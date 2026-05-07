@@ -23,7 +23,7 @@ class GameState:
             
             # Cargar mazos
             if p == self.players[0]:
-                p.deck = CardLoader.load_deck("src/data/basic_bot_deck.json")
+                p.deck = CardLoader.load_deck("src/data/ct_basic_deck.json")
             elif p == self.players[1]:
                 p.deck = CardLoader.load_deck("src/data/fev_basic_deck.json")
             
@@ -280,8 +280,8 @@ class GameState:
             else:
                 target = self.board.get_unit_at(tx, ty)
                 # Aplicar daño
-                murió = target.take_damage(effective_attack)
-                
+                murió = target.take_damage(effective_attack, self)
+                attacker.on_attack(self)
                 if murió:
                     print(f">>> ¡{target.name} ha sido derrotado! <<<")
                     self.board.remove_unit(tx, ty)
@@ -312,6 +312,7 @@ class GameState:
                 if unit:
                     unit.has_moved = False
                     unit.has_attacked = False
+                    unit.ability_used_this_turn = False
 
         # 2. Cambiar de jugador
         self.current_player_id = 1 - self.current_player_id

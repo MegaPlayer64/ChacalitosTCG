@@ -18,6 +18,7 @@ class Unit(Card):
         self.attack = attack
         self.speed = speed
         self.range_atk = range_atk
+        self.has_shield = False
         
         # Habilidades estáticas
         self.static_abilities = []
@@ -32,7 +33,7 @@ class Unit(Card):
         self.pos_y = -1
 
     def take_damage(self, amount: int, game_state) -> bool:
-        """Resta vida y devuelve True si la unidad murió."""
+        # """Resta vida y devuelve True si la unidad murió."""
         from domain.ability_manager import AbilityManager
         AbilityManager.trigger_on_damage_received(self, amount, game_state)
         if self.has_shield:
@@ -46,11 +47,15 @@ class Unit(Card):
         return self.health <= 0
 
     def reset_turn_state(self):
-        """Limpia las banderas al inicio/fin del turno."""
+        # """Limpia las banderas al inicio/fin del turno."""
         self.has_moved = False
         self.has_attacked = False
 
     def on_enter(self, game_state):
         from domain.ability_manager import AbilityManager
         AbilityManager.trigger_on_enter(self, game_state)
+
+    def on_attack(self, game_state):
+        from domain.ability_manager import AbilityManager
+        AbilityManager.trigger_on_attack(self, game_state)
 
