@@ -152,7 +152,7 @@ class AbilityManager:
             if tx is not None and game_state.board.is_within_bounds(tx, ty) and not game_state.board.is_occupied(tx, ty):
                 dist = abs(fx - tx) + abs(fy - ty)
                 if dist <= 1:
-                    game_state.board.move_unit(target_unit, tx, ty)
+                    game_state.board.move_unit(fx, fy, tx, ty)
                     print(f">> {target_unit.name} se movió a ({tx}, {ty}).")
                     return True
                 else:
@@ -573,7 +573,7 @@ class AbilityManager:
             except ValueError: return
 
         if tx is not None and game_state.board.is_within_bounds(tx, ty) and not game_state.board.is_occupied(tx, ty):
-            game_state.board.move_unit(unit, tx, ty)
+            game_state.board.move_unit(fx, fy, tx, ty)
             print(f">> Kapsi se retiró a ({tx}, {ty})")
 
     @staticmethod
@@ -661,7 +661,7 @@ class AbilityManager:
             
             # Aquí es donde usas la lógica que ya tienes en validate_action (pero manual)
             if game_state.board.is_within_bounds(tx, ty) and not game_state.board.is_occupied(tx, ty) and dist <= effective_speed:
-                game_state.board.move_unit(unit, tx, ty)
+                game_state.board.move_unit(fx, fy, tx, ty)
                 print(f">> ¡ESQUIVA! Chino se movió a ({tx}, {ty}) y anuló los {damage} de daño.")
                 unit.ability_used_this_turn = True
                 return 0
