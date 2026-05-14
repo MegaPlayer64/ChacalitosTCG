@@ -32,3 +32,6 @@ class Board:
             self.set_unit_at(to_x, to_y, unit)
             return True
         return False
+
+    def get_all_units(self):
+        return list(self.grid.values())

@@ -36,8 +36,39 @@ def start_integration_test():
     
     # 3. Instanciar Motor y Estado
     print("\n[3] Instanciando GameState y Tablero 6x5...")
+    
+    # 4. Seleccionar el mazo
+    print("Qué mazo quieres seleccionar: \n 1.- Dermapatch \n 2.- 3nai \n 3.- CT \n 4.- FEV \n 5.- News \n 6.- Tralareros")
+    deck1 = input("Mazo para Jugador 1: ")
+    deck2 = input("Mazo para Jugador 2: ")
+    if deck1 == "1":
+        deck1 = "src/data/dermapatch_basic_deck.json"
+    elif deck1 == "2":
+        deck1 = "src/data/3nai_basic_deck.json"
+    elif deck1 == "3":
+        deck1 = "src/data/ct_basic_deck.json"
+    elif deck1 == "4":  
+        deck1 = "src/data/fev_basic_deck.json"
+    elif deck1 == "5":
+        deck1 = "src/data/news_basic_deck.json"
+    elif deck1 == "6":
+        deck1 = "src/data/tt_basic_deck.json"
+        
+    if deck2 == "1":
+        deck2 = "src/data/dermapatch_basic_deck.json"
+    elif deck2 == "2":
+        deck2 = "src/data/3nai_basic_deck.json"
+    elif deck2 == "3":
+        deck2 = "src/data/ct_basic_deck.json"
+    elif deck2 == "4":  
+        deck2 = "src/data/fev_basic_deck.json"
+    elif deck2 == "5":
+        deck2 = "src/data/news_basic_deck.json"
+    elif deck2 == "6":
+        deck2 = "src/data/tt_basic_deck.json"
+    
     # NOTA: Al instanciar GameState, internamente se cargan los mazos, se barajan y se roban 5 cartas a cada Jugador.
-    state = GameState([p1, p2])
+    state = GameState([p1, p2], deck1, deck2)
     # controllers = [HumanController(), AIController(player_id=1)]
     opcion = input("¿Quieres jugar tu contra la IA, contra otro jugador o simular un combate en tre IA? (1 para IA, 2 para otro jugador, 3 para IA vs IA): ")
     if opcion == "1":

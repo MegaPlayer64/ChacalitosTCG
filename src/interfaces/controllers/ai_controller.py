@@ -4,7 +4,7 @@ from domain.action import Action
 from domain.action_type import ActionType
 
 class AIController:
-    def __init__(self, player_id, difficulty="MEDIUM", delay=1.5):
+    def __init__(self, player_id, difficulty="HARD", delay=1.5):
         self.player_id = player_id
         self.difficulty = difficulty.upper()
         self.delay = delay
@@ -30,6 +30,16 @@ class AIController:
                     cost = 0
                 self.turn_energy_spent += cost
                 detalle = f"Carta '{getattr(card, 'name', 'Desconocida')}' (Coste: {cost})"
+            elif action.type == ActionType.PLAY_SPELL:
+                card_index = action.payload['card_index']
+                card = game_state.players[self.player_id].hand[card_index]
+                self.turn_cards_played += 1
+                try:
+                    cost = int(card.cost)
+                except:
+                    cost = 0
+                self.turn_energy_spent += cost
+                detalle = f"Hechizo '{getattr(card, 'name', 'Desconocido')}' -> {action.payload.get('target')}"
             elif action.type == ActionType.ATTACK:
                 detalle = f"Ataque desde {action.payload.get('from')} a {action.payload.get('target')}"
             elif action.type == ActionType.MOVE:
@@ -90,7 +100,8 @@ class AIController:
                 continue
                 
             if player.current_energy >= cost:
-                if card.card_type.lower() == 'unit':
+                card_type = card.card_type.lower()
+                if card_type == 'unit':
                     for x in range(game_state.board.width):
                         for y in range(game_state.board.height):
                             try:
@@ -100,6 +111,31 @@ class AIController:
                                         actions.append(action)
                             except Exception:
                                 pass
+                elif card_type in ('spell', 'trick'):
+                    # Intentar objetivo global
+                    try:
+                        action = Action(ActionType.PLAY_SPELL, self.player_id, {'card_index': i, 'target': 'G'})
+                        if game_state.validate_action(action):
+                            actions.append(action)
+                    except Exception:
+                        pass
+
+                    # Intentar objetivos sobre el tablero
+                    for x in range(game_state.board.width):
+                        for y in range(game_state.board.height):
+                            try:
+                                action = Action(ActionType.PLAY_SPELL, self.player_id, {'card_index': i, 'target': (x, y)})
+                                if game_state.validate_action(action):
+                                    actions.append(action)
+                            except Exception:
+                                pass
+                elif card_type in ('environment', 'building'):
+                    try:
+                        action = Action(ActionType.PLAY_CARD, self.player_id, {'card_index': i, 'to': (-1, -1)})
+                        if game_state.validate_action(action):
+                            actions.append(action)
+                    except Exception:
+                        pass
                 else:
                     try:
                         action = Action(ActionType.PLAY_CARD, self.player_id, {'card_index': i})
@@ -153,13 +189,75 @@ class AIController:
         actions.append(Action(ActionType.END_TURN, self.player_id, {}))
         return actions
 
+    def _is_enemy_unit_target(self, game_state, target):
+        if isinstance(target, tuple):
+            unit = game_state.board.get_unit_at(*target)
+            return unit and getattr(unit, 'owner_id', None) != self.player_id
+        return False
+
+    def _is_friendly_unit_target(self, game_state, target):
+        if isinstance(target, tuple):
+            unit = game_state.board.get_unit_at(*target)
+            return unit and getattr(unit, 'owner_id', None) == self.player_id
+        return False
+
+    def _evaluate_spell_action(self, game_state, action) -> float:
+        player = game_state.players[self.player_id]
+        card = player.hand[action.payload['card_index']]
+        score = 0
+
+        target = action.payload.get('target')
+        if target == 'G':
+            score += 20
+        elif target == 'B':
+            score += 35
+        elif isinstance(target, tuple):
+            if self._is_enemy_unit_target(game_state, target):
+                target_unit = game_state.board.get_unit_at(*target)
+                if target_unit:
+                    score += 30
+                    score += max(0, 10 - target_unit.health)
+            elif self._is_friendly_unit_target(game_state, target):
+                score += 15
+            else:
+                score += 5
+
+        # Los hechizos de coste mayor son más valiosos si pueden usarse
+        try:
+            score += int(card.cost) * 2
+        except Exception:
+            pass
+
+        return score
+
+    def _evaluate_environment_action(self, game_state, action) -> float:
+        score = 15
+        if getattr(game_state, 'active_environment', None) is None:
+            score += 15
+        else:
+            score += 5
+        return score
+
     def _get_medium_action(self, game_state, legal_actions) -> Action:
         # 1. Prioridad Absoluta: Ataque a Base
         base_attacks = [a for a in legal_actions if a.type == ActionType.ATTACK and a.payload['target'] == 'B']
         if base_attacks:
             return base_attacks[0]
 
-        # 2. Fase de Invocación (Mayor Ataque)
+        # 2. Fase de Hechizo/Entorno
+        spell_actions = [a for a in legal_actions if a.type == ActionType.PLAY_SPELL]
+        if spell_actions:
+            best_spell = max(spell_actions, key=lambda a: self._evaluate_spell_action(game_state, a))
+            if self._evaluate_spell_action(game_state, best_spell) > 0:
+                return best_spell
+
+        env_actions = [a for a in legal_actions if a.type == ActionType.PLAY_CARD and game_state.players[self.player_id].hand[a.payload['card_index']].card_type.lower() in ('environment', 'building')]
+        if env_actions:
+            best_env = max(env_actions, key=lambda a: self._evaluate_environment_action(game_state, a))
+            if self._evaluate_environment_action(game_state, best_env) > 10:
+                return best_env
+
+        # 3. Fase de Invocación (Mayor Ataque)
         summons = [a for a in legal_actions if a.type == ActionType.PLAY_CARD]
         if summons:
             player = game_state.players[self.player_id]
@@ -173,7 +271,7 @@ class AIController:
             if best_summon:
                 return best_summon
 
-        # 3. Fase de Movimiento (Hacia la Base Enemiga)
+        # 4. Fase de Movimiento (Hacia la Base Enemiga)
         moves = [a for a in legal_actions if a.type == ActionType.MOVE]
         if moves:
             best_move = None
@@ -280,6 +378,19 @@ class AIController:
                         if self._calculate_lethal_risk(game_state, attacker, fx, fy, ignored_enemy_pos=ignored):
                             score -= 100
 
+            elif action.type == ActionType.PLAY_SPELL:
+                card = player.hand[action.payload['card_index']]
+                score += self._evaluate_spell_action(game_state, action)
+
+                target = action.payload.get('target')
+                if isinstance(target, tuple):
+                    if self._is_enemy_unit_target(game_state, target):
+                        target_unit = game_state.board.get_unit_at(*target)
+                        if target_unit and target_unit.health <= 5:
+                            score += 15
+                    elif self._is_friendly_unit_target(game_state, target):
+                        score += 10
+
             elif action.type == ActionType.PLAY_CARD:
                 card = player.hand[action.payload['card_index']]
                 if card.card_type.lower() == 'unit':
@@ -290,6 +401,8 @@ class AIController:
                     if 'excelencia' in self._get_groups_lower(card):
                         if self._calculate_lethal_risk(game_state, card, tx, ty):
                             score -= 100
+                elif card.card_type.lower() in ('environment', 'building'):
+                    score += self._evaluate_environment_action(game_state, action)
 
             elif action.type == ActionType.MOVE:
                 fx, fy = action.payload['from']

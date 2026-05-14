@@ -8,7 +8,7 @@ from src.domain.board import Board
 from src.infrastructure.loaders.card_loader import CardLoader
 
 class GameState:
-    def __init__(self, players: List[Player]):
+    def __init__(self, players: List[Player], deck1, deck2):
         self.players = players
         self.board = Board(width=6, height=5) # El tablero se inicia limpio (vacío)
         self.current_player_id = 0
@@ -23,9 +23,9 @@ class GameState:
             
             # Cargar mazos
             if p == self.players[0]:
-                p.deck = CardLoader.load_deck("src/data/ct_basic_deck.json")
+                p.deck = CardLoader.load_deck(deck1)
             elif p == self.players[1]:
-                p.deck = CardLoader.load_deck("src/data/fev_basic_deck.json")
+                p.deck = CardLoader.load_deck(deck2)
             
             # Mezclar mazo
             p.shuffle_deck()
