@@ -97,8 +97,10 @@ class GameState:
             if env_id == 53: # Cancha de Futbol
                 if 'futbolero' in unit_tags and not getattr(unit, 'has_attacked', False):
                     effective_speed += 1
+                elif unit.id == 22:
+                    effective_speed += 1
             elif env_id == 54: # La Fundación
-                if 'tralalero tralala' in unit_tags:
+                if 'tralalero tralala' in unit_tags or unit.id == 22:
                     effective_attack -= 1
                 
                 # Los enemigos no pueden recibir buffs de ataque
@@ -140,7 +142,8 @@ class GameState:
                 
             card = player.hand[card_index]
             
-            if player.current_energy < int(card.cost):
+            final_cost = max(1, int(card.cost) - 1) if player.cost_reduction_active else int(card.cost)
+            if player.current_energy < final_cost:
                 print(f">> [!] Energía insuficiente. Necesitas {card.cost}, tienes {player.current_energy}.")
                 return False
                 
@@ -163,8 +166,9 @@ class GameState:
                 return False
                 
             card = player.hand[card_index]
-            
-            if player.current_energy < int(card.cost):
+
+            final_cost = max(1, int(card.cost) - 1) if player.cost_reduction_active else int(card.cost)
+            if player.current_energy < final_cost:
                 print(f">> [!] Energía insuficiente. Necesitas {card.cost}, tienes {player.current_energy}.")
                 return False
             
@@ -206,6 +210,9 @@ class GameState:
             if dist > effective_speed:
                 print(f">> [!] {unit.name} no llega. Distancia: {dist}, Velocidad: {effective_speed}")
                 return False
+
+            if unit.id == 25 and getattr(unit, 'immobile_turns', 0) > 0:
+                return False 
 
             return True
         elif action.type.name == "END_TURN":
@@ -281,6 +288,17 @@ class GameState:
                 print(f">> [!] Objetivo fuera de rango. Distancia: {dist}, Rango: {attacker.range_atk}")
                 return False
 
+            # ID 32: Isidora (Inmune si tiene aliados adyacentes)
+            if target.id == 59:
+                if any(self.board.get_unit_at(nx, ny) for nx, ny in self.board.get_neighbors(target.x, target.y)):
+                    return False 
+
+            if dist > 1 and "Danza" in target.groups:
+                # Buscar si Ale está adyacente al defensor
+                for nx, ny in self.board.get_neighbors(target.x, target.y):
+                    vecino = self.board.get_unit_at(nx, ny)
+                    if vecino and vecino.id == 11:
+                        return False 
             return True
         
         return False
@@ -395,8 +413,11 @@ class GameState:
                 
         return True
     
-
-
+    def _start_turn(self):
+        # Llamar trigger_on_turn_start de AbilityManager
+        from domain.ability_manager import AbilityManager
+        AbilityManager.trigger_on_turn_start(self)
+        
     def _end_turn(self):
         # 1. Resetear el estado de todas las unidades antes de cambiar de jugador
         for y in range(self.board.height):
@@ -432,3 +453,6 @@ class GameState:
             
         self.get_current_player().refresh_energy()
         print(f"\n--- Turno finalizado. Ahora es el turno de {self.get_current_player().name} ---")
+        self._start_turn()
+
+# Actualiza Git
