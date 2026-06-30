@@ -1,4 +1,5 @@
 # main.py
+from kivy.uix import screenmanager
 import os
 import sys
 
@@ -135,6 +136,14 @@ class LBSBGameApp(App):
         
         from src.interfaces.banner_screen import PantallaBanner
         sm.add_widget(PantallaBanner(name='banner_screen'))
+
+        from src.interfaces.deck_builder_screen import PantallaDeckBuilder
+        sm.add_widget(PantallaDeckBuilder(name='deck_builder_screen'))
+
+        from src.interfaces.shop_screen import PantallaTienda
+        sm.add_widget(PantallaTienda(name='shop_screen'))
+
+        print(f"Pantallas registradas: {sm.screen_names}")
         
         # Guardar una referencia de la app en el manager para facilitar accesos directos
         sm.app = self 

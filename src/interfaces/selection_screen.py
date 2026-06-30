@@ -1,7 +1,7 @@
+import json
 import os
 from kivy.uix.screenmanager import Screen
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.spinner import Spinner
@@ -9,7 +9,9 @@ from kivy.uix.spinner import Spinner
 class PantallaSeleccion(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
+        self.ruta_perfil = "src/data/user_profile.json"
+        self.mazos = []  # Diccionario interno de mapeo de rutas/orígenes
+
         layout_global = BoxLayout(orientation='vertical', padding=20, spacing=15)
         
         # Título
@@ -25,13 +27,9 @@ class PantallaSeleccion(Screen):
             size_hint=(None, None), size=(200, 44), pos_hint={'center_x': 0.5}
         )
         
-        # Cargar lista de mazos disponibles en la carpeta
-        self.mazos = self.obtener_lista_mazos()
-        opciones_mazo = [m['nombre'] for m in self.mazos]
-        
         self.spinner_mazo_j1 = Spinner(
-            text=opciones_mazo[0] if opciones_mazo else 'Sin Mazos',
-            values=tuple(opciones_mazo),
+            text='Cargando...',
+            values=(),
             size_hint=(None, None), size=(300, 44), pos_hint={'center_x': 0.5}
         )
         
@@ -49,8 +47,8 @@ class PantallaSeleccion(Screen):
             size_hint=(None, None), size=(200, 44), pos_hint={'center_x': 0.5}
         )
         self.spinner_mazo_j2 = Spinner(
-            text=opciones_mazo[0] if opciones_mazo else 'Sin Mazos',
-            values=tuple(opciones_mazo),
+            text='Cargando...',
+            values=(),
             size_hint=(None, None), size=(300, 44), pos_hint={'center_x': 0.5}
         )
         
@@ -72,20 +70,60 @@ class PantallaSeleccion(Screen):
         
         self.add_widget(layout_global)
 
+    def on_enter(self):
+        """Se ejecuta automáticamente al cargar la pantalla. Actualiza la lista de mazos."""
+        self.mazos = self.obtener_lista_mazos()
+        opciones_visuales = [m['nombre'] for m in self.mazos]
+        
+        if opciones_visuales:
+            self.spinner_mazo_j1.values = tuple(opciones_visuales)
+            self.spinner_mazo_j2.values = tuple(opciones_visuales)
+            
+            # Evitar que el texto quede desactualizado si se eliminó algún mazo
+            if self.spinner_mazo_j1.text not in opciones_visuales:
+                self.spinner_mazo_j1.text = opciones_visuales[0]
+            if self.spinner_mazo_j2.text not in opciones_visuales:
+                self.spinner_mazo_j2.text = opciones_visuales[0]
+
     def obtener_lista_mazos(self):
-        # Escanea las carpetas de mazos predefinidos
-        base_path = "src/data/premade_decks"
         mazos = []
+        
+        # 1. Escanear los mazos premade de las carpetas de datos
+        base_path = "src/data/premade_decks"
         if os.path.exists(base_path):
             for root, dirs, files in os.walk(base_path):
                 for file in files:
                     if file.endswith('.json'):
                         full_path = os.path.join(root, file).replace('\\', '/')
-                        mazos.append({'nombre': file.replace('.json', ''), 'ruta': full_path})
+                        mazos.append({
+                            'nombre': f"[Premade] {file.replace('.json', '')}", 
+                            'ruta': full_path,
+                            'tipo_origen': 'archivo'
+                        })
         
-        # Mazo por defecto si no encuentra
+        # 2. Inyectar dinámicamente tus mazos guardados desde el perfil de usuario
+        if os.path.exists(self.ruta_perfil):
+            try:
+                with open(self.ruta_perfil, "r", encoding="utf-8") as f:
+                    perfil = json.load(f)
+                
+                decks_guardados = perfil.get("decks", {})
+                for nombre_mazo in decks_guardados.keys():
+                    mazos.append({
+                        'nombre': f"[Personal] {nombre_mazo}",
+                        'ruta': nombre_mazo, # Almacenamos el identificador del mazo para el perfil
+                        'tipo_origen': 'perfil'
+                    })
+            except Exception as e:
+                print(f"[!] Error al leer mazos personales del perfil: {e}")
+
+        # Fallback de seguridad
         if not mazos:
-            mazos.append({'nombre': 'Dermapatch', 'ruta': 'src/data/premade_decks/tag_theme/dermapatch_basic_deck.json'})
+            mazos.append({
+                'nombre': '[Premade] Dermapatch', 
+                'ruta': 'src/data/premade_decks/tag_theme/dermapatch_basic_deck.json',
+                'tipo_origen': 'archivo'
+            })
             
         return mazos
 
@@ -93,14 +131,25 @@ class PantallaSeleccion(Screen):
         self.manager.current = nombre_pantalla
 
     def iniciar_partida(self, instance):
-        # Obtener rutas reales de los mazos seleccionados
-        ruta_j1 = next((m['ruta'] for m in self.mazos if m['nombre'] == self.spinner_mazo_j1.text), None)
-        ruta_j2 = next((m['ruta'] for m in self.mazos if m['nombre'] == self.spinner_mazo_j2.text), None)
+        # Encontrar las referencias seleccionadas
+        config_j1 = next((m for m in self.mazos if m['nombre'] == self.spinner_mazo_j1.text), None)
+        config_j2 = next((m for m in self.mazos if m['nombre'] == self.spinner_mazo_j2.text), None)
         
-        # Guardar en las variables globales de la App
+        if not config_j1 or not config_j2:
+            return
+
+        # El game_settings empaquetará tanto la ruta física o la key del perfil como el origen correspondiente
         self.manager.app.game_settings = {
-            'p1': {'tipo': self.spinner_tipo_j1.text, 'mazo': ruta_j1},
-            'p2': {'tipo': self.spinner_tipo_j2.text, 'mazo': ruta_j2}
+            'p1': {
+                'tipo': self.spinner_tipo_j1.text, 
+                'mazo': config_j1['ruta'],
+                'origen': config_j1['tipo_origen']
+            },
+            'p2': {
+                'tipo': self.spinner_tipo_j2.text, 
+                'mazo': config_j2['ruta'],
+                'origen': config_j2['tipo_origen']
+            }
         }
         
         self.cambiar_pantalla('game_screen')

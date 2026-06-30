@@ -381,12 +381,31 @@ class GameState:
                 print(f">> ¡{player.name} jugó la carta {card.name}!")
         
         if action.type.name == "PLAY_SPELL":
-            # Eliminamos la carta de la mano y restamos la energía (El efecto se ejecuta en game_engine)
+            # 1. Recuperar índices y datos
             card_index = action.payload['card_index']
+            target = action.payload.get('target') 
             player = self.get_current_player()
+            
+            # 2. VALIDACIÓN (Para evitar que la IA juegue cartas que no tiene)
+            if card_index < 0 or card_index >= len(player.hand):
+                print(f">> [!] ERROR: Índice de carta inválido: {card_index}")
+                return False
+
+            # 3. Consumir carta y energía
             card = player.hand.pop(card_index)
             player.current_energy -= int(card.cost)
             print(f">> ¡{player.name} lanzó el hechizo {card.name}!")
+
+            # 4. EJECUTAR EL EFECTO (Aquí estaba el hueco)
+            from src.domain.ability_manager import AbilityManager
+            success = AbilityManager.execute_spell(card, target, self)
+            
+            if success:
+                print(f">> [Hechizo]: Efecto de {card.name} aplicado.")
+            else:
+                print(f">> [!] El hechizo {card.name} falló.")
+            
+            return True
 
         if action.type.name == "MOVE":
             fx, fy = action.payload['from']
@@ -507,13 +526,15 @@ class GameState:
         for unit in self.board.get_all_units(current_p.id):
             if hasattr(unit, 'immobile_turns') and unit.immobile_turns > 0:
                 unit.immobile_turns -= 1
-
+        
+        current_p.crisby_cost_reduction_active = False
+        current_p.d_economia_cost_reduction_active = False
+        
         # 2. Cambiar de jugador
         self.current_player_id = 1 - self.current_player_id
         if self.current_player_id == 0:
             self.turn_number += 1
         
-        # Limpiar historial de hechizos fallidos del nuevo jugador al iniciar su turno
         next_player = self.get_current_player()
         next_player.failed_spells_this_turn.clear()
             

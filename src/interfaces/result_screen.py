@@ -11,6 +11,9 @@ class PantallaResultado(Screen):
         super().__init__(**kwargs)
         self.layout = BoxLayout(orientation='vertical', padding=40, spacing=20)
         
+        # Rastreador interno para saber si el jugador local ganó
+        self.victoria_local = True 
+        
         # Labels dinámicos que se actualizan antes de mostrar la pantalla
         self.lbl_titulo = Label(
             text="",
@@ -49,13 +52,31 @@ class PantallaResultado(Screen):
         self.layout.add_widget(btn_menu)
         self.add_widget(self.layout)
 
+    def on_enter(self):
+        from src.domain.rewards_system import RewardsSystem
+        
+        settings = self.manager.app.game_settings
+        tipo_rival = settings['p2']['tipo'] if settings else "IA Normal"
+        
+        premios = RewardsSystem.otorgar_recompensa(victoria=self.victoria_local, dificultad_rival=tipo_rival)
+            
+        if premios:
+                # CORRECCIÓN: Usamos lbl_detalle que es el que definiste en __init__
+                self.lbl_detalle.text += (
+                    f"\n\n[color=00ff88][b]¡BOTÍN DE GUERRA![/b][/color]\n"
+                    f"+{premios['monedas']} 🪙 Monedas  |  +{premios['esencia']} ✨ Esencia"
+                )
+            
     def configurar(self, ganador_nombre: str, perdedor_nombre: str, jugador_local_id: int, ganador_id: int):
         """Llamar antes de hacer la transición para personalizar el texto."""
-        victoria = (jugador_local_id == ganador_id) or jugador_local_id < 0
-        if victoria:
+        # Si el local ID coincide con el ganador, es victoria
+        self.victoria_local = (jugador_local_id == ganador_id) or jugador_local_id < 0
+        
+        if self.victoria_local:
             self.lbl_titulo.text = "[color=00ff88][b]¡VICTORIA![/b][/color]"
         else:
             self.lbl_titulo.text = "[color=ff4444][b]DERROTA[/b][/color]"
+            
         self.lbl_detalle.text = (
             f"[b]{ganador_nombre}[/b] ganó la partida.\n"
             f"La base de [b]{perdedor_nombre}[/b] fue destruida."

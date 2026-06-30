@@ -65,9 +65,14 @@ class PantallaBanner(Screen):
         
         btn_volver = Button(text="Volver al Menú", background_color=(0.7, 0.2, 0.2, 1), size_hint_x=0.3)
         btn_volver.bind(on_release=lambda x: self.cambiar_a_menu())
+
+        btn_tienda = Button(text="Ir a la Tienda", background_color=(0.7, 0.2, 0.2, 1), size_hint_x=0.3)
+        btn_tienda.bind(on_release=lambda x: self.cambiar_a_tienda())
+        
         
         layout_botones.add_widget(btn_gacha)
         layout_botones.add_widget(btn_volver)
+        layout_botones.add_widget(btn_tienda)
         layout_principal.add_widget(layout_botones)
         
         self.add_widget(layout_principal)
@@ -114,3 +119,7 @@ class PantallaBanner(Screen):
 
     def cambiar_a_menu(self):
         self.manager.current = 'menu_screen'
+
+    def cambiar_a_tienda(self):
+        self.manager.current = 'shop_screen'
+    

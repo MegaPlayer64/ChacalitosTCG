@@ -358,9 +358,14 @@ class AIController:
         max_score = -float('inf')
 
         player = game_state.players[self.player_id]
-
+        
         for action in legal_actions:
             score = 0
+
+            if action.type in [ActionType.PLAY_CARD, ActionType.PLAY_SPELL]:
+                idx = action.payload.get('card_index')
+                if idx is None or idx >= len(player.hand):
+                    continue
             
             if action.type == ActionType.END_TURN:
                 score = 0 

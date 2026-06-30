@@ -50,10 +50,25 @@ class PantallaInventario(Screen):
         scroll.add_widget(self.grilla_cartas)
         layout_principal.add_widget(scroll)
         
-        btn_volver = Button(text="Volver al Menú", size_hint_y=0.1)
-        btn_volver.bind(on_release=lambda x: self.cambiar_a_menu())
-        layout_principal.add_widget(btn_volver)
+        # --- NUEVA BOTONERA INFERIOR CON 3 ACCIONES ---
+        layout_botones = BoxLayout(orientation='horizontal', spacing=10, size_hint_y=0.1)
         
+        btn_volver = Button(text="Volver al Menú", size_hint_x=0.25)
+        btn_volver.bind(on_release=lambda x: self.cambiar_a_menu())
+        
+        btn_reciclar = Button(text="♻️ RECICLAR DUPLICADOS", font_size='14sp', background_color=(0.7, 0.4, 0.1, 1), size_hint_x=0.35)
+        btn_reciclar.bind(on_release=self.ejecutar_reciclaje_ui)
+        
+        btn_crear_mazo = Button(text="CREAR O EDITAR MAZO", font_size='14sp', background_color=(0.2, 0.6, 0.4, 1), size_hint_x=0.4)
+        btn_crear_mazo.bind(on_release=self.abrir_deck_builder)
+        
+        layout_botones.add_widget(btn_volver)
+        layout_botones.add_widget(btn_reciclar)
+        layout_botones.add_widget(btn_crear_mazo)
+        
+        layout_principal.add_widget(layout_botones)
+        
+        # Al final, añadimos el layout principal completo a la pantalla
         self.add_widget(layout_principal)
 
     def on_enter(self):
@@ -79,7 +94,10 @@ class PantallaInventario(Screen):
         # 2. Actualizar el encabezado con el nombre y las monedas actuales del jugador
         usuario = perfil_data.get("username", "Jugador")
         monedas = perfil_data.get("coins", 0)
-        self.lbl_titulo.text = f"ÁLBUM DE {usuario.upper()}  |  🪙 Monedas: {monedas}"
+        esencia = perfil_data.get("craft_essence", 0)
+        
+        # Ahora el título rastrea ambas economías en tiempo real
+        self.lbl_titulo.text = f"ÁLBUM DE {usuario.upper()}  |  🪙 Monedas: {monedas}  |  ✨ Esencia: {esencia}"
 
         # 3. Extraer el diccionario de inventario
         inventario_usuario = perfil_data.get("inventory", {})
@@ -104,5 +122,20 @@ class PantallaInventario(Screen):
                 )
                 self.grilla_cartas.add_widget(tarjeta)
 
+    def ejecutar_reciclaje_ui(self, instance):
+        from src.domain.craft_system import CraftSystem
+        
+        resultado = CraftSystem.reciclar_excesos()
+        if resultado["exito"]:
+            # Cambiamos el título temporalmente para celebrar el reciclaje
+            self.lbl_titulo.text = f"♻️ ¡Moliste {resultado['cartas_rotas']} cartas por +{resultado['esencia_obtenida']} ✨!"
+            # Forzamos a Kivy a volver a pintar la grilla con los nuevos topes de 4 copias
+            self.cargar_inventario_desde_json()
+        else:
+            self.lbl_titulo.text = f"❌ {resultado['mensaje']}"
+            
     def cambiar_a_menu(self):
         self.manager.current = 'menu_screen'
+
+    def abrir_deck_builder(self, instance):
+        self.manager.current = 'deck_builder_screen'
