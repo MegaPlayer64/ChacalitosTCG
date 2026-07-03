@@ -314,6 +314,8 @@ class PantallaJuego(Screen):
 
         if not exito:
             self._ia_fallos_consecutivos += 1
+            if accion.type == ActionType.PLAY_SPELL:
+                jugador_actual.failed_spells_this_turn.add(accion.payload['card_index'])
         else:
             self._ia_fallos_consecutivos = 0
 

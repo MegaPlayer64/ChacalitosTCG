@@ -170,8 +170,6 @@ class GameState:
                     print(f">> [!] Zona de invocación inválida para el jugador {action.player_id}.")
                     return False
             
-            if final_cost <= 4:
-                player.crisby_cost_reduction_active = False
             return True
 
         if action.type.name == "PLAY_SPELL":
@@ -206,10 +204,6 @@ class GameState:
                 if not self.board.is_within_bounds(tx, ty):
                     print(">> [!] Objetivo fuera del tablero.")
                     return False
-
-            if final_cost <= 4:
-                player.crisby_cost_reduction_active = False
-            player.d_economia_cost_reduction_active = False
 
             return True
 
@@ -382,8 +376,17 @@ class GameState:
             tx, ty = action.payload.get('to', (-1, -1))
             
             player = self.get_current_player()
+            card = player.hand[card_index]
+
+            crisby_active = getattr(player, 'crisby_cost_reduction_active', False)
+            if crisby_active and card.cost <= 4:
+                final_cost = max(1, int(card.cost) - 1)
+                player.crisby_cost_reduction_active = False
+            else:
+                final_cost = int(card.cost)
+
             card = player.hand.pop(card_index)
-            player.current_energy -= int(card.cost)
+            player.current_energy -= final_cost
             
             if card.card_type.lower() == 'unit':
                 card.owner_id = int(player.id)
@@ -419,21 +422,36 @@ class GameState:
                 print(f">> [!] ERROR: Índice de carta inválido: {card_index}")
                 return False
 
+            card = player.hand[card_index]
+
+            crisby_active = getattr(player, 'crisby_cost_reduction_active', False)
+            d_economia_active = getattr(player, 'd_economia_cost_reduction_active', False)
+            
+            final_cost = int(card.cost)
+            if crisby_active and card.cost <= 4: 
+                final_cost = max(1, int(final_cost) - 1)
+                player.crisby_cost_reduction_active = False
+            if d_economia_active:
+                final_cost = max(1, int(final_cost) - 1)
+                player.d_economia_cost_reduction_active = False
+
             # 3. Consumir carta y energía
             card = player.hand.pop(card_index)
-            player.current_energy -= int(card.cost)
+            player.current_energy -= final_cost
             print(f">> ¡{player.name} lanzó el hechizo {card.name}!")
 
-            # 4. EJECUTAR EL EFECTO (Aquí estaba el hueco)
+            # 4. EJECUTAR EL EFECTO
             from src.domain.ability_manager import AbilityManager
             success = AbilityManager.execute_spell(card, target, self)
             
             if success:
                 print(f">> [Hechizo]: Efecto de {card.name} aplicado.")
+                return True
             else:
-                print(f">> [!] El hechizo {card.name} falló.")
-            
-            return True
+                print(f">> [!] El hechizo {card.name} falló. Devolviendo energía y carta.")
+                player.current_energy += final_cost
+                player.hand.insert(card_index, card)
+                return False
 
         if action.type.name == "MOVE":
             fx, fy = action.payload['from']

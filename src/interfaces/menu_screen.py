@@ -12,7 +12,7 @@ class MenuPrincipal(Screen):
         
         # Encabezado / Título del Juego
         lbl_titulo = Label(
-            text="[b]LBSB CARD GAME[/b]\n[size=16sp]Engine v2[/size]", 
+            text="[b]Chacalitos TCG[/b]\n[size=16sp]Engine v0.1.5[/size]", 
             font_size='32sp', 
             markup=True,
             size_hint_y=0.25,

@@ -697,7 +697,7 @@ class AbilityManager:
         player = game_state.players[unit.owner_id]
         if getattr(player, 'is_ai', False):
             # La IA busca al aliado con más vida para hacerlo un "tanque"
-            aliados = [u for u in game_state.board.get_all_units() if u.owner_id == unit.owner_id and u != unit]
+            aliados = [u for u in game_state.board.get_all_units() if u.owner_id == unit.owner_id and u is not unit]
             if aliados:
                 target = max(aliados, key=lambda u: u.health)
                 target.has_shield = True
@@ -721,7 +721,7 @@ class AbilityManager:
         pos = None
         for y in range(5):
             for x in range(6):
-                if game_state.board.get_unit_at(x, y) == unit:
+                if game_state.board.get_unit_at(x, y) is unit:
                     pos = (x, y)
                     break
             if pos: break
@@ -786,7 +786,7 @@ class AbilityManager:
         pos = None
         for y in range(5):
             for x in range(6):
-                if game_state.board.get_unit_at(x, y) == unit:
+                if game_state.board.get_unit_at(x, y) is unit:
                     pos = (x, y)
                     break
             if pos: break
@@ -905,7 +905,7 @@ class AbilityManager:
         pos = None
         for y in range(game_state.board.height):
             for x in range(game_state.board.width):
-                if game_state.board.get_unit_at(x, y) == unit:
+                if game_state.board.get_unit_at(x, y) is unit:
                     pos = (x, y)
                     break
             if pos: break
