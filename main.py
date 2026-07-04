@@ -126,6 +126,9 @@ class LBSBGameApp(App):
         from src.interfaces.selection_screen import PantallaSeleccion
         sm.add_widget(PantallaSeleccion(name='selection_screen'))
         
+        from src.interfaces.vs_screen import PantallaVersus
+        sm.add_widget(PantallaVersus(name='vs_screen'))
+        
         sm.add_widget(PantallaJuego(name='game_screen'))
         
         from src.interfaces.result_screen import PantallaResultado

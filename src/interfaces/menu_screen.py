@@ -3,10 +3,12 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 
+from src.domain.audio_manager import AudioManager
+
 class MenuPrincipal(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
+
         # Layout principal de toda la pantalla (Vertical)
         layout_global = BoxLayout(orientation='vertical', padding=30, spacing=20)
         
@@ -42,10 +44,13 @@ class MenuPrincipal(Screen):
         layout_global.add_widget(layout_botones)
         
         # Footer con versión o créditos
-        lbl_footer = Label(text="v2.0.0-Beta Testing - 2026", font_size='12sp', size_hint_y=0.1)
+        lbl_footer = Label(text="xXmegaplayer64Xx - 2026", font_size='12sp', size_hint_y=0.1)
         layout_global.add_widget(lbl_footer)
         
         self.add_widget(layout_global)
 
     def cambiar_pantalla(self, nombre_pantalla):
         self.manager.current = nombre_pantalla
+
+    def on_enter(self):
+        AudioManager().play_bgm('titanicmonarch.ogg')

@@ -5,6 +5,7 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.clock import Clock
 
+from src.domain.audio_manager import AudioManager
 from src.domain.game_state import GameState
 from src.domain.action import Action, ActionType
 
@@ -263,8 +264,10 @@ class PantallaJuego(Screen):
         p2.crisby_cost_reduction_active = False
         p2.d_economia_cost_reduction_active = False
 
+        AudioManager().play_bgm('tetoris8bit.ogg')
         self.actualizar_interfaz_completa()
         self._ejecutar_turno_ia_si_toca()
+        self.pasar_turno(instance=None)
 
     def pasar_turno(self, instance):
         jugador_actual = self.game_state.get_current_player()

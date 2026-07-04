@@ -39,6 +39,9 @@ class GameState:
                 if p.deck and len(p.hand) < 10:
                     p.hand.append(p.deck.pop(0))
 
+        # Iniciar el turno 1 oficialmente
+        self._start_turn()
+
     def get_current_player(self) -> Player:
         return self.players[self.current_player_id]
 

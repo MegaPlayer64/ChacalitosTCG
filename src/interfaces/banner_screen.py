@@ -6,6 +6,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from src.domain.gacha_system import GachaSystem
+from src.domain.audio_manager import AudioManager
 
 class TarjetaRevelada(BoxLayout):
     """Mini-componente visual para representar cada carta obtenida en el sobre"""
@@ -83,6 +84,7 @@ class PantallaBanner(Screen):
             with open(self.ruta_perfil, "r", encoding="utf-8") as f:
                 perfil = json.load(f)
             self.lbl_monedas.text = f"🪙 Mis Monedas: {perfil.get('coins', 0)}"
+        AudioManager().play_bgm('placeholderbossanova.ogg')
 
     def comprar_sobre_cinco_cartas(self, instance):
         # Llamamos al nuevo método asumiendo el coste de 250 por 5 cartas de la facción FEV

@@ -237,7 +237,7 @@ class AbilityManager:
         # 5. Condición de robo: Si tiene la etiqueta "Nuevo"
         if hasattr(target_unit, 'groups') and target_unit.groups:
             groups_str = str(target_unit.groups).lower()
-            if 'nuevo' in groups_str:
+            if 'Nuevo' in groups_str:
                 player = game_state.get_current_player()
                 if len(player.hand) < 10 and player.deck:
                     drawn_card = player.deck.pop(0)
@@ -258,7 +258,7 @@ class AbilityManager:
         
         
         tags = str(getattr(target_unit, 'groups', '')).lower()
-        heal_amount = 12 if 'fuerzas especiales valenzuela' in tags or 'cabezal de tren' in tags else 10
+        heal_amount = 12 if 'Fuerzas Especiales Valenzuela' in tags or 'Cabezal de Tren' in tags else 10
         
         player = game_state.players[target_unit.owner_id]
         if getattr(player, 'cant_heal_turns', 0) > 0:
@@ -285,7 +285,7 @@ class AbilityManager:
         if not target_unit: return False
         
         tags = str(getattr(target_unit, 'groups', '')).lower()
-        amount = -2 if 'tecnológico' in tags or 'tecnologico' in tags else -4
+        amount = -2 if 'Tecnológicos' in tags or 'Tecnológicos' in tags else -4
         
         target_unit.temporary_buffs.append({"type": "attack", "amount": amount, "duration": 1})
         print(f">> ¡{target_unit.name} pierde {abs(amount)} de daño este turno!")
@@ -319,7 +319,7 @@ class AbilityManager:
         if not target_unit: return False
         
         tags = str(getattr(target_unit, 'groups', '')).lower()
-        if 'danza' in tags or 'musica' in tags or 'música' in tags:
+        if 'Danza' in tags or 'Música' in tags:
             fx, fy = target
             
             player = game_state.players[target_unit.owner_id]
@@ -345,7 +345,7 @@ class AbilityManager:
 
     @staticmethod
     def _spell_39_effect(card, target, game_state):
-        # Cura 1 por cada 3_NAI o Dermapatch a la base.
+        # Cura 1 por cada 3_NAI o Derma-patch a la base.
         count = 0
         player_id = game_state.current_player_id
         for y in range(game_state.board.height):
@@ -353,7 +353,7 @@ class AbilityManager:
                 ally = game_state.board.get_unit_at(x, y)
                 if ally and ally.owner_id == player_id:
                     tags = str(getattr(ally, 'groups', '')).lower()
-                    if '3_nai' in tags or 'dermapatch' in tags or 'derma-patch' in tags:
+                    if '3_NAI' in tags or 'Derma-patch' in tags:
                         count += 1
         
         if count > 0:
@@ -416,9 +416,9 @@ class AbilityManager:
             print(f">> [!] {player.name} está bajo un efecto que impide la curación.")
         
         tags = str(getattr(target_unit, 'groups', '')).lower()
-        if 'dermapatch' in tags or 'derma-patch' in tags:
+        if 'Derma-patch' in tags or 'Derma-patch' in tags:
             target_unit.temporary_buffs.append({"type": "attack", "amount": 2, "duration": 1})
-            print(f">> ¡Al ser Dermapatch, gana +2 de daño este turno!")
+            print(f">> ¡Al ser Derma-patch, gana +2 de daño este turno!")
             
         return True
 
@@ -493,7 +493,7 @@ class AbilityManager:
                 ally = game_state.board.get_unit_at(x, y)
                 if ally and ally.owner_id == player.id:
                     tags = str(getattr(ally, 'groups', '')).lower()
-                    if 'futbolero' in tags:
+                    if 'Futboleros' in tags:
                         futbolero_count += 1
                         
         cards_to_draw = 3 if futbolero_count >= 2 else 2
@@ -543,7 +543,7 @@ class AbilityManager:
 
     @staticmethod
     def _spell_48_effect(card, target, game_state):
-        # Cafe Frio: +1 velocidad este turno. Si no es Tralalero Tralala, debuff de -1 velocidad el siguiente turno.
+        # Cafe Frio: +1 velocidad este turno. Si no es Tralaleros, debuff de -1 velocidad el siguiente turno.
         if not isinstance(target, tuple): return False
         target_unit = game_state.board.get_unit_at(*target)
         if not target_unit: return False
@@ -552,10 +552,10 @@ class AbilityManager:
         print(f">> [Cafe Frio] {target_unit.name} gana +1 de velocidad este turno.")
         
         tags = str(getattr(target_unit, 'groups', '')).lower()
-        if 'tralalero tralala' not in tags:
+        if 'Tralaleros' not in tags:
             # Debuff para el siguiente turno
             target_unit.temporary_buffs.append({"type": "speed", "amount": -1, "duration": 1, "delay": 1})
-            print(f">> [Cafe Frio] Al no ser Tralalero Tralala, {target_unit.name} perderá 1 de velocidad el próximo turno (Subidón de azúcar).")
+            print(f">> [Cafe Frio] Al no ser Tralaleros, {target_unit.name} perderá 1 de velocidad el próximo turno (Subidón de azúcar).")
             
         return True
 

@@ -1,99 +1,63 @@
 ID,Nombre,CardType,Rareza,Coste,Vida,Ataque,Velocidad,Rango_ataque,Grupos,Descripción habilidad especial,Temática
-1,Jose,unit,Común,2,9,6,2,1,"Cabezal de Tren, Futbolero",,Cartas iniciales CT
-2,Chino,unit,Común,4,18,14,2,1,"Cabezal de Tren, Futbolero",,Cartas iniciales CT
-3,Kapsi,unit,Común,3,14,9,1,1,"Cabezal de Tren, Futbolero",Mover 1 casilla extra después de atacar,Cartas iniciales CT
-4,Melsizis,Unit,Común,1,9,4,1,1,"Fuerzas Especiales Valenzuela
-Deportista",,Cartas iniciales FEV
-5,Joel,unit,Común,4,20,12,2,1,"Fuerzas Especiales Valenzuela, Deportista, Futbolista, Tecnológico",,Cartas iniciales FEV
-6,Vicente,unit,Común,6,38,9,1,2,"Fuerzas Especiales Valenzuela, Deportista",,Cartas iniciales FEV
+1,Jose,unit,Común,2,9,6,2,1,"Cabezal de Tren, Futboleros",,Cartas iniciales CT
+2,Chino,unit,Común,4,18,14,2,1,"Cabezal de Tren, Futboleros",,Cartas iniciales CT
+3,Kapsi,unit,Común,3,14,9,1,1,"Cabezal de Tren, Futboleros",Mover 1 casilla extra después de atacar,Cartas iniciales CT
+4,Melsizis,unit,Común,1,9,4,1,1,"Fuerzas Especiales Valenzuela, Deportistas",,Cartas iniciales FEV
+5,Joel,unit,Común,4,20,12,2,1,"Fuerzas Especiales Valenzuela, Deportistas, Futboleros, Tecnológico",,Cartas iniciales FEV
+6,Vicente,unit,Común,6,38,9,1,2,"Fuerzas Especiales Valenzuela, Deportistas",,Cartas iniciales FEV
 7,Dante,unit,Común,2,8,7,2,1,"Fuerzas Especiales Valenzuela, Artista, Músico, Tecnológico",,Cartas iniciales FEV
-8,Naty,unit,Común,1,6,3,2,1,"3_NAI
-Danza",,Cartas Iniciales 3_NAI
-9,Ami,unit,Común,3,13,11,2,1,"3_NAI
-Danza",,Cartas Iniciales 3_NAI
-10,Isacovic,unit,Común,3,14,9,1,2,"3_NAI
-Danza",,Cartas Iniciales 3_NAI
-11,Ale,unit,Común,3,16,9,1,1,"3_NAI
-Danza",Las unidades de Danza adyacentes a Ale no pueden ser el objetivo de ataques a distancia.,Cartas Iniciales 3_NAI
-12,Stefano,unit,Común,4,15,8,1,1,"Dermapatch, Cabezal de Tren, Ex-estudiante",Puede aumentar daño 1 perdiendo 1 vida,Cartas iniciales Dermapatch
-13,Emi,unit,Común,4,21,10,1,1,"Derma-patch
-Danza
-Musica",,Cartas Iniciales Dermapatch
-14,Sofi,unit,Común,3,15,7,1,1,"Derma-patch
-Musica","Al inicio de tu turno, cura 1 de vida a un aliado adyacente",Cartas Iniciales Dermapatch
+8,Naty,unit,Común,1,6,3,2,1,"3_NAI, Danza",,Cartas Iniciales 3_NAI
+9,Ami,unit,Común,3,13,11,2,1,"3_NAI, Danza",,Cartas Iniciales 3_NAI
+10,Isacovic,unit,Común,3,14,9,1,2,"3_NAI, Danza",,Cartas Iniciales 3_NAI
+11,Ale,unit,Común,3,16,9,1,1,"3_NAI, Danza",Las unidades de Danza adyacentes a Ale no pueden ser el objetivo de ataques a distancia.,Cartas Iniciales 3_NAI
+12,Stefano,unit,Común,4,15,8,1,1,"Derma-patch, Cabezal de Tren, Ex-estudiante",Puede aumentar daño 1 perdiendo 1 vida,Cartas iniciales Dermapatch
+13,Emi,unit,Común,4,21,10,1,1,"Derma-patch, Danza, Músico",,Cartas Iniciales Dermapatch
+14,Sofi,unit,Común,3,15,7,1,1,"Derma-patch, Músico","Al inicio de tu turno, cura 1 de vida a un aliado adyacente",Cartas Iniciales Dermapatch
 15,Daniela,unit,Común,3,15,8,1,1,Derma-patch,Gana +2 daño si rival tiene más vida,Cartas Iniciales Dermapatch
-16,Martina,unit,Común,2,9,8,1,1,"Derma-patch
-Cabezal de Tren",,Cartas Iniciales Dermapatch
+16,Martina,unit,Común,2,9,8,1,1,"Derma-patch, Cabezal de Tren",,Cartas Iniciales Dermapatch
 17,Richi,unit,Común,5,26,13,1,1,Derma-patch,Mitad daño primer golpe,Cartas Iniciales Dermapatch
-18,Margarita,unit,Común,3,15,9,1,1,"Tralaleros
-Artista",,Cartas Iniciales Tralalero tralala
-19,Camila,unit,Común,2,10,7,1,1,"Tralaleros
-Literatura
-Artista",,Cartas Iniciales Tralalero tralala
-20,Ariana,unit,Común,3,15,9,2,1,"Tralaleros
-Músico
-Artista",,Cartas Iniciales Tralalero tralala
-21,Iara,unit,Común,4,18,8,1,1,"Tralaleros
-Músico
-Tecnológico",Reduce el daño recibido en 2 si hay 2 o más Tralalero en el tablero.,Cartas Iniciales Tralalero tralala
+18,Margarita,unit,Común,3,15,9,1,1,"Tralaleros, Artista",,Cartas Iniciales Tralalero tralala
+19,Camila,unit,Común,2,10,7,1,1,"Tralaleros, Literatura, Artista",,Cartas Iniciales Tralalero tralala
+20,Ariana,unit,Común,3,15,9,2,1,"Tralaleros, Músico, Artista",,Cartas Iniciales Tralalero tralala
+21,Iara,unit,Común,4,18,8,1,1,"Tralaleros, Músico, Tecnológico",Reduce el daño recibido en 2 si hay 2 o más Tralalero en el tablero.,Cartas Iniciales Tralalero tralala
 22,Rin,unit,Común,3,15,11,1,1,Aestetic,Puede adquirir efectos de entorno sin importar su etiqueta,Cartas Iniciales Aestetic
 23,Tammy,unit,Común,3,12,14,1,1,Aestetic,,Cartas Iniciales Aestetic
-24,Josefa G,unit,Común,3,13,12,2,1,"Nuevo
-Aestetic","Al entrar al tablero, mira las 3 primeras cartas del mazo enemigo. Elige una y ponla al fondo.",Cartas Iniciales Nuevos
-25,Nico,unit,Común,7,34,14,1,1,Deportista,Gana 3 de daño a cambio de no poder moverse 2 turnos.,Cartas Iniciales Mish-A
-26,Helen,unit,Común,5,28,12,1,1,"Tralaleros
-Artista
-Literatura
-Músico",,Cartas Iniciales Mish-B
-27,Dario,unit,Común,1,6,4,2,1,"Artista
-Literatura
-Músico
-Tecnológico",,Cartas Iniciales Mish-B
+24,Josefa G,unit,Común,3,13,12,2,1,"Nuevo, Aestetic","Al entrar al tablero, mira las 3 primeras cartas del mazo enemigo. Elige una y ponla al fondo.",Cartas Iniciales Nuevos
+25,Nico,unit,Común,7,34,14,1,1,Deportistas,Gana 3 de daño a cambio de no poder moverse 2 turnos.,Cartas Iniciales Mish-A
+26,Helen,unit,Común,5,28,12,1,1,"Tralaleros, Artista, Literatura, Músico",,Cartas Iniciales Mish-B
+27,Dario,unit,Común,1,6,4,2,1,"Artista, Literatura, Músico, Tecnológico",,Cartas Iniciales Mish-B
 28,Cristobal,unit,Común,2,10,5,1,1,Nuevo,"Al entrar, robas una carta de tu mazo. Si la carta robada es un truco, cura 4 a un aliado.",Cartas Iniciales Nuevos
-29,Crisby,unit,Común,2,11,6,1,1,"Nuevo
-Tecnológico","Al entrar, tu próxima carta de coste 4 o menos cuesta 1 de energía menos este turno.",Cartas Iniciales Nuevos
+29,Crisby,unit,Común,2,11,6,1,1,"Nuevo, Tecnológico","Al entrar, tu próxima carta de coste 4 o menos cuesta 1 de energía menos este turno.",Cartas Iniciales Nuevos
 30,Josefa A,unit,Común,2,10,5,1,1,Nuevo,"Al entrar, selecciona una unidad aliada, esta recibe un escudo que reduce la mitad de daño recibido en el siguiente ataque.",Cartas Iniciales Nuevos
 31,Isidora,unit,Especial,6,30,0,0,0,-,"Mientras tenga aliados adyacentes, no puede ser atacada. Da +3 de vida máxima a todas las unidades aliadas.",Cartas Miscelanias
 32,Llamado de otro punto,spell,Epica,4,N/A,N/A,N/A,N/A,-,"Selecciona una unidad en el tablero (aliada o enemiga) y atráela hasta 2 casillas en línea recta hacia tu unidad más cercana. Si la unidad objetivo es de la tag Nuevo, robas 1 carta.",Cartas Truco
-33,Pan con Mayo,spell,Común,2,N/A,N/A,N/A,N/A,-,"Cura 10
-Cura 12 si es Fuerzas Especiales Valenzuela o Cabezal de Tren",Cartas Truco
+33,Pan con Mayo,spell,Común,2,N/A,N/A,N/A,N/A,-,"Cura 10. Cura 12 si es Fuerzas Especiales Valenzuela o Cabezal de Tren",Cartas Truco
 34,Globo de eventos,spell,Común,3,N/A,N/A,N/A,N/A,-,Más 3 daño por 2 turnos,Cartas Truco
 35,Operación de Olimpiadas,spell,Especial,3,N/A,N/A,N/A,N/A,-,"Enemigo Tecnológico pierde 2 daño este turno
 Si no es Tecnológico, pierde 4 daño este turno",Cartas Truco
-36,Pelota de Futbol,spell,Especial,2,N/A,N/A,N/A,N/A,-,"Más 3 daño por 1 turno
-Si elimina una unidad, roba 1 carta.",Cartas Truco
+36,Pelota de Futbol,spell,Especial,2,N/A,N/A,N/A,N/A,-,"Más 3 daño por 1 turno. Si elimina una unidad, roba 1 carta.",Cartas Truco
 37,Agarre sospechoso,spell,Especial,4,N/A,N/A,N/A,N/A,-,Reduce la velocidad de una unidad enemiga a 0 por un turno.,Cartas Truco
-38,Encore!,spell,Común,3,N/A,N/A,N/A,N/A,,"Selecciona una tropa, si la tropa es Danza o Musica, mueve una casilla esta unidad",Cartas Truco
-39,Tik-Toks,spell,Especial,5,N/A,N/A,N/A,N/A,-,Cura 1 por cada 3_NAI o Dermapatch.,Cartas Truco
-40,Invitación de Juego,spell,Especial,4,N/A,N/A,N/A,N/A,-,"Mira las 3 primeras cartas del mazo.
-Puedes poner una unidad de coste 3 o menos en tu mano.",Cartas Truco
-41,Derma-patch,spell,Especial,3,N/A,N/A,N/A,N/A,-,"Cura 12
-Si objetivo es Dermapatch, gana +2 ataque este turno",Cartas Truco
-42,Reacción Explosiva,spell,Común,4,N/A,N/A,N/A,N/A,-,"Todos enemigos pierden 2 PV
-Si son 3 o más enemigos, pierden 3",Cartas Truco
-43,Chapuline,spell,Especial,1,N/A,N/A,N/A,N/A,-,"Cura 4
-Pierde 3 daño por un turno",Cartas Truco
-44,Robo Disimulado,spell,Común,5,N/A,N/A,N/A,N/A,-,"Roba 2 cartas
-Si tienes 7 o más en mano, roba 1",Cartas Truco
-45,Combo de cartas,spell,Especial,3,N/A,N/A,N/A,N/A,,"Roba 2 cartas.
-Si controlas 2 o más Futboleros, roba 1 carta adicional.",Cartas Truco
+38,Encore!,spell,Común,3,N/A,N/A,N/A,N/A,,"Selecciona una tropa, si la tropa es Danza o Músico, mueve una casilla esta unidad",Cartas Truco
+39,Tik-Toks,spell,Especial,5,N/A,N/A,N/A,N/A,-,Cura 1 por cada 3_NAI o Derma-patch.,Cartas Truco
+40,Invitación de Juego,spell,Especial,4,N/A,N/A,N/A,N/A,-,"Mira las 3 primeras cartas del mazo. Puedes poner una unidad de coste 3 o menos en tu mano.",Cartas Truco
+41,Derma-patch,spell,Especial,3,N/A,N/A,N/A,N/A,-,"Cura 12. Si objetivo es Derma-patch, gana +2 ataque este turno",Cartas Truco
+42,Reacción Explosiva,spell,Común,4,N/A,N/A,N/A,N/A,-,"Todos enemigos pierden 2 PV. Si son 3 o más enemigos, pierden 3",Cartas Truco
+43,Chapuline,spell,Especial,1,N/A,N/A,N/A,N/A,-,"Cura 4. Pierde 3 daño por un turno",Cartas Truco
+44,Robo Disimulado,spell,Común,5,N/A,N/A,N/A,N/A,-,"Roba 2 cartas. Si tienes 7 o más en mano, roba 1",Cartas Truco
+45,Combo de cartas,spell,Especial,3,N/A,N/A,N/A,N/A,,"Roba 2 cartas. Si controlas 2 o más Futboleros, roba 1 carta adicional.",Cartas Truco
 46,Expulsión de clase,spell,Común,4,N/A,N/A,N/A,N/A,,Destruye una unidad con 9 o menos de ataque.,Cartas Truco
 47,Charla Vocacional,spell,Especial,4,N/A,N/A,N/A,N/A,,Todos los aliados ganan +2 daño este turno.,Cartas Truco
-48,Cafe Frio,spell,Común,2,N/A,N/A,N/A,N/A,-,"Da +1 de velocidad este turno. El siguiente turno si la carta no es ""Tralalero Tralala"", pierde 1 de velocidad.",Cartas Truco
+48,Cafe Frio,spell,Común,2,N/A,N/A,N/A,N/A,-,"Da +1 de velocidad este turno. El siguiente turno si la carta no es ""Tralaleros"", pierde 1 de velocidad.",Cartas Truco
 49,Almuerzo Pesado,spell,Especial,3,N/A,N/A,N/A,N/A,-,"Durante el proximo turno, el rival no puede curar a sus unidades o la base.",Cartas Truco
 50,Escuadrón Paramédico,spell,Especial,3,N/A,N/A,N/A,N/A,-,"Selecciona una unidad aliada. Si esa unidad tiene al menos 2 aliados adyacentes (en cruz o diagonal), recupera 15 PV",Cartas Truco
 51,Daiaodama (大青玉),spell,Especial,1,N/A,N/A,N/A,N/A,-,"Selecciona una unidad, realiza un ataque de 6 de Daño a una unidad enemiga en un rango de hasta 3 casillas",Cartas Truco
 52,Zona de Juegos,building,Común,4,N/A,N/A,N/A,N/A,-,Fuerzas Especiales Valenzuela adquieren +2 de vida al invocarse.,Cartas Entorno
-53,Cancha de Futbol,building,Especial,4,N/A,N/A,N/A,N/A,-,Futbolero adquieren +1 velocidad si no han atacado,Cartas Entorno
+53,Cancha de Futbol,building,Especial,4,N/A,N/A,N/A,N/A,-,Futboleros adquieren +1 velocidad si no han atacado,Cartas Entorno
 54,La Fundación,building,Epica,5,N/A,N/A,N/A,N/A,,Los enemigos no pueden recibir buffs de ataque. Tralaleros adquieren -1 de daño recibido.,Cartas Entorno
-55,Sala STEAM,building,Épica,4,N/A,N/A,N/A,N/A,-,Un Dermapatch cura 2 al inicio del turno,Cartas Entorno
-56,Margarita (Vintage),unit,Especial,5,20,6,1,1,"Tralaleros
-Artista",Todos los aliados de las clases Artista y Tralaleros ganan +1 de daño mientras ella este viva.,Estilos Clásicos
-57,Amira (Presidenta),unit,Epica,6,26,14,2,2,"3_NAI
-Danza","Después de atacar, todos los aliados ganan +1 daño este turno.",Formalidad
+55,Sala STEAM,building,Épica,4,N/A,N/A,N/A,N/A,-,Un Derma-patch cura 2 al inicio del turno,Cartas Entorno
+56,Margarita (Vintage),unit,Especial,5,20,6,1,1,"Tralaleros, Artista",Todos los aliados de las clases Artista y Tralaleros ganan +1 de daño mientras ella este viva.,Estilos Clásicos
+57,Amira (Presidenta),unit,Epica,6,26,14,2,2,"3_NAI, Danza","Después de atacar, todos los aliados ganan +1 daño este turno.",Formalidad
 58,Dante (Economista),unit,Épica,3,11,9,1,1,"Fuerzas Especiales Valenzuela, Artista, Músico, Tecnológico",El primer hechizo que juegues cada turno cuesta 1 menos (Mínimo 1 de coste).,Formalidad
-59,Crisby (Airsoft),unit,Épica,4,19,9,1,2,"Nuevo
-Tecnológico"," Si tiene adyacente un enemigo, lo inmoviliza por un turno. Esta habilidad no se puede activar si esta unidad ha sido movida este turno",Cartas Miscelanias
-60,Melsizis (DT),unit,Épica,5,24,14,1,1,"Fuerzas Especiales Valenzuela
-Deportista","Mientras este activo: Todas las cartas de grupo Fuerzas Especiales Valenzuela ganan +1 de ataque. Si hay al menos una carta de los Cabezal de Tren en el tablero, también ganan +1 de velocidad.",SIMCE
-61,Chino (Quemadas),unit,Excelencia,9,21,15,3,2,"Cabezal de Tren, Futbolero","La primera vez que esta unidad sea atacada en cada turno rival, se mueve automáticamente a una casilla adyacente vacía (tú eliges cuál) y anula el daño.",SIMCE
+59,Crisby (Airsoft),unit,Épica,4,19,9,1,2,"Nuevo, Tecnológico"," Si tiene adyacente un enemigo, lo inmoviliza por un turno. Esta habilidad no se puede activar si esta unidad ha sido movida este turno",Cartas Miscelanias
+60,Melsizis (DT),unit,Épica,5,24,14,1,1,"Fuerzas Especiales Valenzuela, Deportista","Mientras este activo: Todas las cartas de grupo Fuerzas Especiales Valenzuela ganan +1 de ataque. Si hay al menos una carta de los Cabezal de Tren en el tablero, también ganan +1 de velocidad.",SIMCE
+61,Chino (Quemadas),unit,Excelencia,9,21,15,3,2,"Cabezal de Tren, Futboleros","La primera vez que esta unidad sea atacada en cada turno rival, se mueve automáticamente a una casilla adyacente vacía (tú eliges cuál) y anula el daño.",SIMCE

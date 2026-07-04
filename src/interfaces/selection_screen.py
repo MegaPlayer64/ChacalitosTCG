@@ -152,4 +152,4 @@ class PantallaSeleccion(Screen):
             }
         }
         
-        self.cambiar_pantalla('game_screen')
+        self.cambiar_pantalla('vs_screen')
