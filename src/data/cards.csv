@@ -20,9 +20,9 @@ ID,Nombre,CardType,Rareza,Coste,Vida,Ataque,Velocidad,Rango_ataque,Grupos,Descri
 19,Camila,unit,Común,2,10,7,1,1,"Tralaleros, Literatura, Artista",,Cartas Iniciales Tralalero tralala
 20,Ariana,unit,Común,3,15,9,2,1,"Tralaleros, Músico, Artista",,Cartas Iniciales Tralalero tralala
 21,Iara,unit,Común,4,18,8,1,1,"Tralaleros, Músico, Tecnológico",Reduce el daño recibido en 2 si hay 2 o más Tralalero en el tablero.,Cartas Iniciales Tralalero tralala
-22,Rin,unit,Común,3,15,11,1,1,Aestetic,Puede adquirir efectos de entorno sin importar su etiqueta,Cartas Iniciales Aestetic
-23,Tammy,unit,Común,3,12,14,1,1,Aestetic,,Cartas Iniciales Aestetic
-24,Josefa G,unit,Común,3,13,12,2,1,"Nuevo, Aestetic","Al entrar al tablero, mira las 3 primeras cartas del mazo enemigo. Elige una y ponla al fondo.",Cartas Iniciales Nuevos
+22,Rin,unit,Común,3,15,11,1,1,,Puede adquirir efectos de entorno sin importar su etiqueta,Cartas Iniciales
+23,Tammy,unit,Común,3,12,14,1,1,,,Cartas Iniciales
+24,Josefa G,unit,Común,3,13,12,2,1,"Nuevo","Al entrar al tablero, mira las 3 primeras cartas del mazo enemigo. Elige una y ponla al fondo.",Cartas Iniciales Nuevos
 25,Nico,unit,Común,7,34,14,1,1,Deportistas,Gana 3 de daño a cambio de no poder moverse 2 turnos.,Cartas Iniciales Mish-A
 26,Helen,unit,Común,5,28,12,1,1,"Tralaleros, Artista, Literatura, Músico",,Cartas Iniciales Mish-B
 27,Dario,unit,Común,1,6,4,2,1,"Artista, Literatura, Músico, Tecnológico",,Cartas Iniciales Mish-B

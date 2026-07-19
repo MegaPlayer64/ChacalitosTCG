@@ -6,6 +6,7 @@ from src.domain.action import Action
 from src.domain.action_type import ActionType
 from src.domain.board import Board
 from src.infrastructure.loaders.card_loader import CardLoader
+from src.domain.audio_manager import AudioManager
 
 class GameState:
     def __init__(self, players: List[Player], deck1, deck2):

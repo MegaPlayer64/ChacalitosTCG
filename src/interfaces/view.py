@@ -1,4 +1,5 @@
 # src/interfaces/view.py
+# Esta es la interfaz antigua, usada para probar el código.
 import os
 
 class ConsoleView:

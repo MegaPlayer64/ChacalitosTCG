@@ -1,12 +1,38 @@
-# main.py
-from kivy.uix import screenmanager
 import os
 import sys
+from kivy.utils import platform
 
-# Agregamos la carpeta 'src' al path para que Python encuentre tus módulos
+# 1. AGREGAR 'src' AL PATH DE INMEDIATO (Para que las importaciones de abajo funcionen)
 sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 
+# 2. PARÁMETROS DE ENTORNO GRÁFICOS (Mismo orden para evitar congelamientos)
+if platform == 'android':
+    pass
+
+elif platform == 'linux':
+    os.environ['LIBGL_ALWAYS_SOFTWARE'] = '1'
+    os.environ['vblank_mode'] = '0'
+    os.environ['KIVY_GL_BACKEND'] = 'sdl2'
+    os.environ['SDL_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR'] = '1'
+    
+    from kivy.config import Config
+    Config.set('graphics', 'width', '960')
+    Config.set('graphics', 'height', '540')
+    Config.set('graphics', 'fullscreen', '0')
+    Config.write()
+
+elif platform == 'win':
+    from kivy.config import Config
+    Config.set('graphics', 'width', '1280')
+    Config.set('graphics', 'height', '720')
+    Config.set('graphics', 'fullscreen', '0')
+    Config.write()
+
+# 3. AHORA SÍ, LAS IMPORTACIONES DEL MOTOR Y KIVY
+from kivy.uix import screenmanager
+
 try:
+    # Como el path se agregó en el paso 1, estas importaciones ya no fallarán:
     from src.infrastructure.loaders.card_loader import CardLoader
     from src.domain.player import Player
     from src.domain.game_state import GameState
@@ -18,100 +44,8 @@ except ImportError as e:
     print(f"\n[ERROR CRITICO] Fallo de importación, posible dependencia circular: {e}\n")
     sys.exit(1)
 
-# pyrefly: ignore [missing-import]
 from kivy.app import App
-# pyrefly: ignore [missing-import]
 from kivy.uix.screenmanager import ScreenManager
-
-
-def start_integration_test():
-    print("\n" + "="*40)
-    print("   INICIANDO TEST DE INTEGRACIÓN LBSB   ")
-    print("="*40)
-
-    # 1. Inicializar CardLoader
-    print("\n[1] Cargando Base de Datos de Cartas...")
-    csv_path = "src/data/cards.csv"
-    all_cards = CardLoader.load_units(csv_path)
-    print(f" -> Cartas cargadas exitosamente: {len(all_cards)} (Incluye Unidades, Spells y Buildings)")
-
-    # 2. Configurar Jugadores
-    print("\n[2] Configurando Jugadores...")
-    p1 = Player(player_id=0, name="Jugador 1")
-    p2 = Player(player_id=1, name="Jugador 2")
-    
-    # 3. Instanciar Motor y Estado
-    print("\n[3] Instanciando GameState y Tablero 6x5...")
-    
-    # 4. Seleccionar el mazo
-    print("Qué mazo quieres seleccionar: \n 1.- Dermapatch \n 2.- 3nai \n 3.- CT \n 4.- FEV \n 5.- News \n 6.- Tralareros \n 7.- Mazo Mish-A Pre ser Mish-A")
-    deck1 = input("Mazo para Jugador 1: ")
-    deck2 = input("Mazo para Jugador 2: ")
-    if deck1 == "1":
-        deck1 = "src/data/premade_decks/tag_theme/dermapatch_basic_deck.json"
-    elif deck1 == "2":
-        deck1 = "src/data/premade_decks/tag_theme/3nai_basic_deck.json"
-    elif deck1 == "3":
-        deck1 = "src/data/premade_decks/tag_theme/ct_basic_deck.json"
-    elif deck1 == "4":  
-        deck1 = "src/data/premade_decks/tag_theme/fev_basic_deck.json"
-    elif deck1 == "5":
-        deck1 = "src/data/premade_decks/tag_theme/news_basic_deck.json"
-    elif deck1 == "6":
-        deck1 = "src/data/premade_decks/tag_theme/tt_basic_deck.json"
-    elif deck1 == "7":
-        deck1 = "src/data/premade_decks/challenges/imagine_a_cool_name.json"
-        
-    if deck2 == "1":
-        deck2 = "src/data/premade_decks/tag_theme/dermapatch_basic_deck.json"
-    elif deck2 == "2":
-        deck2 = "src/data/premade_decks/tag_theme/3nai_basic_deck.json"
-    elif deck2 == "3":
-        deck2 = "src/data/premade_decks/tag_theme/ct_basic_deck.json"
-    elif deck2 == "4":  
-        deck2 = "src/data/premade_decks/tag_theme/fev_basic_deck.json"
-    elif deck2 == "5":
-        deck2 = "src/data/premade_decks/tag_theme/news_basic_deck.json"
-    elif deck2 == "6":
-        deck2 = "src/data/premade_decks/tag_theme/tt_basic_deck.json"
-    elif deck2 == "7":
-        deck2 = "src/data/premade_decks/challenges/imagine_a_cool_name.json"
-    # NOTA: Al instanciar GameState, internamente se cargan los mazos, se barajan y se roban 5 cartas a cada Jugador.
-    state = GameState([p1, p2], deck1, deck2)
-    # controllers = [HumanController(), AIController(player_id=1)]
-    opcion = input("¿Quieres jugar tu contra la IA, contra otro jugador o simular un combate en tre IA? (1 para IA, 2 para otro jugador, 3 para IA vs IA): ")
-
- 
-    if opcion == "1":
-        dificulty = input("¿Quieres jugar contra una IA [EASY, MEDIUM, HARD]?: ").upper()
-        controllers = [HumanController(), AIController(player_id=1, difficulty=dificulty)]
-        p2.is_ai = True
-    elif opcion == "2":
-        controllers = [HumanController(), HumanController()]
-    else:
-        dificulty = input("¿Quieres jugar contra una IA [EASY, MEDIUM, HARD]?: ").upper()
-        controllers = [AIController(player_id=0, difficulty=dificulty), AIController(player_id=1, difficulty=dificulty)]
-        p1.is_ai = True
-        p2.is_ai = True
-    engine = GameEngine(state, controllers)
-    view = ConsoleView()
-
-    # 4. Imprimir Estado Actual Post-Robo Inicial
-    print("\n[4] Verificando Estado Inicial...")
-    print(f" -> {p1.name} | Vida: {p1.health} HP | Cartas en mano: {len(p1.hand)} | Mazo restante: {len(p1.deck)}")
-    print(f" -> {p2.name} | Vida: {p2.health} HP | Cartas en mano: {len(p2.hand)} | Mazo restante: {len(p2.deck)}")
-
-    print("\n[5] Dibujando Tablero Inicial Limpio:")
-    view.draw_board(state)
-
-    print("\n[6] Iniciando Loop de Juego.")
-    print(" -> INSTRUCCIÓN PARA TEST: Selecciona la acción [4] Jugar Carta.")
-    print(" -> Prueba invocar una unidad para el J1 en X >= 2 (Debería fallar por restricción de zona).")
-    print(" -> Prueba invocar una unidad para el J1 en X < 2  (Debería ser exitoso).")
-    print("-" * 40 + "\n")
-
-    # Arrancamos el motor
-    engine.run()
 
 class LBSBGameApp(App):
     def build(self):
@@ -146,6 +80,9 @@ class LBSBGameApp(App):
         from src.interfaces.shop_screen import PantallaTienda
         sm.add_widget(PantallaTienda(name='shop_screen'))
 
+        from src.interfaces.options_screen import PantallaOpciones
+        sm.add_widget(PantallaOpciones(name='options_screen'))
+        
         print(f"Pantallas registradas: {sm.screen_names}")
         
         # Guardar una referencia de la app en el manager para facilitar accesos directos

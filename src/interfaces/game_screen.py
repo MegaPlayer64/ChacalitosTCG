@@ -46,8 +46,18 @@ class PantallaJuego(Screen):
         
         layout_tablero_global.add_widget(barra_info)
         
+        # --- 1.5. BARRA DE ENTORNO/EDIFICIO (Active Environment) ---
+        self.lbl_entorno = Label(
+            text="[color=888888][b]Entorno Activo:[/b] Ninguno[/color]", 
+            markup=True, 
+            halign='center', 
+            size_hint_y=0.06,
+            font_size='14sp'
+        )
+        layout_tablero_global.add_widget(self.lbl_entorno)
+        
         # --- 2. CUADRÍCULA DE JUEGO (6x5) ---
-        grilla_tablero = GridLayout(cols=6, rows=5, spacing=4, size_hint_y=0.6)
+        grilla_tablero = GridLayout(cols=6, rows=5, spacing=4, size_hint_y=0.55)
         self.celdas_graficas = {}
         
         for y in range(5):
@@ -62,7 +72,7 @@ class PantallaJuego(Screen):
         layout_tablero_global.add_widget(grilla_tablero)
         
         # --- 3. ZONA INFERIOR (Mano) ---
-        self.layout_mano = BoxLayout(orientation='horizontal', size_hint_y=0.25, spacing=5)
+        self.layout_mano = BoxLayout(orientation='horizontal', size_hint_y=0.24, spacing=5)
         self.layout_mano.add_widget(Label(text="[Zona de Mano - Esperando Cartas]", markup=True))
         
         layout_tablero_global.add_widget(self.layout_mano)
@@ -96,10 +106,15 @@ class PantallaJuego(Screen):
             
             accion = Action(player_id=jugador.id, type=tipo_accion, payload=payload)
             if self.game_state.apply_action(accion):
+                if is_spell == True:
+                    AudioManager().play_sfx("heal.wav")
+                else:
+                    AudioManager().play_sfx("summonunit.wav")
                 self.carta_seleccionada_index = None
                 self.actualizar_interfaz_completa()
             else:
                 print(f">> [!] Invocación/Hechizo denegado en ({x}, {y})")
+                AudioManager().play_sfx("error2.wav")
             return
 
         # MODO C: UNIDAD DEL TABLERO SELECCIONADA (Mover, Atacar o Activar)
@@ -111,13 +126,16 @@ class PantallaJuego(Screen):
                 print("Intento de activar habilidad propia lol")
             elif unidad_en_celda and unidad_en_celda.owner_id != jugador.id:
                 accion = Action(player_id=jugador.id, type=ActionType.ATTACK, payload={'from': origen, 'target': (x, y)})
+                AudioManager().play_sfx("punch.wav")
             else:
                 accion = Action(player_id=jugador.id, type=ActionType.MOVE, payload={'from': origen, 'to': (x, y)})
+                AudioManager().play_sfx("move.wav")
             
             if self.game_state.apply_action(accion):
                 print(f">> Acción realizada desde {origen} hacia {(x, y)}")
             else:
                 print(f">> [!] Acción denegada desde {origen}")
+                AudioManager().play_sfx("error1.wav")
                 
             self.unidad_seleccionada_coords = None
             self.actualizar_interfaz_completa()
@@ -139,8 +157,10 @@ class PantallaJuego(Screen):
         
         if self.game_state.apply_action(accion):
             print(f">> ¡Ataque a la base ejecutado desde {origen}!")
+            AudioManager().play_sfx("punch1.wav")
         else:
             print(f">> [!] Ataque a la base denegado.")
+            AudioManager().play_sfx("error1.wav")
             
         self.unidad_seleccionada_coords = None
         self.actualizar_interfaz_completa()
@@ -167,13 +187,22 @@ class PantallaJuego(Screen):
             self.layout_mano.add_widget(btn_carta)
 
     def seleccionar_carta(self, instance):
-        for btn in self.layout_mano.children:
-            # Restaurar colores según si es hechizo o unidad
-            es_spell = 'E' in btn.text and btn.background_color == (0.8, 0.6, 0.1, 1) # Detectar si estaba dorada
-            btn.background_color = (0.3, 0.3, 0.3, 1)
+        jugador = self.game_state.get_current_player()
+        ya_seleccionada = (self.carta_seleccionada_index == instance.indice_mano)
 
-        instance.background_color = (0.8, 0.6, 0.1, 1) # Dorado seleccionado
-        self.carta_seleccionada_index = instance.indice_mano
+        for btn in self.layout_mano.children:
+            if hasattr(btn, 'indice_mano') and btn.indice_mano < len(jugador.hand):
+                carta = jugador.hand[btn.indice_mano]
+                es_spell = getattr(carta, 'card_type', 'unit').lower() == 'spell'
+                btn.background_color = (0.1, 0.1, 0.3, 1) if es_spell else (0.3, 0.3, 0.3, 1)
+            else:
+                btn.background_color = (0.3, 0.3, 0.3, 1)
+
+        if ya_seleccionada:
+            self.carta_seleccionada_index = None
+        else:
+            instance.background_color = (0.8, 0.6, 0.1, 1) # Dorado seleccionado
+            self.carta_seleccionada_index = instance.indice_mano
 
     def actualizar_interfaz_completa(self):
         if not self.game_state:
@@ -192,6 +221,15 @@ class PantallaJuego(Screen):
         
         self.lbl_j1.text = f"J1: {p1.health} HP\nEnergía: {getattr(p1, 'current_energy', 0)}/{getattr(p1, 'max_energy', 0)}" + (lbl_estado if self.game_state.current_player_id == 0 else "")
         self.lbl_j2.text = f"J2: {p2.health} HP\nEnergía: {getattr(p2, 'current_energy', 0)}/{getattr(p2, 'max_energy', 0)}" + (lbl_estado if self.game_state.current_player_id == 1 else "")
+        
+        # Actualizar Entorno Activo
+        env = getattr(self.game_state, 'active_environment', None)
+        if env and getattr(env, 'card', None):
+            creador_nombre = self.game_state.players[env.owner_id].name
+            desc = env.card.description.replace('\n', ' ') if env.card.description else ""
+            self.lbl_entorno.text = f"[color=ffbb33][b]Entorno Activo:[/b][/color] {env.card.name} [color=88ccff]({creador_nombre})[/color] - [color=cccccc][i]{desc}[/i][/color]"
+        else:
+            self.lbl_entorno.text = "[color=888888][b]Entorno Activo:[/b] Ninguno[/color]"
         
         # Limpiar Tablero Visual
         for (cx, cy), btn in self.celdas_graficas.items():
@@ -272,8 +310,8 @@ class PantallaJuego(Screen):
     def pasar_turno(self, instance):
         jugador_actual = self.game_state.get_current_player()
         accion = Action(player_id=jugador_actual.id, type=ActionType.END_TURN, payload={})
-        
         self.game_state.apply_action(accion)
+        AudioManager().play_sfx("card1.wav")
         self.carta_seleccionada_index = None
         self.unidad_seleccionada_coords = None
         self.actualizar_interfaz_completa()
