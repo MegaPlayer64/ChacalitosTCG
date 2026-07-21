@@ -44,20 +44,28 @@ class PantallaBanner(Screen):
         # Aquí defines los datos de cada banner. Puedes añadir más fácilmente.
         self.lista_banners = [
             {
-                "id": "GENERAL", 
-                "nombre": "Sobre General", 
-                "desc": "¡Consigue cartas de todas las facciones!\nProbabilidad normal.",
-                "coste_1": 50,
-                "coste_5": 250,
-                "imagen": "src/art/banner_general.png" # Placeholder
+                "id": "SIMCE1", 
+                "nombre": "Sobre SIMCE 1", 
+                "desc": "¡El Chino (Quemadas) y Melsizis (DT) se unen al combate!",
+                "coste_1": 100,
+                "coste_5": 500,
+                "imagen": "src/art/facciones_png/logo-simce.png" # Placeholder
             },
             {
-                "id": "LLEGADA_12", 
-                "nombre": "¡Nuevos Retadores!", 
-                "desc": "¡Probabilidad aumentada para las 12 nuevas cartas!\nIncluye facciones especiales.",
-                "coste_1": 60,
-                "coste_5": 300,
-                "imagen": "src/art/banner_nuevos.png" # Placeholder
+                "id": "MISHEXPANSIONPACK1", 
+                "nombre": "Sobre Mish", 
+                "desc": "¡El equipo Mish se unen al combate! \n Cuando los unes causan gran daño a los enemigos cercanos.",
+                "coste_1": 100,
+                "coste_5": 500,
+                "imagen": "src/art/facciones_png/logo-mish.png" # Placeholder
+            },
+            {
+                "id": "ALIANZAS3RO", 
+                "nombre": "Sobre Alianzas 3ro", 
+                "desc": "¡El Dragon Menor de las Alianzas se une al combate! \n Acompañados de multiples cartas basadas en la época de alianzas",
+                "coste_1": 100,
+                "coste_5": 500,
+                "imagen": "src/art/facciones_png/logo-alainzas3ro.png" # Placeholder
             }
         ]
         self.banner_actual = self.lista_banners[0] # Banner por defecto

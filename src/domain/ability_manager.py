@@ -5,29 +5,37 @@ class AbilityManager:
 
     @staticmethod
     def trigger_on_enter(unit, game_state):
-        if int(unit.id) == 28:
-            AbilityManager._cristobal_on_enter(unit, game_state)
-        elif int(unit.id) == 24:
-            AbilityManager._josefa_g_on_enter(unit, game_state)
-        elif int(unit.id) == 29:
-            AbilityManager._crisby_on_enter(unit, game_state)
-        elif int(unit.id) == 30:
-            AbilityManager._josefa_a_on_enter(unit, game_state)
-        elif int(unit.id) == 17:
-            AbilityManager._richi_on_enter(unit, game_state)
-        elif int(unit.id) == 58:
-            AbilityManager._dante_economista_main_ability(unit, game_state)
-        elif int(unit.id) == 31:
+        if unit.id == 31:
             AbilityManager._isidora_on_enter(unit, game_state)
+        elif unit.id == 28:
+            AbilityManager._cristobal_on_enter(unit, game_state)
+        elif unit.id == 24:
+            AbilityManager._josefa_g_on_enter(unit, game_state)
+        elif unit.id == 29:
+            AbilityManager._crisby_on_enter(unit, game_state)
+        elif unit.id == 30:
+            AbilityManager._josefa_a_on_enter(unit, game_state)
+        elif unit.id == 17:
+            AbilityManager._richi_on_enter(unit, game_state)
+        elif unit.id == 70:
+            unit.turns_alive = 0
+        elif unit.id == 58:
+            AbilityManager._dante_economista_main_ability(unit, game_state)
 
     @staticmethod
     def trigger_on_activate(unit, game_state):
-        if int(unit.id) == 62:
+        if int(unit.id) == 12:
             AbilityManager._stefano_on_activate(unit, game_state)
         elif int(unit.id) == 25:
             AbilityManager._nico_on_activate(unit, game_state)
         elif int(unit.id) == 59:
             AbilityManager._crisby_airsoft_on_activate(unit, game_state)
+        elif int(unit.id) == 63:
+            AbilityManager._cutino_on_activate(unit, game_state)
+        elif int(unit.id) == 64:
+            AbilityManager._zander_on_activate(unit, game_state)
+        elif int(unit.id) == 68:
+            AbilityManager._dante_yukata_on_activate(unit, game_state)
         
 
     @staticmethod
@@ -38,8 +46,10 @@ class AbilityManager:
             AbilityManager._daniela_on_attack(unit, game_state)
         elif int(unit.id) == 57:
             AbilityManager._amira_presidenta_on_attack(unit, game_state)
-        elif int(unit.id) == 63:
-            AbilityManager._jose_enmascarado_on_attack(unit, game_state)
+        #  elif int(unit.id) == 63:
+            # AbilityManager._jose_enmascarado_on_attack(unit, game_state)
+        elif int(unit.id) == 75:
+            AbilityManager._rafa_on_attack(unit, game_state)
 
     @staticmethod
     def trigger_on_damage_received(unit, damage, game_state):
@@ -61,6 +71,13 @@ class AbilityManager:
             AbilityManager._STEAM_on_turn_start(unit, game_state)
         elif int(unit.id) == 58:
             AbilityManager._dante_economista_main_ability(unit, game_state)
+        elif int(unit.id) == 70:
+            AbilityManager._dragon_menor_on_turn_start(unit, game_state)
+
+    @staticmethod
+    def trigger_on_death(unit, game_state):
+        if int(unit.id) == 65:
+            AbilityManager._gandan_on_death(unit, game_state)
 
     @staticmethod
     def resolve_pending_ability(game_state, payload):
@@ -120,7 +137,78 @@ class AbilityManager:
                     print(f">> Kapsi se retiró a ({tx}, {ty})")
                     return True
             return False
+
+        elif pending['ability'] == 'cutino_summon':
+            sx, sy = pending['source_coords']
+            unit = game_state.board.get_unit_at(sx, sy)
+            if not unit: return False
+            if max(abs(tx - sx), abs(ty - sy)) <= 1 and not game_state.board.is_occupied(tx, ty):
+                player = game_state.players[unit.owner_id]
+                player.current_energy -= 3
+                from src.infrastructure.loaders.card_loader import CardLoader
+                gandan_card = CardLoader.load_card_by_id(65)
+                gandan_card.owner_id = unit.owner_id
+                game_state.board.set_unit_at(tx, ty, gandan_card)
+                unit.has_activated_this_turn = True
+                print(f">> [Cutiño] ¡Gandan fue invocado en ({tx}, {ty})!")
+                return True
+            else:
+                print(">> [Cutiño] Debes invocar a Gandan en una casilla adyacente vacía.")
+                return False
+
+        elif pending['ability'] == 'zander_move_1':
+            ally = game_state.board.get_unit_at(tx, ty)
+            sx, sy = pending['source_coords']
+            unit = game_state.board.get_unit_at(sx, sy)
+            if ally and ally.owner_id == unit.owner_id:
+                game_state.pending_ability = {
+                    'ability': 'zander_move_2',
+                    'source_coords': (sx, sy),
+                    'target_unit': (tx, ty)
+                }
+                print(f">> [Zander] Ahora selecciona una casilla adyacente vacía para mover a {ally.name}.")
+                return False
+            else:
+                print(">> [Zander] Selecciona un aliado válido.")
+                return False
+
+        elif pending['ability'] == 'zander_move_2':
+            tux, tuy = pending['target_unit']
+            ally = game_state.board.get_unit_at(tux, tuy)
+            if ally and not game_state.board.is_occupied(tx, ty):
+                if max(abs(tx - tux), abs(ty - tuy)) <= 1:
+                    game_state.board.move_unit(tux, tuy, tx, ty)
+                    
+                    sx, sy = pending['source_coords']
+                    unit = game_state.board.get_unit_at(sx, sy)
+                    if unit:
+                        unit.has_activated_this_turn = True
+                        
+                    print(f">> [Zander] ¡{ally.name} fue movido a ({tx}, {ty})!")
+                    return True
+            print(">> [Zander] Movimiento inválido.")
+            return False
+
+        elif pending['ability'] == 'dante_yukata_attack':
+            sx, sy = pending['source_coords']
+            unit = game_state.board.get_unit_at(sx, sy)
+            if not unit: return False
             
+            enemy_unit = game_state.board.get_unit_at(tx, ty)
+            dist = max(abs(sx - tx), abs(sy - ty))
+            eff_range = game_state.get_effective_stats(unit)["range_atk"]
+            if enemy_unit and enemy_unit.owner_id != unit.owner_id and dist <= (eff_range + 1):
+                murio = enemy_unit.take_damage(6, game_state)
+                if murio:
+                    print(f">> ¡{enemy_unit.name} ha sido destruido por el Miku Peluche!")
+                    game_state.board.remove_unit(tx, ty)
+                unit.has_activated_this_turn = True
+                return True
+            else:
+                print(">> [Dante Yukata] Objetivo inválido o fuera de rango.")
+                return False
+            
+
         elif pending['ability'] == 'chino_quemadas':
             fx, fy = pending['unit_coords']
             effective_speed = pending['speed']
@@ -142,6 +230,15 @@ class AbilityManager:
     def execute_spell(card, target, game_state):
         print(f">> [Hechizo]: Ejecutando efecto de {card.name}")
         
+        # Inmunidad de Feña (ID 66) a hechizos enemigos
+        if target != 'G' and isinstance(target, tuple):
+            target_unit = game_state.board.get_unit_at(*target)
+            if target_unit and target_unit.id == 66 and target_unit.owner_id != game_state.current_player_id:
+                aliados = [u for u in game_state.board.get_all_units() if u.owner_id == target_unit.owner_id and u is not target_unit]
+                if aliados:
+                    print(f">> [Feña] ¡Es inmune a hechizos enemigos mientras tenga aliados vivos!")
+                    return False
+
         effect_methods = {
             32: AbilityManager._spell_32_effect,
             33: AbilityManager._spell_33_effect,
@@ -161,8 +258,11 @@ class AbilityManager:
             47: AbilityManager._spell_47_effect,
             48: AbilityManager._spell_48_effect,
             49: AbilityManager._spell_49_effect,
-            50: AbilityManager._spell_50_effect,
             51: AbilityManager._spell_51_effect,
+            71: AbilityManager._spell_71_effect,
+            72: AbilityManager._spell_72_effect,
+            76: AbilityManager._spell_76_effect,
+            77: AbilityManager._spell_77_effect,
         }
         
         method = effect_methods.get(int(card.id))
@@ -298,7 +398,9 @@ class AbilityManager:
         if not target_unit: return False
         
         target_unit.temporary_buffs.append({"type": "attack", "amount": 3, "duration": 1})
-        target_unit.temporary_buffs.append({"type": "draw_on_kill", "duration": 1})
+        tags = str(getattr(target_unit, 'groups', '')).lower()
+        if 'futbolero' in tags:
+            target_unit.temporary_buffs.append({"type": "draw_on_kill", "duration": 1})
         print(f">> ¡{target_unit.name} obtiene +3 de daño este turno! (Si elimina una unidad, robas 1 carta).")
         return True
 
@@ -920,4 +1022,191 @@ class AbilityManager:
                 print(f">> [Habilidad Crisby Airsoft]: {target.name} no puede moverse por 1 turno.")
                 break
 
-    # Porfa decime si te dignas a darte cuenta que esto se modifico Git1,Chino (Quemadas),unit,Exc
+    @staticmethod
+    def _cutino_on_activate(unit, game_state):
+        if getattr(game_state.get_current_player(), 'is_ai', False):
+            player = game_state.players[unit.owner_id]
+            if player.current_energy < 3: return False
+            from src.infrastructure.loaders.card_loader import CardLoader
+            gandan_card = CardLoader.load_card_by_id(65)
+            if not gandan_card: return False
+            
+            spawn_coords = None
+            for nx, ny in game_state.board.get_neighbors(unit.pos_x, unit.pos_y):
+                if not game_state.board.is_occupied(nx, ny):
+                    spawn_coords = (nx, ny)
+                    break
+            if spawn_coords:
+                player.current_energy -= 3
+                gandan_card.owner_id = unit.owner_id
+                game_state.board.set_unit_at(spawn_coords[0], spawn_coords[1], gandan_card)
+                unit.has_activated_this_turn = True
+                print(f">> [Cutiño] ¡Invocó a Gandan en {spawn_coords}!")
+                return True
+            return False
+        else:
+            game_state.pending_ability = {
+                'ability': 'cutino_summon',
+                'source_coords': (unit.pos_x, unit.pos_y)
+            }
+            print(">> [Cutiño] Selecciona una casilla adyacente vacía para invocar a Gandan.")
+            return True
+
+    @staticmethod
+    def _zander_on_activate(unit, game_state):
+        if getattr(game_state.get_current_player(), 'is_ai', False):
+            print(">> [Zander] AI no sabe usar esta habilidad aún.")
+            return False
+            
+        game_state.pending_ability = {
+            'ability': 'zander_move_1',
+            'source_coords': (unit.pos_x, unit.pos_y)
+        }
+        print(">> [Zander] Selecciona al aliado que quieres mover (Paso 1/2).")
+        return True
+
+    @staticmethod
+    def _dante_yukata_on_activate(unit, game_state):
+        if getattr(game_state.get_current_player(), 'is_ai', False):
+            enemy_unit = None
+            ex, ey = -1, -1
+            for y in range(game_state.board.height):
+                for x in range(game_state.board.width):
+                    u = game_state.board.get_unit_at(x, y)
+                    if u and u.owner_id != unit.owner_id:
+                        dist = max(abs(unit.pos_x - x), abs(unit.pos_y - y))
+                        eff_range = game_state.get_effective_stats(unit)["range_atk"]
+                        if dist <= (eff_range + 1):
+                            enemy_unit = u
+                            ex, ey = x, y
+                            break
+                if enemy_unit: break
+            if enemy_unit:
+                murio = enemy_unit.take_damage(6, game_state)
+                if murio:
+                    print(f">> ¡{enemy_unit.name} ha sido destruido por el Miku Peluche!")
+                    game_state.board.remove_unit(ex, ey)
+                unit.has_activated_this_turn = True
+                return True
+            return False
+        else:
+            game_state.pending_ability = {
+                'ability': 'dante_yukata_attack',
+                'source_coords': (unit.pos_x, unit.pos_y)
+            }
+            eff_range = game_state.get_effective_stats(unit)["range_atk"]
+            print(f">> [Dante Yukata] Selecciona a un enemigo a rango {eff_range + 1} para atacar con Miku Peluche.")
+            return True
+
+    @staticmethod
+    def _dragon_menor_on_turn_start(unit, game_state):
+        unit.turns_alive = getattr(unit, 'turns_alive', 0) + 1
+        if unit.turns_alive == 3:
+            cx, cy = unit.pos_x, unit.pos_y
+            target_x = 5 if unit.owner_id == 0 else 0
+            if target_x != cx:
+                occupant = game_state.board.get_unit_at(target_x, cy)
+                if occupant:
+                    dx = 1 if unit.owner_id == 0 else -1
+                    new_occ_x = target_x + dx
+                    if game_state.board.is_within_bounds(new_occ_x, cy) and not game_state.board.is_occupied(new_occ_x, cy):
+                        game_state.board.move_unit(target_x, cy, new_occ_x, cy)
+                        print(f">> [Dragón] ¡Empujó a {occupant.name} a ({new_occ_x}, {cy})!")
+                    else:
+                        print(f">> [Dragón] ¡Aplastó a {occupant.name} contra el borde!")
+                        murio = occupant.take_damage(10, game_state)
+                        if murio:
+                            game_state.board.remove_unit(target_x, cy)
+                game_state.board.move_unit(cx, cy, target_x, cy)
+                print(">> [Dragón] ¡Se abalanzó a la fila opuesta!")
+
+    @staticmethod
+    def _gandan_on_death(unit, game_state):
+        print(f">> [Gandan] ¡Gandan explotó en ({unit.pos_x}, {unit.pos_y})!")
+        for nx, ny in list(game_state.board.get_neighbors(unit.pos_x, unit.pos_y)):
+            target = game_state.board.get_unit_at(nx, ny)
+            if target:
+                murio = target.take_damage(3, game_state)
+                if murio:
+                    game_state.board.remove_unit(nx, ny)
+
+    @staticmethod
+    def _spell_71_effect(card, target, game_state):
+        if not isinstance(target, tuple): return False
+        _, ty = target
+        
+        has_3nai = False
+        allies = []
+        for x in range(game_state.board.width):
+            u = game_state.board.get_unit_at(x, ty)
+            if u and u.owner_id == game_state.current_player_id:
+                allies.append(u)
+                if '3_nai' in str(getattr(u, 'groups', '')).lower():
+                    has_3nai = True
+                    
+        heal_amt = 7 if has_3nai else 5
+        for u in allies:
+            u.health = min(u.max_health, u.health + heal_amt)
+            print(f">> [Tren] {u.name} se curó {heal_amt} PV.")
+        return True
+
+    @staticmethod
+    def _spell_72_effect(card, target, game_state):
+        if not isinstance(target, tuple): return False
+        tx, ty = target
+        target_unit = game_state.board.get_unit_at(tx, ty)
+        if not target_unit: return False
+        
+        musico_count = 0
+        for y in range(game_state.board.height):
+            for x in range(game_state.board.width):
+                u = game_state.board.get_unit_at(x, y)
+                if u and u.owner_id == game_state.current_player_id:
+                    if 'músico' in str(getattr(u, 'groups', '')).lower() or 'musico' in str(getattr(u, 'groups', '')).lower():
+                        musico_count += 1
+                        
+        if musico_count > 0:
+            target_unit.temporary_buffs.append({"type": "attack", "amount": musico_count, "duration": 1})
+            print(f">> [Trombón] {target_unit.name} gana +{musico_count} de Ataque este turno.")
+        return True
+
+    @staticmethod
+    def _rafa_on_attack(unit, game_state):
+        unit.immobile_turns = 2
+        print(f">> [Rafa] Debe recargar, estará inmovilizado por 1 turno.")
+
+    @staticmethod
+    def _spell_76_effect(card, target, game_state):
+        if not isinstance(target, tuple): return False
+        tx, ty = target
+        target_unit = game_state.board.get_unit_at(tx, ty)
+        if not target_unit: return False
+        
+        target_unit.temporary_buffs.append({"type": "attack", "amount": 2, "duration": 1})
+        tags = str(getattr(target_unit, 'groups', '')).lower()
+        if 'artista' in tags:
+            target_unit.temporary_buffs.append({"type": "range_atk", "amount": 1, "duration": 1})
+            print(f">> [Lienzo de Arte] {target_unit.name} gana +2 Ataque y +1 Rango este turno.")
+        else:
+            print(f">> [Lienzo de Arte] {target_unit.name} gana +2 Ataque este turno.")
+        return True
+
+    @staticmethod
+    def _spell_77_effect(card, target, game_state):
+        if not isinstance(target, tuple): return False
+        tx, ty = target
+        target_unit = game_state.board.get_unit_at(tx, ty)
+        if not target_unit or target_unit.owner_id != game_state.current_player_id: 
+            return False
+        
+        target_unit.health = min(target_unit.max_health, target_unit.health + 6)
+        print(f">> [Ensayo PAES] {target_unit.name} recuperó 6 PV.")
+        
+        tags = str(getattr(target_unit, 'groups', '')).lower()
+        if 'literatura' in tags or 'tecnológico' in tags or 'tecnologico' in tags or 'nuevo' in tags:
+            player = game_state.players[game_state.current_player_id]
+            if player.deck and len(player.hand) < 10:
+                drawn = player.deck.pop(0)
+                player.hand.append(drawn)
+                print(f">> [Ensayo PAES] ¡Robaste a {drawn.name}!")
+        return True

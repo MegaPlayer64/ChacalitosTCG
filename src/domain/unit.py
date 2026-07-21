@@ -40,6 +40,14 @@ class Unit(Card):
         # """Resta vida y devuelve True si la unidad murió."""
         from domain.ability_manager import AbilityManager
         AbilityManager.trigger_on_damage_received(self, amount, game_state)
+        
+        # Entorno ID 73: Escenario de Baile
+        active_env = getattr(game_state, 'active_environment', None)
+        if active_env and int(active_env.card.id) == 73:
+            tags = str(getattr(self, 'groups', '')).lower()
+            if '3_nai' in tags or 'músico' in tags or 'musico' in tags or 'danza' in tags:
+                amount = max(0, amount - 1)
+                
         if self.has_shield:
             damage_taken = amount // 2
             self.health -= damage_taken
@@ -51,7 +59,10 @@ class Unit(Card):
         else:
             self.health -= amount
             print(f">> {self.name} recibió {amount} de daño! (Vida restante: {self.health})")
-        return self.health <= 0
+        if self.health <= 0:
+            AbilityManager.trigger_on_death(self, game_state)
+            return True
+        return False
 
     def reset_turn_state(self):
         # """Limpia las banderas al inicio/fin del turno."""

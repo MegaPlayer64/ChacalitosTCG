@@ -47,9 +47,10 @@ class GameState:
         return self.players[self.current_player_id]
 
     def get_effective_stats(self, unit) -> dict:
-        """Calcula el ataque y velocidad efectivos basándose en las habilidades estáticas de los aliados."""
+        """Calcula el ataque, velocidad y rango efectivos basándose en las habilidades estáticas y temporales."""
         effective_attack = unit.attack
         effective_speed = unit.speed
+        effective_range = getattr(unit, 'range_atk', 1)
         
         unit_tags = []
         if getattr(unit, 'groups', None):
@@ -57,6 +58,17 @@ class GameState:
                 unit_tags = [g.strip().lower() for g in unit.groups.split(',') if g.strip()]
             elif isinstance(unit.groups, list):
                 unit_tags = [g.lower() for g in unit.groups if g]
+
+        # Entorno ID 67: Casa de Nico
+        env_id = None
+        if getattr(self, 'active_environment', None):
+            env_id = int(self.active_environment.card.id)
+            if env_id == 67:
+                for i in range(len(unit_tags)):
+                    if unit_tags[i] in ['mish-a', 'mish-b']:
+                        unit_tags[i] = 'mish'
+                if 'mish-a' in unit_tags or 'mish-b' in unit_tags:
+                    unit_tags.append('mish')
             
         board_ally_tags = set()
         for y in range(self.board.height):
@@ -97,6 +109,8 @@ class GameState:
                     effective_speed = buff['value']
                 elif buff['type'] == 'attack_set':
                     effective_attack = buff['value']
+                elif buff['type'] == 'range_atk':
+                    effective_range += buff['amount']
 
         # Efectos estáticos de Entorno Activo
         if getattr(self, 'active_environment', None):
@@ -115,12 +129,45 @@ class GameState:
                     # Limitar el ataque máximo a su ataque base si es mayor
                     if effective_attack > unit.attack:
                         effective_attack = unit.attack
+            elif env_id == 67: # Casa de Nico
+                if 'mish' in unit_tags:
+                    effective_attack += 1
+
+        # Pasivas Personales (ID 62, 69)
+        if unit.id == 62:
+            mish_count = 0
+            for y in range(self.board.height):
+                for x in range(self.board.width):
+                    u = self.board.get_unit_at(x, y)
+                    if u and u is not unit and getattr(u, 'owner_id', None) == unit.owner_id:
+                        tags = str(getattr(u, 'groups', '')).lower()
+                        if 'mish-a' in tags or 'mish' in tags or (env_id == 67 and 'mish-b' in tags):
+                            mish_count += 1
+            effective_attack += mish_count
+        
+        if unit.id == 69:
+            has_adj = False
+            for nx, ny in self.board.get_neighbors(unit.pos_x, unit.pos_y):
+                adj = self.board.get_unit_at(nx, ny)
+                if adj and adj.owner_id == unit.owner_id:
+                    adj_tags = str(getattr(adj, 'groups', '')).lower()
+                    if 'danza' in adj_tags or '3_nai' in adj_tags:
+                        has_adj = True
+                        break
+            if has_adj:
+                effective_attack += 2
+                effective_speed += 2
+
+        if unit.id == 70:
+            # No puede ser afectada por bonificaciones de velocidad
+            effective_speed = unit.speed
 
         # Evitar valores negativos
         effective_attack = max(0, effective_attack)
         effective_speed = max(0, effective_speed)
+        effective_range = max(1, effective_range)
 
-        return {"attack": effective_attack, "speed": effective_speed}
+        return {"attack": effective_attack, "speed": effective_speed, "range_atk": effective_range}
 
     def validate_summon(self, player_id, x, y):
         if not self.board.is_within_bounds(x, y):
@@ -168,8 +215,28 @@ class GameState:
                 
             if card.card_type.lower() == 'unit':
                 if self.board.is_occupied(tx, ty):
-                    print(f">> [!] La casilla ({tx}, {ty}) ya está ocupada.")
-                    return False
+                    if card.id == 69:
+                        pass # Permitir sobre-escribir para Duales
+                    else:
+                        print(f">> [!] La casilla ({tx}, {ty}) ya está ocupada.")
+                        return False
+                        
+                if card.id == 69:
+                    naty_pos = None
+                    ami_pos = None
+                    for y in range(self.board.height):
+                        for x in range(self.board.width):
+                            u = self.board.get_unit_at(x, y)
+                            if u and u.owner_id == action.player_id:
+                                if u.id == 17: naty_pos = (x, y)
+                                elif u.id == 16: ami_pos = (x, y)
+                    if not naty_pos or not ami_pos:
+                        print(">> [!] Faltan Naty o Ami en el tablero para la invocación Dual.")
+                        return False
+                    if (tx, ty) not in (naty_pos, ami_pos):
+                        print(">> [!] Debes invocar encima de la ubicación de Naty o Ami.")
+                        return False
+
                 if not self.validate_summon(action.player_id, tx, ty):
                     print(f">> [!] Zona de invocación inválida para el jugador {action.player_id}.")
                     return False
@@ -283,6 +350,10 @@ class GameState:
                 print(f">> [!] {attacker.name} ya agotó su ataque este turno.")
                 return False
 
+            if getattr(attacker, 'immobile_turns', 0) > 0:
+                print(f">> [!] {attacker.name} no puede atacar (inmovilizado/recargando por {getattr(attacker, 'immobile_turns', 0)} turnos).")
+                return False
+
             if tx == 'B':
                 # Ataque a la base enemiga
                 if action.player_id == 0:
@@ -290,16 +361,18 @@ class GameState:
                         print(">> [!] Debes estar en la columna 4 o 5 para atacar la Base Enemiga.")
                         return False
                     dist = max(abs(fx - 6), 0)
-                    if dist > attacker.range_atk:
-                        print(f">> [!] La base está fuera de rango. Rango: {attacker.range_atk}")
+                    eff_range = self.get_effective_stats(attacker)["range_atk"]
+                    if dist > eff_range:
+                        print(f">> [!] La base está fuera de rango. Rango: {eff_range}")
                         return False
                 elif action.player_id == 1:
                     if fx not in [0, 1]:
                         print(">> [!] Debes estar en la columna 0 o 1 para atacar la Base Enemiga.")
                         return False
                     dist = max(abs(fx - (-1)), 0)
-                    if dist > attacker.range_atk:
-                        print(f">> [!] La base está fuera de rango. Rango: {attacker.range_atk}")
+                    eff_range = self.get_effective_stats(attacker)["range_atk"]
+                    if dist > eff_range:
+                        print(f">> [!] La base está fuera de rango. Rango: {eff_range}")
                         return False
                 return True
 
@@ -318,8 +391,9 @@ class GameState:
 
             # 4. ¿Está en rango (Manhattan)?
             dist = abs(fx - tx) + abs(fy - ty)
-            if dist > attacker.range_atk:
-                print(f">> [!] Objetivo fuera de rango. Distancia: {dist}, Rango: {attacker.range_atk}")
+            eff_range = self.get_effective_stats(attacker)["range_atk"]
+            if dist > eff_range:
+                print(f">> [!] Objetivo fuera de rango. Distancia: {dist}, Rango: {eff_range}")
                 return False
 
             # ID 32: Isidora (Inmune si tiene aliados adyacentes)
@@ -370,8 +444,10 @@ class GameState:
             
         if action.type.name == "RESOLVE_ABILITY":
             from src.domain.ability_manager import AbilityManager
+            old_pending = self.pending_ability
             result = AbilityManager.resolve_pending_ability(self, action.payload)
-            if result:
+            # Solo limpiar si la resolución fue exitosa y la habilidad pendiente NO cambió
+            if result and self.pending_ability == old_pending:
                 self.pending_ability = None
             return result
 
@@ -393,6 +469,14 @@ class GameState:
             player.current_energy -= final_cost
             
             if card.card_type.lower() == 'unit':
+                if card.id == 69:
+                    # Sacrificar Naty y Ami
+                    for y in range(self.board.height):
+                        for x in range(self.board.width):
+                            u = self.board.get_unit_at(x, y)
+                            if u and u.owner_id == player.id and u.id in (16, 17):
+                                self.board.remove_unit(x, y)
+                
                 card.owner_id = int(player.id)
                 self.board.set_unit_at(tx, ty, card)
                 print(f">> ¡{player.name} invocó a {card.name} en ({tx}, {ty})!")
