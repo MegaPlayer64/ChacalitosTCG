@@ -15,7 +15,6 @@ class MenuPrincipal(Screen):
         layout_global = BoxLayout(orientation='vertical', padding=30, spacing=20)
 
         #Fondo bello
-        
         fondo_grilla = FondoCuadriculado(size=self.size)
         self.add_widget(fondo_grilla, index=0)
         

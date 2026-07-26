@@ -6,6 +6,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
+from kivy.uix.spinner import Spinner  # <-- IMPORTANTE PARA LOS DROPDOWNS
 
 from src.infrastructure.loaders.card_loader import CardLoader
 
@@ -33,24 +34,66 @@ class TarjetaAlbum(BoxLayout):
 
 
 class PantallaInventario(Screen):
+    # Peso jerárquico para ordenar correctamente por rareza
+    PESO_RAREZA = {
+        "Común": 1,
+        "Especial": 2,
+        "Épica": 3,
+        "Excelencia": 4
+    }
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.ruta_perfil = "src/data/user_profile.json"
+        self.coleccion_datos = [] # Guardará la lista de dicts: [{'id', 'objeto', 'cantidad', 'tipo', 'rareza', 'grupos'}, ...]
         
         layout_principal = BoxLayout(orientation='vertical', padding=10, spacing=10)
         
-        # Guardamos el label del título/monedas como atributo para poder actualizarlo luego
-        self.lbl_titulo = Label(text="ÁLBUM DE COLECCIÓN", size_hint_y=0.1, font_size='20sp')
+        # 1. Header (Título + Economía)
+        self.lbl_titulo = Label(text="ÁLBUM DE COLECCIÓN", size_hint_y=0.08, font_size='18sp')
         layout_principal.add_widget(self.lbl_titulo)
         
-        scroll = ScrollView(size_hint_y=0.8)
+        # 2. BARRA DE FILTROS Y ORDENAMIENTO (NUEVA)
+        layout_filtros = BoxLayout(orientation='horizontal', spacing=10, size_hint_y=0.08)
+        
+        # Selector de Criterio de Orden
+        self.spn_orden = Spinner(
+            text="Ordenar: ID",
+            values=["Ordenar: ID", "Ordenar: Rareza", "Ordenar: Coste", "Ordenar: Cantidad", "Ordenar: Nombre"],
+            size_hint_x=0.35
+        )
+        self.spn_orden.bind(text=self.actualizar_vista)
+
+        # Selector de Tipo de Carta
+        self.spn_tipo = Spinner(
+            text="Tipo: Todos",
+            values=["Tipo: Todos", "Unidades", "Trucos (Spells)", "Entornos (Buildings)"],
+            size_hint_x=0.32
+        )
+        self.spn_tipo.bind(text=self.actualizar_vista)
+
+        # Selector de Tag / Grupo
+        self.spn_tag = Spinner(
+            text="Tag: Todas",
+            values=["Tag: Todas"],
+            size_hint_x=0.33
+        )
+        self.spn_tag.bind(text=self.actualizar_vista)
+
+        layout_filtros.add_widget(self.spn_orden)
+        layout_filtros.add_widget(self.spn_tipo)
+        layout_filtros.add_widget(self.spn_tag)
+        layout_principal.add_widget(layout_filtros)
+        
+        # 3. Grilla de Cartas con Scroll
+        scroll = ScrollView(size_hint_y=0.74)
         self.grilla_cartas = GridLayout(cols=4, spacing=10, size_hint_y=None)
         self.grilla_cartas.bind(minimum_height=self.grilla_cartas.setter('height'))
         
         scroll.add_widget(self.grilla_cartas)
         layout_principal.add_widget(scroll)
         
-        # --- NUEVA BOTONERA INFERIOR CON 3 ACCIONES ---
+        # 4. Botonera Inferior
         layout_botones = BoxLayout(orientation='horizontal', spacing=10, size_hint_y=0.1)
         
         btn_volver = Button(text="Volver al Menú", size_hint_x=0.25)
@@ -67,20 +110,14 @@ class PantallaInventario(Screen):
         layout_botones.add_widget(btn_crear_mazo)
         
         layout_principal.add_widget(layout_botones)
-        
-        # Al final, añadimos el layout principal completo a la pantalla
         self.add_widget(layout_principal)
 
     def on_enter(self):
-        """Este método de Kivy se ejecuta automáticamente CADA VEZ que entras a esta pantalla"""
+        """Carga datos del JSON al entrar a la pantalla"""
         self.cargar_inventario_desde_json()
 
     def cargar_inventario_desde_json(self):
-        self.grilla_cartas.clear_widgets()
-        
-        # 1. Intentar leer el archivo JSON real
         if not os.path.exists(self.ruta_perfil):
-            print(f"[!] Error: No se encontró el archivo en {self.ruta_perfil}")
             self.lbl_titulo.text = "ÁLBUM DE COLECCIÓN (Perfil no encontrado)"
             return
             
@@ -91,45 +128,110 @@ class PantallaInventario(Screen):
             print(f"[!] Error al parsear el JSON del perfil: {e}")
             return
 
-        # 2. Actualizar el encabezado con el nombre y las monedas actuales del jugador
+        # Actualizar Header
         usuario = perfil_data.get("username", "Jugador")
         monedas = perfil_data.get("coins", 0)
         esencia = perfil_data.get("craft_essence", 0)
-        
-        # Ahora el título rastrea ambas economías en tiempo real
         self.lbl_titulo.text = f"ÁLBUM DE {usuario.upper()}  |  🪙 Monedas: {monedas}  |  ✨ Esencia: {esencia}"
 
-        # 3. Extraer el diccionario de inventario
+        # Procesar cartas e indexar en memory list
         inventario_usuario = perfil_data.get("inventory", {})
-        
-        # 4. Consultar las IDs al CardLoader real y meterlas a la grilla
+        self.coleccion_datos.clear()
+        tags_detectadas = set()
+
         for card_id_str, cantidad in inventario_usuario.items():
             card_id = int(card_id_str)
             carta_objeto = CardLoader.get_card_stats_by_id(card_id)
             
             if carta_objeto and cantidad > 0:
-                nombre = carta_objeto.name
-                coste = carta_objeto.cost
                 rareza = getattr(carta_objeto, 'rarity', 'Común')
                 tipo = 'unit' if hasattr(carta_objeto, 'attack') else getattr(carta_objeto, 'card_type', 'unit')
+                
+                # Normalizar los grupos/tags para filtrado
+                grupos_raw = getattr(carta_objeto, 'groups', getattr(carta_objeto, 'grupos', ''))
+                
+                if isinstance(grupos_raw, str):
+                    lista_preliminar = grupos_raw.replace('\n', ',').split(',')
+                elif isinstance(grupos_raw, (list, tuple)):
+                    lista_preliminar = grupos_raw
+                else:
+                    lista_preliminar = []
 
-                tarjeta = TarjetaAlbum(
-                    nombre=nombre, 
-                    coste=coste, 
-                    rareza=rareza, 
-                    tipo=tipo, 
-                    cantidad=cantidad
-                )
-                self.grilla_cartas.add_widget(tarjeta)
+                # Limpia espacios y elimina vacíos y guiones ('-') de un solo paso
+                grupos = [str(g).strip() for g in lista_preliminar if str(g).strip() not in ('', '-')]
+
+                for tag in grupos:
+                    tags_detectadas.add(tag)
+                    
+                self.coleccion_datos.append({
+                    "id": card_id,
+                    "objeto": carta_objeto,
+                    "cantidad": cantidad,
+                    "nombre": carta_objeto.name,
+                    "coste": carta_objeto.cost,
+                    "rareza": rareza,
+                    "tipo": tipo,
+                    "grupos": grupos
+                })
+
+        # Actualizar valores del Spinner de Tags automáticamente
+        self.spn_tag.values = ["Tag: Todas"] + sorted(list(tags_detectadas))
+        
+        # Renderizar la lista
+        self.actualizar_vista()
+
+    def actualizar_vista(self, *args):
+        """Filtra, ordena y redibuja las cartas en la grilla"""
+        self.grilla_cartas.clear_widgets()
+        
+        cartas_filtradas = list(self.coleccion_datos)
+
+        # --- A) FILTRAR POR TIPO ---
+        tipo_sel = self.spn_tipo.text
+        if tipo_sel == "Unidades":
+            cartas_filtradas = [c for c in cartas_filtradas if c["tipo"] == "unit"]
+        elif tipo_sel == "Trucos (Spells)":
+            cartas_filtradas = [c for c in cartas_filtradas if c["tipo"] == "spell"]
+        elif tipo_sel == "Entornos (Buildings)":
+            cartas_filtradas = [c for c in cartas_filtradas if c["tipo"] == "building"]
+
+        # --- B) FILTRAR POR TAG / GRUPO ---
+        tag_sel = self.spn_tag.text
+        if tag_sel != "Tag: Todas":
+            tag_limpia = tag_sel.replace("Tag: ", "")
+            cartas_filtradas = [c for c in cartas_filtradas if tag_limpia in c["grupos"]]
+
+        # --- C) ORDENAR ---
+        orden_sel = self.spn_orden.text
+        if orden_sel == "Ordenar: Rareza":
+            # Ordena de mayor rareza a menor rareza
+            cartas_filtradas.sort(key=lambda c: self.PESO_RAREZA.get(c["rareza"], 0), reverse=True)
+        elif orden_sel == "Ordenar: Coste":
+            cartas_filtradas.sort(key=lambda c: c["coste"])
+        elif orden_sel == "Ordenar: Cantidad":
+            cartas_filtradas.sort(key=lambda c: c["cantidad"], reverse=True)
+        elif orden_sel == "Ordenar: Nombre":
+            cartas_filtradas.sort(key=lambda c: c["nombre"].lower())
+        else: # Ordenar por ID por defecto
+            cartas_filtradas.sort(key=lambda c: c["id"])
+
+        # --- D) DIBUJAR EN UI ---
+        for c in cartas_filtradas:
+            tarjeta = TarjetaAlbum(
+                nombre=c["nombre"], 
+                coste=c["coste"], 
+                rareza=c["rareza"], 
+                tipo=c["tipo"], 
+                cantidad=c["cantidad"]
+            )
+            self.grilla_cartas.add_widget(tarjeta)
 
     def ejecutar_reciclaje_ui(self, instance):
         from src.domain.craft_system import CraftSystem
         
         resultado = CraftSystem.reciclar_excesos()
         if resultado["exito"]:
-            # Cambiamos el título temporalmente para celebrar el reciclaje
             self.lbl_titulo.text = f"♻️ ¡Moliste {resultado['cartas_rotas']} cartas por +{resultado['esencia_obtenida']} ✨!"
-            # Forzamos a Kivy a volver a pintar la grilla con los nuevos topes de 4 copias
             self.cargar_inventario_desde_json()
         else:
             self.lbl_titulo.text = f"❌ {resultado['mensaje']}"

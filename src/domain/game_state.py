@@ -1,4 +1,5 @@
 # src/domain/game_state.py
+from kivy import context
 from typing import List
 # Imports directos ya que están en la misma carpeta domain/
 from src.domain.player import Player
@@ -116,13 +117,16 @@ class GameState:
         if getattr(self, 'active_environment', None):
             env_id = int(self.active_environment.card.id)
             if env_id == 53: # Cancha de Futbol
-                if 'futbolero' in unit_tags and not getattr(unit, 'has_attacked', False):
+                if 'Futboleros' in unit_tags and not getattr(unit, 'has_attacked', False):
                     effective_speed += 1
-                elif unit.id == 22:
+                elif int(unit.id) == 22:
                     effective_speed += 1
             elif env_id == 54: # La Fundación
-                if 'tralalero tralala' in unit_tags or unit.id == 22:
+                if 'Tralaleros' in unit_tags or int(unit.id) == 22:
                     effective_attack -= 1
+            elif env_id == 80: # Biblioteca Escolar
+                if 'Literatura' in unit_tags or int(unit.id) == 22:
+                    effective_range += 1
                 
                 # Los enemigos no pueden recibir buffs de ataque
                 if getattr(unit, 'owner_id', None) is not None and unit.owner_id != self.active_environment.owner_id:
@@ -134,7 +138,7 @@ class GameState:
                     effective_attack += 1
 
         # Pasivas Personales (ID 62, 69)
-        if unit.id == 62:
+        if int(unit.id) == 62: #Freddy
             mish_count = 0
             for y in range(self.board.height):
                 for x in range(self.board.width):
@@ -145,7 +149,7 @@ class GameState:
                             mish_count += 1
             effective_attack += mish_count
         
-        if unit.id == 69:
+        if int(unit.id) == 69: #Ami&Naty Duales
             has_adj = False
             for nx, ny in self.board.get_neighbors(unit.pos_x, unit.pos_y):
                 adj = self.board.get_unit_at(nx, ny)
@@ -158,7 +162,7 @@ class GameState:
                 effective_attack += 2
                 effective_speed += 2
 
-        if unit.id == 70:
+        if int(unit.id) == 70: #Dragon Menor Alianzas
             # No puede ser afectada por bonificaciones de velocidad
             effective_speed = unit.speed
 
@@ -215,24 +219,31 @@ class GameState:
                 
             if card.card_type.lower() == 'unit':
                 if self.board.is_occupied(tx, ty):
-                    if card.id == 69:
+                    if int(card.id) == 69:
                         pass # Permitir sobre-escribir para Duales
                     else:
                         print(f">> [!] La casilla ({tx}, {ty}) ya está ocupada.")
                         return False
                         
-                if card.id == 69:
+                if int(card.id) == 69:
                     naty_pos = None
                     ami_pos = None
                     for y in range(self.board.height):
                         for x in range(self.board.width):
                             u = self.board.get_unit_at(x, y)
-                            if u and u.owner_id == action.player_id:
-                                if u.id == 17: naty_pos = (x, y)
-                                elif u.id == 16: ami_pos = (x, y)
+                            if u and int(u.owner_id) == int(action.player_id):
+                                # Obtenemos la ID de la carta real de la unidad
+                                u_card_id = getattr(u, 'card_id', getattr(u, 'id', None))
+                                
+                                if int(u_card_id) == 8: 
+                                    naty_pos = (x, y)
+                                elif int(u_card_id) == 9: 
+                                    ami_pos = (x, y)
+                                    
                     if not naty_pos or not ami_pos:
                         print(">> [!] Faltan Naty o Ami en el tablero para la invocación Dual.")
                         return False
+                        
                     if (tx, ty) not in (naty_pos, ami_pos):
                         print(">> [!] Debes invocar encima de la ubicación de Naty o Ami.")
                         return False
@@ -315,7 +326,12 @@ class GameState:
                 print(f">> [!] {unit.name} no se puede mover. Turnos de inmovilidad: {getattr(unit, 'immobile_turns', 0)}")
                 return False 
 
+            # 7. ¿Es Margaret en turno impar?
+            if getattr(unit, "id") == "78" and self.turn_number % 2 != 0:
+                print(f">> [!] {unit.name} no se puede mover. Es turno impar y es Margaret. (Esta comiendo o durmiendo)")
+                return False 
             return True
+
         elif action.type.name == "END_TURN":
             self._end_turn()
             return True
@@ -424,8 +440,8 @@ class GameState:
                 print(f">> [!] No puedes activar la habilidad de una unidad enemiga.")
                 return False
                 
-            # 3. ¿Ya se usó la habilidad de esta unidad en este turno? (Opcional, por si quieres limitar)
-            if getattr(unit, 'has_activated_this_turn', False):
+            # 3. ¿Ya se usó la habilidad de esta unidad en este turno?
+            if getattr(unit, 'has_activated_this_turn', False) or getattr(unit, 'ability_used_this_turn', False):
                 print(f">> [!] {unit.name} ya usó su habilidad activa en este turno.")
                 return False
                 
@@ -469,13 +485,32 @@ class GameState:
             player.current_energy -= final_cost
             
             if card.card_type.lower() == 'unit':
-                if card.id == 69:
-                    # Sacrificar Naty y Ami
+                if int(card.id) == 69:
+                    # Variables para almacenar la posición de 1 Naty y 1 Ami
+                    pos_naty = None
+                    pos_ami = None
+                    
+                    # 1. Localizar las casillas exactas
                     for y in range(self.board.height):
                         for x in range(self.board.width):
                             u = self.board.get_unit_at(x, y)
-                            if u and u.owner_id == player.id and u.id in (16, 17):
-                                self.board.remove_unit(x, y)
+                            if u and int(u.owner_id) == int(player.id):
+                                # Obtenemos el ID de la carta asegurando compatibilidad
+                                u_card_id = int(getattr(u, 'card_id', getattr(u, 'id', 0)))
+                                
+                                if u_card_id == 8 and pos_naty is None:
+                                    pos_naty = (x, y)
+                                elif u_card_id == 9 and pos_ami is None:
+                                    pos_ami = (x, y)
+
+                    # 2. Sacrificar ambas unidades
+                    if pos_naty:
+                        self.board.remove_unit(pos_naty[0], pos_naty[1])
+                        print(f">> [Sacrificio] Naty eliminada en {pos_naty}")
+                        
+                    if pos_ami:
+                        self.board.remove_unit(pos_ami[0], pos_ami[1])
+                        print(f">> [Sacrificio] Ami eliminada en {pos_ami}")
                 
                 card.owner_id = int(player.id)
                 self.board.set_unit_at(tx, ty, card)
@@ -484,6 +519,11 @@ class GameState:
                 # CORRECCIÓN: Integrar la gestión de habilidades directamente aquí
                 from src.domain.ability_manager import AbilityManager
                 AbilityManager.trigger_on_enter(card, self)
+
+                if card.rarity == "Excelencia":
+                    from src.domain.audio_manager import AudioManager
+                    AudioManager().play_bgm("bradinsky.ogg")
+                    
                 
                 # Efecto pasivo 52 (Zona de Juegos)
                 if getattr(self, 'active_environment', None) and int(self.active_environment.card.id) == 52:
@@ -650,9 +690,7 @@ class GameState:
             for x in range(self.board.width):
                 unit = self.board.get_unit_at(x, y)
                 if unit:
-                    unit.has_moved = False
-                    unit.has_attacked = False
-                    unit.ability_used_this_turn = False
+                    unit.reset_turn_state()
                     
                     # 1.5. Decrementar duración de buffs temporales si la unidad pertenece al jugador que termina su turno
                     if unit.owner_id == self.current_player_id and hasattr(unit, 'temporary_buffs'):

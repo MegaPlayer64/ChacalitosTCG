@@ -4,7 +4,7 @@ import os
 
 class GachaSystem:
     @staticmethod
-    def abrir_sobre_avanzado(tipo_banner="GENERAL", cantidad_cartas=3, costo=100, ruta_perfil="src/data/user_profile.json"):
+    def abrir_sobre_avanzado(tipo_banner="GENERAL", cantidad_cartas=3, costo=100, pago_con_ticket=False, ruta_perfil="src/data/user_profile.json"):
         from src.infrastructure.loaders.card_loader import CardLoader
 
         if not os.path.exists(ruta_perfil):
@@ -13,8 +13,13 @@ class GachaSystem:
         with open(ruta_perfil, "r", encoding="utf-8") as f:
             perfil = json.load(f)
 
-        if perfil.get("coins", 0) < costo:
-            return {"exito": False, "mensaje": "¡Monedas insuficientes! 🪙"}
+        if pago_con_ticket:
+            costo_tickets = 1  # 1 ticket por tirada
+            if perfil.get("tickets", 0) < costo_tickets:
+                return {"exito": False, "mensaje": "¡No tienes suficientes Tickets! 🎟️"}
+        else:
+            if perfil.get("coins", 0) < costo:
+                return {"exito": False, "mensaje": "¡Monedas insuficientes! 🪙"}
 
         # 1. CARGAR TODAS LAS CARTAS DEL CSV
         todas_las_cartas = CardLoader.load_units("src/data/cards.csv")
@@ -27,14 +32,14 @@ class GachaSystem:
         # 2. FILTRAR EL POOL SEGÚN EL BANNER ELEGIDO
         if tipo_banner == "SIMCE1":
             # int(c.id) para comparar números. range(1, 62) incluye del 1 al 61.
-            pool_banner = [c for c in todas_las_cartas if int(c.id) in range(1, 61)]
+            pool_banner = [c for c in todas_las_cartas if int(c.id) in range(1, 62)]
             ids_destacadas = ["60", "61"]
             
         elif tipo_banner == "MISHEXPANSIONPACK1":
             # range(1, 60) incluye 1-59 | range(62, 68) incluye 62-67
             pool_banner = [
                 c for c in todas_las_cartas 
-                if int(c.id) in range(1, 60) or int(c.id) in range(62, 67)
+                if int(c.id) in range(1, 60) or int(c.id) in range(62, 68)
             ]
             # Extraemos solo el str(c.id) y separamos correctamente el operador 'or'
             ids_destacadas = [
@@ -43,13 +48,17 @@ class GachaSystem:
             ]
             
         elif tipo_banner == "ALIANZAS3RO":
-            # range(1, 60) incluye 1-59 | range(68, 74) incluye 68-73
+            # range(1, 55) incluye 1-55 | range(68, 74) incluye 68-73
             pool_banner = [
                 c for c in todas_las_cartas 
-                if int(c.id) in range(1, 60) or int(c.id) in range(68, 73)
+                if int(c.id) in range(1, 55) or int(c.id) in range(68, 74)
             ]
             ids_destacadas = ["68", "69", "70", "71", "72", "73"]
-            
+        
+        elif tipo_banner == "TICKETPACK1":
+            pool_banner = [c for c in todas_las_cartas if int(c.id) in range(1, 59) or int(c.id) in range(62, 67) or int(c.id) in range(74, 81)] 
+            ids_destacadas = ["74","75","76","77","78","79","80"]
+
         else:
             # Banner General por defecto si no coincide ninguno
             pool_banner = todas_las_cartas
@@ -112,7 +121,13 @@ class GachaSystem:
                 perfil["inventory"][card_id_str] = 1
 
         # 5. DESCONTAR DINERO Y GUARDAR
-        perfil["coins"] -= costo
+        if pago_con_ticket:
+            perfil["tickets"] -= 1
+            print(f"[🎟️] Tickets restantes: {perfil['tickets']}")
+        else:
+            perfil["coins"] -= costo
+            print(f"[💰] Monedas restantes: {perfil['coins']}")
+
         with open(ruta_perfil, "w", encoding="utf-8") as f:
             json.dump(perfil, f, indent=2, ensure_ascii=False)
 

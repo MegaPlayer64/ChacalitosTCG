@@ -4,10 +4,16 @@ from kivy.uix.label import Label
 from kivy.uix.image import Image
 from kivy.clock import Clock
 import os
+from src.domain.grid_background import FondoCuadriculado
 
 class PantallaVersus(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        
+        #Fondo bello
+        fondo_grilla = FondoCuadriculado(size=self.size)
+        self.add_widget(fondo_grilla, index=0)
+
         self.layout_principal = BoxLayout(orientation='vertical', padding=50, spacing=20)
         
         # Título

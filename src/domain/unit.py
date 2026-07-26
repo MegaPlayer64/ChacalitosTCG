@@ -68,6 +68,8 @@ class Unit(Card):
         # """Limpia las banderas al inicio/fin del turno."""
         self.has_moved = False
         self.has_attacked = False
+        self.has_activated_this_turn = False
+        self.ability_used_this_turn = False
 
     def on_enter(self, game_state):
         from domain.ability_manager import AbilityManager

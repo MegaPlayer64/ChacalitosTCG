@@ -5,21 +5,22 @@ class AbilityManager:
 
     @staticmethod
     def trigger_on_enter(unit, game_state):
-        if unit.id == 31:
+        uid = int(unit.id)
+        if uid == 31:
             AbilityManager._isidora_on_enter(unit, game_state)
-        elif unit.id == 28:
+        elif uid == 28:
             AbilityManager._cristobal_on_enter(unit, game_state)
-        elif unit.id == 24:
+        elif uid == 24:
             AbilityManager._josefa_g_on_enter(unit, game_state)
-        elif unit.id == 29:
+        elif uid == 29:
             AbilityManager._crisby_on_enter(unit, game_state)
-        elif unit.id == 30:
+        elif uid == 30:
             AbilityManager._josefa_a_on_enter(unit, game_state)
-        elif unit.id == 17:
+        elif uid == 17:
             AbilityManager._richi_on_enter(unit, game_state)
-        elif unit.id == 70:
+        elif uid == 70:
             unit.turns_alive = 0
-        elif unit.id == 58:
+        elif uid == 58:
             AbilityManager._dante_economista_main_ability(unit, game_state)
 
     @staticmethod
@@ -146,7 +147,7 @@ class AbilityManager:
                 player = game_state.players[unit.owner_id]
                 player.current_energy -= 3
                 from src.infrastructure.loaders.card_loader import CardLoader
-                gandan_card = CardLoader.load_card_by_id(65)
+                gandan_card = CardLoader.get_card_stats_by_id(65)
                 gandan_card.owner_id = unit.owner_id
                 game_state.board.set_unit_at(tx, ty, gandan_card)
                 unit.has_activated_this_turn = True
@@ -233,7 +234,7 @@ class AbilityManager:
         # Inmunidad de Feña (ID 66) a hechizos enemigos
         if target != 'G' and isinstance(target, tuple):
             target_unit = game_state.board.get_unit_at(*target)
-            if target_unit and target_unit.id == 66 and target_unit.owner_id != game_state.current_player_id:
+            if target_unit and int(target_unit.id) == 66 and int(target_unit.owner_id) != int(game_state.current_player_id):
                 aliados = [u for u in game_state.board.get_all_units() if u.owner_id == target_unit.owner_id and u is not target_unit]
                 if aliados:
                     print(f">> [Feña] ¡Es inmune a hechizos enemigos mientras tenga aliados vivos!")
@@ -1028,7 +1029,7 @@ class AbilityManager:
             player = game_state.players[unit.owner_id]
             if player.current_energy < 3: return False
             from src.infrastructure.loaders.card_loader import CardLoader
-            gandan_card = CardLoader.load_card_by_id(65)
+            gandan_card = CardLoader.get_card_stats_by_id(65)
             if not gandan_card: return False
             
             spawn_coords = None
@@ -1101,24 +1102,40 @@ class AbilityManager:
     @staticmethod
     def _dragon_menor_on_turn_start(unit, game_state):
         unit.turns_alive = getattr(unit, 'turns_alive', 0) + 1
+        
         if unit.turns_alive == 3:
             cx, cy = unit.pos_x, unit.pos_y
             target_x = 5 if unit.owner_id == 0 else 0
+            
             if target_x != cx:
                 occupant = game_state.board.get_unit_at(target_x, cy)
+                se_puede_mover = True
+                
                 if occupant:
                     dx = 1 if unit.owner_id == 0 else -1
                     new_occ_x = target_x + dx
+                    
+                    # 1. Intentar empujar a la casilla trasera
                     if game_state.board.is_within_bounds(new_occ_x, cy) and not game_state.board.is_occupied(new_occ_x, cy):
                         game_state.board.move_unit(target_x, cy, new_occ_x, cy)
                         print(f">> [Dragón] ¡Empujó a {occupant.name} a ({new_occ_x}, {cy})!")
+                    
+                    # 2. Si no hay espacio, colisión y daño por aplastamiento
                     else:
-                        print(f">> [Dragón] ¡Aplastó a {occupant.name} contra el borde!")
+                        print(f">> [Dragón] ¡Aplastó a {occupant.name} contra el límite!")
                         murio = occupant.take_damage(10, game_state)
+                        
                         if murio:
                             game_state.board.remove_unit(target_x, cy)
-                game_state.board.move_unit(cx, cy, target_x, cy)
-                print(">> [Dragón] ¡Se abalanzó a la fila opuesta!")
+                        else:
+                            # 🛡️ BLOQUEO: Si sobrevivió, la casilla sigue ocupada. El Dragón frena.
+                            se_puede_mover = False
+                            print(f">> [Dragón] {occupant.name} resistió el impacto y bloqueó el avance.")
+                
+                # 3. Solo avanza si la casilla destino está vacía
+                if se_puede_mover:
+                    game_state.board.move_unit(cx, cy, target_x, cy)
+                    print(">> [Dragón] ¡Se abalanzó a la fila opuesta!")
 
     @staticmethod
     def _gandan_on_death(unit, game_state):

@@ -5,12 +5,17 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.spinner import Spinner
+from src.domain.grid_background import FondoCuadriculado
 
 class PantallaSeleccion(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.ruta_perfil = "src/data/user_profile.json"
         self.mazos = []  # Diccionario interno de mapeo de rutas/orígenes
+        
+        #Fondo bello
+        fondo_grilla = FondoCuadriculado(size=self.size)
+        self.add_widget(fondo_grilla, index=0)
 
         layout_global = BoxLayout(orientation='vertical', padding=20, spacing=15)
         

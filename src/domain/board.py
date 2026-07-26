@@ -36,7 +36,7 @@ class Board:
     def get_all_units(self, player_id=None):
         if player_id is None:
             return list(self.grid.values())
-        return [unit for unit in self.grid.values() if unit.owner_id == player_id]
+        return [unit for unit in self.grid.values() if unit.owner_id is not None and int(unit.owner_id) == int(player_id)]
     
     def get_neighbors(self, x, y):
         """Retorna las coordenadas de las casillas adyacentes (hasta 8 vecinos)."""

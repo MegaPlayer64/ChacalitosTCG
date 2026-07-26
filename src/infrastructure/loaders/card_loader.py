@@ -91,6 +91,11 @@ class CardLoader:
         return None
 
     @staticmethod
+    def load_card_by_id(card_id, csv_path="src/data/cards.csv"):
+        """Alias para get_card_stats_by_id."""
+        return CardLoader.get_card_stats_by_id(card_id, csv_path)
+
+    @staticmethod
     def load_deck(deck_recipe_path, csv_path="src/data/cards.csv", ruta_perfil="src/data/user_profile.json"):
         """
         Detecta si la referencia es un mazo predefinido (.json) o un mazo personal 

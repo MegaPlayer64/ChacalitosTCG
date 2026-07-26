@@ -55,7 +55,7 @@ class RewardsSystem:
             return {
                 "monedas": monedas_finales, 
                 "esencia": esencia_final_ganada,
-                "ticket_ganado": ticket_ganado
+                "tickets": 1 if ticket_ganado else 0,
             }
 
         except Exception as e:
