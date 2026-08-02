@@ -28,9 +28,9 @@ class AudioManager:
         # 2. Definir las rutas específicas para música y efectos
         if platform == 'android':
             # pyrefly: ignore [missing-import]
-            from android.storage import app_storage_dir
-            self.music_dir = os.path.join(app_storage_dir(), 'audio', 'music')
-            self.sound_dir = os.path.join(app_storage_dir(), 'audio', 'sound')
+            from android.storage import app_storage_path
+            self.music_dir = os.path.join(app_storage_path(), "audio", "music")
+            self.sound_dir = os.path.join(app_storage_path(), "audio", "sound")
         else:
             self.music_dir = os.path.join(self.src_dir, 'audio', 'music')
             self.sound_dir = os.path.join(self.src_dir, 'audio', 'sound')
@@ -39,6 +39,16 @@ class AudioManager:
         self.preload_sound('move', 'walk1.wav')
         self.preload_sound('draw', 'card1.wav')
         self.preload_sound('damage', 'punch1.wav')
+        self.preload_sound('dead', 'deadunit.wav')
+        self.preload_sound('deploy', 'summonunit.wav')
+        self.preload_sound('select1', 'select1.wav')
+        self.preload_sound('select2', 'select2.wav')
+        self.preload_sound('heal', 'heal.wav')
+        self.preload_sound('error1', 'error1.wav')
+        self.preload_sound('error2', 'error2.wav')
+        self.preload_sound('error3', 'error3.wav')
+
+
 
     def preload_sound(self, name, filename):
         # Buscamos los SFX específicamente en la subcarpeta 'sound'

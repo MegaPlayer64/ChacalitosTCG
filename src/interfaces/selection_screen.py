@@ -1,5 +1,6 @@
 import json
 import os
+import random
 from kivy.uix.screenmanager import Screen
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
@@ -7,13 +8,15 @@ from kivy.uix.label import Label
 from kivy.uix.spinner import Spinner
 from src.domain.grid_background import FondoCuadriculado
 
+OPCION_MAZO_RANDOM = "[Aleatorio] Mazo Random"
+
 class PantallaSeleccion(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.ruta_perfil = "src/data/user_profile.json"
         self.mazos = []  # Diccionario interno de mapeo de rutas/orígenes
         
-        #Fondo bello
+        # Fondo bello
         fondo_grilla = FondoCuadriculado(size=self.size)
         self.add_widget(fondo_grilla, index=0)
 
@@ -47,7 +50,7 @@ class PantallaSeleccion(Screen):
         panel_j2.add_widget(Label(text="Jugador 2", font_size='18sp'))
         
         self.spinner_tipo_j2 = Spinner(
-            text='Humano',
+            text='IA Normal',  # Sugerencia por defecto para agilizar pruebas
             values=('Humano', 'IA Fácil', 'IA Normal', 'IA Difícil'),
             size_hint=(None, None), size=(200, 44), pos_hint={'center_x': 0.5}
         )
@@ -80,15 +83,18 @@ class PantallaSeleccion(Screen):
         self.mazos = self.obtener_lista_mazos()
         opciones_visuales = [m['nombre'] for m in self.mazos]
         
+        # Agregamos la opción de Mazo Aleatorio al principio de la lista
+        opciones_con_random = [OPCION_MAZO_RANDOM] + opciones_visuales
+        
         if opciones_visuales:
-            self.spinner_mazo_j1.values = tuple(opciones_visuales)
-            self.spinner_mazo_j2.values = tuple(opciones_visuales)
+            self.spinner_mazo_j1.values = tuple(opciones_con_random)
+            self.spinner_mazo_j2.values = tuple(opciones_con_random)
             
-            # Evitar que el texto quede desactualizado si se eliminó algún mazo
-            if self.spinner_mazo_j1.text not in opciones_visuales:
+            # Si el texto actual no es válido o está cargando, asignamos Mazo Random por defecto al J2
+            if self.spinner_mazo_j1.text not in opciones_con_random:
                 self.spinner_mazo_j1.text = opciones_visuales[0]
-            if self.spinner_mazo_j2.text not in opciones_visuales:
-                self.spinner_mazo_j2.text = opciones_visuales[0]
+            if self.spinner_mazo_j2.text not in opciones_con_random:
+                self.spinner_mazo_j2.text = OPCION_MAZO_RANDOM
 
     def obtener_lista_mazos(self):
         mazos = []
@@ -116,7 +122,7 @@ class PantallaSeleccion(Screen):
                 for nombre_mazo in decks_guardados.keys():
                     mazos.append({
                         'nombre': f"[Personal] {nombre_mazo}",
-                        'ruta': nombre_mazo, # Almacenamos el identificador del mazo para el perfil
+                        'ruta': nombre_mazo, # Identificador del mazo en el perfil
                         'tipo_origen': 'perfil'
                     })
             except Exception as e:
@@ -135,15 +141,26 @@ class PantallaSeleccion(Screen):
     def cambiar_pantalla(self, nombre_pantalla):
         self.manager.current = nombre_pantalla
 
+    def _obtener_config_mazo(self, texto_spinner):
+        """ Retorna la configuración del mazo o elige uno al azar si es la opción Random. """
+        if texto_spinner == OPCION_MAZO_RANDOM:
+            if self.mazos:
+                mazo_elegido = random.choice(self.mazos)
+                print(f">> [SELECCIÓN RANDOM] Mazo seleccionado automáticamente: {mazo_elegido['nombre']}")
+                return mazo_elegido
+            return None
+        return next((m for m in self.mazos if m['nombre'] == texto_spinner), None)
+
     def iniciar_partida(self, instance):
-        # Encontrar las referencias seleccionadas
-        config_j1 = next((m for m in self.mazos if m['nombre'] == self.spinner_mazo_j1.text), None)
-        config_j2 = next((m for m in self.mazos if m['nombre'] == self.spinner_mazo_j2.text), None)
+        # Resolver mazo (directo o aleatorio) para ambos jugadores
+        config_j1 = self._obtener_config_mazo(self.spinner_mazo_j1.text)
+        config_j2 = self._obtener_config_mazo(self.spinner_mazo_j2.text)
         
         if not config_j1 or not config_j2:
+            print("[!] Error: No se pudo resolver la configuración de mazo para uno de los jugadores.")
             return
 
-        # El game_settings empaquetará tanto la ruta física o la key del perfil como el origen correspondiente
+        # game_settings empaqueta tanto la ruta física/key como el tipo de origen correspondiente
         self.manager.app.game_settings = {
             'p1': {
                 'tipo': self.spinner_tipo_j1.text, 

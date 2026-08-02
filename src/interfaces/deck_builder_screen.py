@@ -96,20 +96,44 @@ class PantallaDeckBuilder(Screen):
         scroll_mazo.add_widget(self.lista_mazo_visual)
         col_central.add_widget(scroll_mazo)
 
-        # Columna Derecha: Panel Informativo
+# --- Columna Derecha: Panel Informativo ---
         col_derecha = BoxLayout(orientation='vertical', size_hint_x=0.3, spacing=10)
-        col_derecha.add_widget(Label(text="🔍 Detalles de la Carta", size_hint_y=0.06))
+        col_derecha.add_widget(Label(text="🔍 Detalles de la Carta", size_hint_y=0.06, bold=True))
+        
+        # 1. ScrollView para los detalles de la carta
+        scroll_detalles = ScrollView(size_hint_y=0.48)
         self.lbl_detalles_carta = Label(
             text="Selecciona una carta para inspeccionar.", 
-            text_size=(250, None), halign='left', valign='top', size_hint_y=0.5
+            size_hint_y=None, # La altura la calculará el texto
+            halign='left', 
+            valign='top',
+            markup=True       # Te permite usar [b]negrita[/b], [color=ff0000]colores[/color], etc.
         )
-        self.lbl_detalles_carta.bind(size=self.lbl_detalles_carta.setter('text_size'))
-        col_derecha.add_widget(self.lbl_detalles_carta)
+        # La magia de Kivy: ajusta el ancho del wrapping al contenedor y calcula el alto real necesario
+        self.lbl_detalles_carta.bind(
+            width=lambda instance, value: setattr(instance, 'text_size', (value, None)),
+            texture_size=lambda instance, value: setattr(instance, 'height', value[1])
+        )
+        scroll_detalles.add_widget(self.lbl_detalles_carta)
+        col_derecha.add_widget(scroll_detalles)
         
-        col_derecha.add_widget(Label(text="📊 Sinergias del Mazo", size_hint_y=0.06))
-        self.lbl_sinergias = Label(text="No hay tags.", text_size=(250, None), halign='left', valign='top', size_hint_y=0.38)
-        self.lbl_sinergias.bind(size=self.lbl_sinergias.setter('text_size'))
-        col_derecha.add_widget(self.lbl_sinergias)
+        col_derecha.add_widget(Label(text="📊 Sinergias del Mazo", size_hint_y=0.06, bold=True))
+        
+        # 2. ScrollView para las sinergias
+        scroll_sinergias = ScrollView(size_hint_y=0.4)
+        self.lbl_sinergias = Label(
+            text="No hay tags.", 
+            size_hint_y=None, 
+            halign='left', 
+            valign='top',
+            markup=True
+        )
+        self.lbl_sinergias.bind(
+            width=lambda instance, value: setattr(instance, 'text_size', (value, None)),
+            texture_size=lambda instance, value: setattr(instance, 'height', value[1])
+        )
+        scroll_sinergias.add_widget(self.lbl_sinergias)
+        col_derecha.add_widget(scroll_sinergias)
 
         layout_columnas.add_widget(col_izquierda)
         layout_columnas.add_widget(col_central)

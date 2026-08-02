@@ -32,7 +32,7 @@ class GachaSystem:
         # 2. FILTRAR EL POOL SEGÚN EL BANNER ELEGIDO
         if tipo_banner == "SIMCE1":
             # int(c.id) para comparar números. range(1, 62) incluye del 1 al 61.
-            pool_banner = [c for c in todas_las_cartas if int(c.id) in range(1, 62)]
+            pool_banner = [c for c in todas_las_cartas if int(c.id) in range(1, 62) or int(c.id) == 81]
             ids_destacadas = ["60", "61"]
             
         elif tipo_banner == "MISHEXPANSIONPACK1":
@@ -51,12 +51,12 @@ class GachaSystem:
             # range(1, 55) incluye 1-55 | range(68, 74) incluye 68-73
             pool_banner = [
                 c for c in todas_las_cartas 
-                if int(c.id) in range(1, 55) or int(c.id) in range(68, 74)
+                if int(c.id) in range(1, 55) or int(c.id) in range(68, 74) or int(c.id) == 81
             ]
             ids_destacadas = ["68", "69", "70", "71", "72", "73"]
         
         elif tipo_banner == "TICKETPACK1":
-            pool_banner = [c for c in todas_las_cartas if int(c.id) in range(1, 59) or int(c.id) in range(62, 67) or int(c.id) in range(74, 81)] 
+            pool_banner = [c for c in todas_las_cartas if int(c.id) in range(1, 59) or int(c.id) in range(62, 67) or int(c.id) in range(74, 81) or int(c.id) == 81] 
             ids_destacadas = ["74","75","76","77","78","79","80"]
 
         else:

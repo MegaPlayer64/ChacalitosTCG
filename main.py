@@ -47,7 +47,7 @@ except ImportError as e:
 from kivy.app import App
 from kivy.uix.screenmanager import ScreenManager
 
-class LBSBGameApp(App):
+class ChacalitosTCG(App):
     def build(self):
         from src.interfaces.menu_screen import MenuPrincipal
         from src.interfaces.game_screen import PantallaJuego
@@ -94,7 +94,7 @@ def main():
     try:
         print("Cargando Base de Datos de Cartas...")
         CardLoader.load_units("src/data/cards.csv")
-        LBSBGameApp().run()
+        ChacalitosTCG().run()
     except Exception as e:
         print(f"\n[!] Error Inesperado: {e}")
 

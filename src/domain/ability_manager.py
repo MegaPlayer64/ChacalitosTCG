@@ -47,8 +47,8 @@ class AbilityManager:
             AbilityManager._daniela_on_attack(unit, game_state)
         elif int(unit.id) == 57:
             AbilityManager._amira_presidenta_on_attack(unit, game_state)
-        #  elif int(unit.id) == 63:
-            # AbilityManager._jose_enmascarado_on_attack(unit, game_state)
+        elif int(unit.id) == 81:
+            AbilityManager._jose_enmascarado_on_attack(unit, game_state)
         elif int(unit.id) == 75:
             AbilityManager._rafa_on_attack(unit, game_state)
 
@@ -58,7 +58,9 @@ class AbilityManager:
             AbilityManager._chino_quemadas_on_damage_received(unit, damage, game_state)
         elif int(unit.id) == 21:
             AbilityManager._iara_on_damage_received(unit, damage, game_state)
-
+        elif int(unit.id) == 79:
+            AbilityManager._axel_on_damage_receaved(unit, game_state)
+ 
     @staticmethod
     def trigger_on_turn_start(unit, game_state):
         active_env = getattr(game_state, 'active_environment', None)
@@ -259,6 +261,7 @@ class AbilityManager:
             47: AbilityManager._spell_47_effect,
             48: AbilityManager._spell_48_effect,
             49: AbilityManager._spell_49_effect,
+            50: AbilityManager._spell_50_effect,
             51: AbilityManager._spell_51_effect,
             71: AbilityManager._spell_71_effect,
             72: AbilityManager._spell_72_effect,
@@ -456,7 +459,9 @@ class AbilityManager:
                 ally = game_state.board.get_unit_at(x, y)
                 if ally and ally.owner_id == player_id:
                     tags = str(getattr(ally, 'groups', '')).lower()
-                    if '3_NAI' in tags or 'Derma-patch' in tags:
+                    
+                    # CORRECCIÓN: Buscamos todo en minúsculas
+                    if '3_nai' in tags or 'derma-patch' in tags:
                         count += 1
         
         if count > 0:
@@ -1227,3 +1232,11 @@ class AbilityManager:
                 player.hand.append(drawn)
                 print(f">> [Ensayo PAES] ¡Robaste a {drawn.name}!")
         return True
+
+    @staticmethod
+    def _axel_on_damage_receaved(unit, game_state):
+        # Gana +1 de daño al recibir daño lol
+        unit.attack += 1
+        print(f">> [Habilidad Axel]: {unit.name} ha ganado +1 de daño (recibió daño).")
+
+

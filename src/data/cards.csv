@@ -84,3 +84,4 @@ Es requerido para invocar esta carta que en el tablero haya una Naty y una Ami a
 78,Margaret,unit,Común,4,26,10,1,1,"Artista, Literatura, Deportistas",Solo puede moverse en turnos pares.,Cartas Iniciales
 79,Axel,unit,Especial,6,28,10,2,1,Mish-A,"Al recibir daño, adquiere +1 de daño",Cartas Iniciales Mish-A
 80,Biblioteca Escolar,building,Épica,5,N/A,N/A,N/A,N/A,Literatura,"Las unidades con la tag Literatura ganan +1 de Rango de ataque y +3 de Vida. Al inicio de tu turno, si controlas al menos una unidad de Literatura, puedes mirar la carta superior de tu mazo y decidir si dejarla arriba o ponerla al fondo.",Cartas Entorno
+81,Jose (Enmascarado),unit,Especial,3,13,16,1,1,"Cabezal de Tren, Futbolero","Cada vez que ataca, pierde la mitad de su daño (Hasta 1). Además, su primer ataque tiene 2 de rango",Cartas Miscelanias

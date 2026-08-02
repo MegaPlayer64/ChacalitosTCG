@@ -35,13 +35,21 @@ class PantallaJuego(Screen):
         
         self.btn_atacar_base = Button(text="Atacar\nBase", size_hint_x=0.15, background_color=(0.8, 0.2, 0.2, 1))
         self.btn_atacar_base.bind(on_release=self.atacar_base)
+
+        btn_cancelar = Button(text="Cancelar\nAcción", size_hint_x=0.15, background_color=(0.5, 0.5, 0.5, 1))
+        btn_cancelar.bind(on_release=self.cancelar_accion)
+
+        btn_habilidad = Button(text="Usar\nHabilidad", size_hint_x=0.15, background_color=(0.6, 0.2, 0.8, 1))
+        btn_habilidad.bind(on_release=self.activar_habilidad_unidad)
         
         barra_info.add_widget(self.lbl_j1)
         barra_info.add_widget(btn_rendirse)
         barra_info.add_widget(btn_reiniciar)
+        barra_info.add_widget(btn_habilidad)
         barra_info.add_widget(self.lbl_turno) # Centro
         barra_info.add_widget(self.btn_atacar_base)
         barra_info.add_widget(btn_pasar_turno)
+        barra_info.add_widget(btn_cancelar)
         barra_info.add_widget(self.lbl_j2)
         
         layout_tablero_global.add_widget(barra_info)
@@ -106,36 +114,42 @@ class PantallaJuego(Screen):
             
             accion = Action(player_id=jugador.id, type=tipo_accion, payload=payload)
             if self.game_state.apply_action(accion):
-                if is_spell == True:
-                    AudioManager().play_sfx("heal.wav")
+                if is_spell:
+                    AudioManager().play_sfx("heal")
                 else:
-                    AudioManager().play_sfx("summonunit.wav")
+                    AudioManager().play_sfx("deploy")
                 self.carta_seleccionada_index = None
                 self.actualizar_interfaz_completa()
             else:
                 print(f">> [!] Invocación/Hechizo denegado en ({x}, {y})")
-                AudioManager().play_sfx("error2.wav")
+                AudioManager().play_sfx("error2")
             return
 
-        # MODO C: UNIDAD DEL TABLERO SELECCIONADA (Mover, Atacar o Activar)
+        # MODO C: UNIDAD DEL TABLERO SELECCIONADA (Mover, Atacar o Deseleccionar)
         if self.unidad_seleccionada_coords:
             origen = self.unidad_seleccionada_coords
             
+            # Clic sobre sí misma -> DESELECCIONAR (cancela la selección limpiamente)
             if origen == (x, y):
-                accion = Action(player_id=jugador.id, type=ActionType.ACTIVATE_ABILITY, payload={'from': origen})
-                print("Intento de activar habilidad propia lol")
+                self.unidad_seleccionada_coords = None
+                self.actualizar_interfaz_completa()
+                return
+
+            # Clic sobre unidad enemiga -> ATAQUE NORMAL
             elif unidad_en_celda and unidad_en_celda.owner_id != jugador.id:
                 accion = Action(player_id=jugador.id, type=ActionType.ATTACK, payload={'from': origen, 'target': (x, y)})
-                AudioManager().play_sfx("punch.wav")
+                if self.game_state.apply_action(accion):
+                    AudioManager().play_sfx("damage")
+                else:
+                    AudioManager().play_sfx("error1")
+            
+            # Clic sobre casilla vacía -> MOVIMIENTO
             else:
                 accion = Action(player_id=jugador.id, type=ActionType.MOVE, payload={'from': origen, 'to': (x, y)})
-                AudioManager().play_sfx("move.wav")
-            
-            if self.game_state.apply_action(accion):
-                print(f">> Acción realizada desde {origen} hacia {(x, y)}")
-            else:
-                print(f">> [!] Acción denegada desde {origen}")
-                AudioManager().play_sfx("error1.wav")
+                if self.game_state.apply_action(accion):
+                    AudioManager().play_sfx("move")
+                else:
+                    AudioManager().play_sfx("error1")
                 
             self.unidad_seleccionada_coords = None
             self.actualizar_interfaz_completa()
@@ -144,7 +158,7 @@ class PantallaJuego(Screen):
         # MODO D: SELECCIÓN INICIAL DE UNIDAD
         if unidad_en_celda and unidad_en_celda.owner_id == jugador.id:
             self.unidad_seleccionada_coords = (x, y)
-            self.celdas_graficas[(x, y)].background_color = (0.2, 0.8, 0.2, 1) # Feedback verde
+            self.actualizar_interfaz_completa()
 
     def atacar_base(self, instance):
         if not self.unidad_seleccionada_coords:
@@ -157,10 +171,10 @@ class PantallaJuego(Screen):
         
         if self.game_state.apply_action(accion):
             print(f">> ¡Ataque a la base ejecutado desde {origen}!")
-            AudioManager().play_sfx("punch1.wav")
+            AudioManager().play_sfx("damage")
         else:
             print(f">> [!] Ataque a la base denegado.")
-            AudioManager().play_sfx("error1.wav")
+            AudioManager().play_sfx("error1")
             
         self.unidad_seleccionada_coords = None
         self.actualizar_interfaz_completa()
@@ -231,16 +245,45 @@ class PantallaJuego(Screen):
         else:
             self.lbl_entorno.text = "[color=888888][b]Entorno Activo:[/b] Ninguno[/color]"
         
-        # Limpiar Tablero Visual
+        # --- Limpiar Tablero Visual ---
         for (cx, cy), btn in self.celdas_graficas.items():
             btn.text = "."
             btn.background_color = (0.15, 0.15, 0.15, 1) 
             
-        # Redibujar Tropas
+        # --- Redibujar Tropas ---
         for (cx, cy), unit in self.game_state.board.grid.items():
             boton = self.celdas_graficas[(cx, cy)]
-            boton.text = f"{unit.name}\n[b]{unit.attack} Dmg[/b] | {unit.health} Hp \n {unit.speed} Vel | {unit.range_atk} Rng"
+            boton.text = f"{unit.name}\n{unit.attack} Dmg | {unit.health} Hp \n {unit.speed} Vel | {unit.range_atk} Rng"
             boton.background_color = (0.2, 0.5, 0.8, 1) if unit.owner_id == 0 else (0.8, 0.3, 0.3, 1)
+
+        # --- RESALTADO DE RANGOS DE MOVIMIENTO Y ATAQUE ---
+        if self.unidad_seleccionada_coords:
+            ux, uy = self.unidad_seleccionada_coords
+            unidad_sel = self.game_state.board.get_unit_at(ux, uy)
+            
+            if unidad_sel:
+                # 1. Resaltar la unidad seleccionada en Verde brillante
+                self.celdas_graficas[(ux, uy)].background_color = (0.2, 0.8, 0.2, 1)
+                
+                # 2. Calcular alcance para todas las celdas
+                for (cx, cy), btn in self.celdas_graficas.items():
+                    if (cx, cy) == (ux, uy):
+                        continue
+                    
+                    distancia = abs(cx - ux) + abs(cy - uy) # Distancia Manhattan (casillas)
+                    target_unit = self.game_state.board.get_unit_at(cx, cy)
+                    
+                    # Clic/Alcance de ATAQUE (Enemigo al alcance -> ROJO)
+                    if distancia <= unidad_sel.range_atk and target_unit and target_unit.owner_id != jugador_actual.id:
+                        btn.background_color = (0.9, 0.2, 0.2, 1) # Rojo Intenso
+                    
+                    # Clic/Alcance de MOVIMIENTO (Casilla vacía al alcance de velocidad -> AZUL)
+                    elif distancia <= unidad_sel.speed and not target_unit:
+                        btn.background_color = (0.2, 0.5, 0.9, 1) # Azul Movimiento
+                    
+                    # Zona de ataque a casilla vacía (Púrpura tenue)
+                    elif distancia <= unidad_sel.range_atk and not target_unit:
+                        btn.background_color = (0.5, 0.2, 0.5, 0.6)
 
         # Redibujar Mano
         mano_formateada = [
@@ -311,11 +354,30 @@ class PantallaJuego(Screen):
         jugador_actual = self.game_state.get_current_player()
         accion = Action(player_id=jugador_actual.id, type=ActionType.END_TURN, payload={})
         self.game_state.apply_action(accion)
-        AudioManager().play_sfx("card1.wav")
+        AudioManager().play_sfx("draw")
         self.carta_seleccionada_index = None
         self.unidad_seleccionada_coords = None
         self.actualizar_interfaz_completa()
         self._ejecutar_turno_ia_si_toca()
+
+    def cancelar_accion(self, instance=None):
+        """ Cancela habilidades pendientes o desselecciona unidades/cartas. """
+        if not self.game_state:
+            return
+
+        jugador = self.game_state.get_current_player()
+        
+        # Si hay una habilidad esperando objetivo, enviamos la acción de cancelar
+        if getattr(self.game_state, 'pending_ability', None):
+            accion = Action(player_id=jugador.id, type=ActionType.CANCEL_ABILITY, payload={})
+            self.game_state.apply_action(accion)
+            print(">> [UI] Habilidad cancelada por el usuario.")
+            AudioManager().play_sfx("error1")
+            
+        # Limpiamos las selecciones locales de la interfaz
+        self.unidad_seleccionada_coords = None
+        self.carta_seleccionada_index = None
+        self.actualizar_interfaz_completa()
 
     def _ejecutar_turno_ia_si_toca(self):
         if not self.ai_controller or not self.game_state or getattr(self, '_ia_corriendo', False):
@@ -380,6 +442,25 @@ class PantallaJuego(Screen):
             self.manager.current = 'result_screen'
             
         Clock.schedule_once(_cambiar, 0.1)
+
+    def activar_habilidad_unidad(self, instance=None):
+        """ Activa la habilidad de la unidad actualmente seleccionada """
+        if not self.unidad_seleccionada_coords:
+            print(">> [!] Primero selecciona una unidad tuya en el tablero.")
+            return
+
+        jugador = self.game_state.get_current_player()
+        origen = self.unidad_seleccionada_coords
+        
+        accion = Action(player_id=jugador.id, type=ActionType.ACTIVATE_ABILITY, payload={'from': origen})
+        if self.game_state.apply_action(accion):
+            print(f">> Habilidad activada desde {origen}. Selecciona objetivo si es necesario.")
+            AudioManager().play_sfx("heal")
+        else:
+            print(f">> [!] La unidad en {origen} no puede activar habilidad.")
+            AudioManager().play_sfx("error1")
+            
+        self.actualizar_interfaz_completa()
 
     def reiniciar_partida(self, instance):
         self._ia_corriendo = False

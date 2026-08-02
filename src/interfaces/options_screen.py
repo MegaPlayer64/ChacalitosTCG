@@ -7,7 +7,10 @@ from kivy.uix.button import Button
 from kivy.properties import StringProperty
 from src.domain.audio_manager import AudioManager
 import os
-import psutil
+try:
+    import psutil
+except ImportError:
+    psutil = None
 
 class PantallaOpciones(Screen):
     # Propiedades dinámicas
