@@ -27,11 +27,8 @@ class PantallaJuego(Screen):
         btn_rendirse = Button(text="Rendirse", size_hint_x=0.15, background_color=(0.5, 0.2, 0.2, 1))
         btn_rendirse.bind(on_release=lambda x: self.volver_al_menu())
         
-        btn_reiniciar = Button(text="Reiniciar", size_hint_x=0.15, background_color=(0.2, 0.6, 0.8, 1))
-        btn_reiniciar.bind(on_release=self.reiniciar_partida)
-        
-        btn_pasar_turno = Button(text="Pasar\nTurno", size_hint_x=0.15, background_color=(0.8, 0.6, 0.1, 1))
-        btn_pasar_turno.bind(on_release=self.pasar_turno)
+        self.btn_pasar_turno = Button(text="Pasar\nTurno", size_hint_x=0.15, background_color=(0.8, 0.6, 0.1, 1))
+        self.btn_pasar_turno.bind(on_release=self.pasar_turno)
         
         self.btn_atacar_base = Button(text="Atacar\nBase", size_hint_x=0.15, background_color=(0.8, 0.2, 0.2, 1))
         self.btn_atacar_base.bind(on_release=self.atacar_base)
@@ -39,16 +36,15 @@ class PantallaJuego(Screen):
         btn_cancelar = Button(text="Cancelar\nAcción", size_hint_x=0.15, background_color=(0.5, 0.5, 0.5, 1))
         btn_cancelar.bind(on_release=self.cancelar_accion)
 
-        btn_habilidad = Button(text="Usar\nHabilidad", size_hint_x=0.15, background_color=(0.6, 0.2, 0.8, 1))
+        btn_habilidad = Button(text="Usar\nHabilidad", size_hint_x=0.3, background_color=(0.6, 0.2, 0.8, 1))
         btn_habilidad.bind(on_release=self.activar_habilidad_unidad)
         
         barra_info.add_widget(self.lbl_j1)
         barra_info.add_widget(btn_rendirse)
-        barra_info.add_widget(btn_reiniciar)
         barra_info.add_widget(btn_habilidad)
         barra_info.add_widget(self.lbl_turno) # Centro
         barra_info.add_widget(self.btn_atacar_base)
-        barra_info.add_widget(btn_pasar_turno)
+        barra_info.add_widget(self.btn_pasar_turno)
         barra_info.add_widget(btn_cancelar)
         barra_info.add_widget(self.lbl_j2)
         
@@ -90,7 +86,71 @@ class PantallaJuego(Screen):
         self.ai_controller = None 
         self.carta_seleccionada_index = None
 
+    def is_my_turn(self) -> bool:
+        if not getattr(self.manager, 'is_online_game', False):
+            return True
+        role = getattr(self.manager, 'online_role', None)
+        if not self.game_state:
+            return False
+        return self.game_state.current_player_id == role
+
+    def aplicar_accion_y_notificar(self, accion):
+        exito = self.game_state.apply_action(accion)
+        if exito and getattr(self.manager, 'is_online_game', False):
+            # Clonar payload para evitar problemas de referencia
+            payload = accion.payload.copy()
+            self.manager.online_controller.send_action(accion.type.name, payload)
+        return exito
+
+    def recibir_accion_oponente(self, msg):
+        if not self.game_state: return
+        
+        if msg.get("type") == "END_TURN":
+            accion = Action(player_id=self.game_state.current_player_id, type=ActionType.END_TURN, payload={})
+            self.game_state.apply_action(accion)
+            AudioManager().play_sfx("draw")
+            self.actualizar_interfaz_completa()
+            return
+            
+        action_type_str = msg.get("action")
+        payload = msg.get("data", {})
+        
+        for key in ['from', 'to', 'target']:
+            if key in payload and isinstance(payload[key], list):
+                payload[key] = tuple(payload[key])
+                
+        try:
+            action_type = ActionType[action_type_str]
+        except KeyError:
+            print(f">> [!] Acción desconocida del oponente: {action_type_str}")
+            return
+            
+        accion = Action(player_id=self.game_state.current_player_id, type=action_type, payload=payload)
+        if self.game_state.apply_action(accion):
+            print(f">> Acción del oponente ejecutada: {action_type_str}")
+            if action_type == ActionType.PLAY_SPELL:
+                AudioManager().play_sfx("heal")
+            elif action_type == ActionType.PLAY_CARD:
+                AudioManager().play_sfx("deploy")
+            elif action_type == ActionType.ATTACK:
+                AudioManager().play_sfx("damage")
+            elif action_type == ActionType.MOVE:
+                AudioManager().play_sfx("move")
+        else:
+            print(f">> [!] Fallo al aplicar acción del oponente: {action_type_str}")
+            
+        self.actualizar_interfaz_completa()
+
+    def rival_desconectado(self, msg=None):
+        print(">> [!] El rival se ha desconectado.")
+        self.lbl_turno.text = "[color=ff3333][b]¡RIVAL DESCONECTADO![/b][/color]"
+
     def celda_clickeada(self, instance):
+        if not self.is_my_turn():
+            print(">> [!] Es el turno del oponente...")
+            AudioManager().play_sfx("error1")
+            return
+            
         x, y = instance.coordenadas
         jugador = self.game_state.get_current_player()
         unidad_en_celda = self.game_state.board.get_unit_at(x, y)
@@ -98,7 +158,7 @@ class PantallaJuego(Screen):
         # MODO A: RESOLVIENDO HABILIDAD PENDIENTE (Targeting)
         if getattr(self.game_state, 'pending_ability', None):
             accion = Action(player_id=jugador.id, type=ActionType.RESOLVE_ABILITY, payload={'target': (x, y)})
-            if self.game_state.apply_action(accion):
+            if self.aplicar_accion_y_notificar(accion):
                 print(f">> Habilidad resuelta en ({x}, {y})")
             else:
                 print(f">> [!] Resolución inválida en ({x}, {y})")
@@ -113,7 +173,7 @@ class PantallaJuego(Screen):
             payload = {'card_index': self.carta_seleccionada_index, 'target' if is_spell else 'to': (x, y)}
             
             accion = Action(player_id=jugador.id, type=tipo_accion, payload=payload)
-            if self.game_state.apply_action(accion):
+            if self.aplicar_accion_y_notificar(accion):
                 if is_spell:
                     AudioManager().play_sfx("heal")
                 else:
@@ -138,7 +198,7 @@ class PantallaJuego(Screen):
             # Clic sobre unidad enemiga -> ATAQUE NORMAL
             elif unidad_en_celda and unidad_en_celda.owner_id != jugador.id:
                 accion = Action(player_id=jugador.id, type=ActionType.ATTACK, payload={'from': origen, 'target': (x, y)})
-                if self.game_state.apply_action(accion):
+                if self.aplicar_accion_y_notificar(accion):
                     AudioManager().play_sfx("damage")
                 else:
                     AudioManager().play_sfx("error1")
@@ -146,7 +206,7 @@ class PantallaJuego(Screen):
             # Clic sobre casilla vacía -> MOVIMIENTO
             else:
                 accion = Action(player_id=jugador.id, type=ActionType.MOVE, payload={'from': origen, 'to': (x, y)})
-                if self.game_state.apply_action(accion):
+                if self.aplicar_accion_y_notificar(accion):
                     AudioManager().play_sfx("move")
                 else:
                     AudioManager().play_sfx("error1")
@@ -161,6 +221,11 @@ class PantallaJuego(Screen):
             self.actualizar_interfaz_completa()
 
     def atacar_base(self, instance):
+        if not self.is_my_turn():
+            print(">> [!] Es el turno del oponente...")
+            AudioManager().play_sfx("error1")
+            return
+            
         if not self.unidad_seleccionada_coords:
             print(">> [!] Selecciona una unidad tuya primero para atacar la base.")
             return
@@ -169,7 +234,7 @@ class PantallaJuego(Screen):
         origen = self.unidad_seleccionada_coords
         accion = Action(player_id=jugador.id, type=ActionType.ATTACK, payload={'from': origen, 'target': 'B'})
         
-        if self.game_state.apply_action(accion):
+        if self.aplicar_accion_y_notificar(accion):
             print(f">> ¡Ataque a la base ejecutado desde {origen}!")
             AudioManager().play_sfx("damage")
         else:
@@ -201,6 +266,11 @@ class PantallaJuego(Screen):
             self.layout_mano.add_widget(btn_carta)
 
     def seleccionar_carta(self, instance):
+        if not self.is_my_turn():
+            print(">> [!] Es el turno del oponente...")
+            AudioManager().play_sfx("error1")
+            return
+            
         jugador = self.game_state.get_current_player()
         ya_seleccionada = (self.carta_seleccionada_index == instance.indice_mano)
 
@@ -285,12 +355,25 @@ class PantallaJuego(Screen):
                     elif distancia <= unidad_sel.range_atk and not target_unit:
                         btn.background_color = (0.5, 0.2, 0.5, 0.6)
 
-        # Redibujar Mano
-        mano_formateada = [
-            {"nombre": c.name, "coste": c.cost, "tipo": getattr(c, 'card_type', 'unit')} 
-            for c in jugador_actual.hand
-        ]
+        # Redibujar Mano (Con Fog of War si es online)
+        is_online = getattr(self.manager, 'is_online_game', False)
+        my_role = getattr(self.manager, 'online_role', None)
+        
+        if is_online and jugador_actual.id != my_role:
+            mano_formateada = [
+                {"nombre": "Dorso", "coste": "?", "tipo": "hidden"} 
+                for c in jugador_actual.hand
+            ]
+        else:
+            mano_formateada = [
+                {"nombre": c.name, "coste": c.cost, "tipo": getattr(c, 'card_type', 'unit')} 
+                for c in jugador_actual.hand
+            ]
         self.dibujar_mano(mano_formateada)
+        
+        # Deshabilitar botón "Pasar Turno" si no es mi turno
+        if is_online:
+            self.btn_pasar_turno.disabled = not self.is_my_turn()
         
         # Evaluar Condición de Victoria
         if p1.health <= 0 or p2.health <= 0:
@@ -311,49 +394,78 @@ class PantallaJuego(Screen):
                 'p2': {'tipo': 'Humano', 'mazo': 'src/data/premade_decks/tag_theme/fev_basic_deck.json'}
             }
 
-        p1 = Player(player_id=0, name="Jugador 1")
-        p2 = Player(player_id=1, name="Jugador 2" if 'Humano' in settings['p2']['tipo'] else f"IA ({settings['p2']['tipo']})")
+        is_online = getattr(self.manager, 'is_online_game', False)
+        
+        if is_online:
+            role = self.manager.online_role
+            p1_name = self.manager.online_controller.player_name if role == 0 else self.manager.online_opponent
+            p2_name = self.manager.online_opponent if role == 0 else self.manager.online_controller.player_name
+            
+            p1 = Player(player_id=0, name=p1_name)
+            p2 = Player(player_id=1, name=p2_name)
+            p1.is_ai = False
+            p2.is_ai = False
+            
+            deck1 = self.manager.local_deck if role == 0 else self.manager.opponent_deck
+            deck2 = self.manager.opponent_deck if role == 0 else self.manager.local_deck
+        else:
+            p1 = Player(player_id=0, name="Jugador 1")
+            p2 = Player(player_id=1, name="Jugador 2" if 'Humano' in settings['p2']['tipo'] else f"IA ({settings['p2']['tipo']})")
+            p1.is_ai = 'Humano' not in settings['p1']['tipo']
+            p2.is_ai = 'Humano' not in settings['p2']['tipo']
+            deck1 = settings['p1']['mazo']
+            deck2 = settings['p2']['mazo']
 
-        def _dificultad(tipo):
-            if 'Fácil' in tipo: return 'EASY'
-            if 'Normal' in tipo: return 'MEDIUM'
-            return 'HARD'
+        p1.crisby_cost_reduction_active = False
+        p1.d_economia_cost_reduction_active = False
+        p2.crisby_cost_reduction_active = False
+        p2.d_economia_cost_reduction_active = False
 
         self.ai_controller = None
-        p1.is_ai = 'Humano' not in settings['p1']['tipo']
-        p2.is_ai = 'Humano' not in settings['p2']['tipo']
-
-        if p2.is_ai:
-            self.ai_controller = AIController(player_id=1, difficulty=_dificultad(settings['p2']['tipo']), delay=0)
-        elif p1.is_ai:
-            self.ai_controller = AIController(player_id=0, difficulty=_dificultad(settings['p1']['tipo']), delay=0)
+        if not is_online:
+            def _dificultad(tipo):
+                if 'Fácil' in tipo: return 'EASY'
+                if 'Normal' in tipo: return 'MEDIUM'
+                return 'HARD'
+            if p2.is_ai:
+                self.ai_controller = AIController(player_id=1, difficulty=_dificultad(settings['p2']['tipo']), delay=0)
+            elif p1.is_ai:
+                self.ai_controller = AIController(player_id=0, difficulty=_dificultad(settings['p1']['tipo']), delay=0)
 
         # OJO AQUÍ: Asegúrate que GameState inicializa turn=1 si quieres que empiece en 1.
-        self.game_state = GameState([p1, p2], settings['p1']['mazo'], settings['p2']['mazo'])
+        self.game_state = GameState([p1, p2], deck1, deck2, seed=getattr(self.manager, 'online_seed', None))
+
+        if is_online:
+            self.online_controller = self.manager.online_controller
+            self.online_controller.on_opponent_action = self.recibir_accion_oponente
+            self.online_controller.on_start_turn = lambda msg: None
+            self.online_controller.on_disconnect = self.rival_desconectado
 
         self.carta_seleccionada_index = None
         self.unidad_seleccionada_coords = None
         self._ia_corriendo = False
         self._ia_fallos_consecutivos = 0
-        
-        # En on_pre_enter de game_screen.py
-        p1 = Player(player_id=0, name="Jugador 1")
-        p1.crisby_cost_reduction_active = False
-        p1.d_economia_cost_reduction_active = False
-
-        p2 = Player(player_id=1, name="Jugador 2")
-        p2.crisby_cost_reduction_active = False
-        p2.d_economia_cost_reduction_active = False
 
         AudioManager().play_bgm('tetoris8bit.ogg')
         self.actualizar_interfaz_completa()
-        self._ejecutar_turno_ia_si_toca()
-        self.pasar_turno(instance=None)
+        
+        if not is_online:
+            self._ejecutar_turno_ia_si_toca()
+            self.pasar_turno(instance=None)
 
     def pasar_turno(self, instance):
+        if not self.is_my_turn():
+            print(">> [!] Es el turno del oponente...")
+            AudioManager().play_sfx("error1")
+            return
+            
         jugador_actual = self.game_state.get_current_player()
         accion = Action(player_id=jugador_actual.id, type=ActionType.END_TURN, payload={})
         self.game_state.apply_action(accion)
+        
+        if getattr(self.manager, 'is_online_game', False):
+            self.manager.online_controller.send_action("END_TURN", {})
+            
         AudioManager().play_sfx("draw")
         self.carta_seleccionada_index = None
         self.unidad_seleccionada_coords = None
@@ -362,6 +474,9 @@ class PantallaJuego(Screen):
 
     def cancelar_accion(self, instance=None):
         """ Cancela habilidades pendientes o desselecciona unidades/cartas. """
+        if not self.is_my_turn():
+            return
+            
         if not self.game_state:
             return
 
@@ -370,7 +485,7 @@ class PantallaJuego(Screen):
         # Si hay una habilidad esperando objetivo, enviamos la acción de cancelar
         if getattr(self.game_state, 'pending_ability', None):
             accion = Action(player_id=jugador.id, type=ActionType.CANCEL_ABILITY, payload={})
-            self.game_state.apply_action(accion)
+            self.aplicar_accion_y_notificar(accion)
             print(">> [UI] Habilidad cancelada por el usuario.")
             AudioManager().play_sfx("error1")
             
@@ -445,6 +560,11 @@ class PantallaJuego(Screen):
 
     def activar_habilidad_unidad(self, instance=None):
         """ Activa la habilidad de la unidad actualmente seleccionada """
+        if not self.is_my_turn():
+            print(">> [!] Es el turno del oponente...")
+            AudioManager().play_sfx("error1")
+            return
+            
         if not self.unidad_seleccionada_coords:
             print(">> [!] Primero selecciona una unidad tuya en el tablero.")
             return
@@ -453,7 +573,7 @@ class PantallaJuego(Screen):
         origen = self.unidad_seleccionada_coords
         
         accion = Action(player_id=jugador.id, type=ActionType.ACTIVATE_ABILITY, payload={'from': origen})
-        if self.game_state.apply_action(accion):
+        if self.aplicar_accion_y_notificar(accion):
             print(f">> Habilidad activada desde {origen}. Selecciona objetivo si es necesario.")
             AudioManager().play_sfx("heal")
         else:

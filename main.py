@@ -60,6 +60,9 @@ class ChacalitosTCG(App):
         from src.interfaces.selection_screen import PantallaSeleccion
         sm.add_widget(PantallaSeleccion(name='selection_screen'))
         
+        from src.interfaces.online_lobby_screen import OnlineLobbyScreen
+        sm.add_widget(OnlineLobbyScreen(name='online_lobby_screen'))
+        
         from src.interfaces.vs_screen import PantallaVersus
         sm.add_widget(PantallaVersus(name='vs_screen'))
         

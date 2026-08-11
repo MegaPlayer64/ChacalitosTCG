@@ -10,7 +10,13 @@ from src.infrastructure.loaders.card_loader import CardLoader
 from src.domain.audio_manager import AudioManager
 
 class GameState:
-    def __init__(self, players: List[Player], deck1, deck2):
+    def __init__(self, players: List[Player], deck1, deck2, seed=None):
+        import random
+        if seed is not None:
+            random.seed(seed)
+        else:
+            random.seed(None)
+            
         self.players = players
         self.board = Board(width=6, height=5) # El tablero se inicia limpio (vacío)
         self.current_player_id = 0

@@ -61,8 +61,8 @@ Si no es Tecnológico, pierde 4 daño este turno",Cartas Truco
 59,Crisby (Airsoft),unit,Épica,4,19,9,1,2,"Mish-B, Nuevo, Tecnológico"," Si tiene adyacente un enemigo, lo inmoviliza por un turno. Esta habilidad no se puede activar si esta unidad ha sido movida este turno",Cartas Miscelanias
 60,Melsizis (DT),unit,Épica,5,24,14,1,1,"Fuerzas Especiales Valenzuela, Deportistas","Mientras este activo: Todas las cartas de grupo Fuerzas Especiales Valenzuela ganan +1 de ataque. Si hay al menos una carta de los Cabezal de Tren en el tablero, también ganan +1 de velocidad.",SIMCE
 61,Chino (Quemadas),unit,Excelencia,9,21,15,3,2,"Cabezal de Tren, Futboleros","La primera vez que esta unidad sea atacada en cada turno rival, se mueve automáticamente a una casilla adyacente vacía (tú eliges cuál) y anula el daño.",SIMCE
-62,Freddy,unit,Común,2,10,6,1,1,"Mish-A, Futboleros","Freddy gana +1 de Ataque por cada otra unidad ""Mish-A"" o ""Mish"" activa en el tablero",Cartas Iniciales Mish
-63,Cutiño,unit,Común,4,14,6,1,2,"Mish-A, Mish-B, Tecnológico, Deportistas",Invoca Gandan pagando 3 de energia,Cartas Iniciales Mish
+62,Diego S.,unit,Común,2,10,6,1,1,"Mish-A, Futboleros","Freddy gana +1 de Ataque por cada otra unidad ""Mish-A"" o ""Mish"" activa en el tablero",Cartas Iniciales Mish
+63,D. Cutiño,unit,Común,4,14,6,1,2,"Mish-A, Mish-B, Tecnológico, Deportistas",Invoca Gandan pagando 3 de energia,Cartas Iniciales Mish
 64,Zander,unit,Común,3,13,9,1,1,"Mish-A, Artista, Literatura ",Puede mover aliado 1 casilla una vez por turno,Cartas Iniciales Mish
 65,Gandan,unit,Ficha,3,9,5,0,2,"Mish-A, Mish-B, Tecnológico","Al morir, hace 3 de daño en area",Cartas Iniciales Mish
 66,Feña,unit,Especial,2,12,8,1,1,Mish-A,Feña no puede ser el objetivo de hechizos enemigos mientras haya otro aliado en el tablero.,Cartas Iniciales Mish
@@ -83,5 +83,6 @@ Es requerido para invocar esta carta que en el tablero haya una Naty y una Ami a
 77,Ensayo PAES,spell,Épica,2,N/A,N/A,N/A,N/A,"Literatura, Tecnológico, Nuevo","Una unidad aliada recupera 6 de Vida. Si la unidad objetivo es Literatura, Tecnológico o Nuevo, además robas 1 carta de tu mazo.",Cartas Truco
 78,Margaret,unit,Común,4,26,10,1,1,"Artista, Literatura, Deportistas",Solo puede moverse en turnos pares.,Cartas Iniciales
 79,Axel,unit,Especial,6,28,10,2,1,Mish-A,"Al recibir daño, adquiere +1 de daño",Cartas Iniciales Mish-A
-80,Biblioteca Escolar,building,Épica,5,N/A,N/A,N/A,N/A,Literatura,"Las unidades con la tag Literatura ganan +1 de Rango de ataque y +3 de Vida. Al inicio de tu turno, si controlas al menos una unidad de Literatura, puedes mirar la carta superior de tu mazo y decidir si dejarla arriba o ponerla al fondo.",Cartas Entorno
-81,Jose (Enmascarado),unit,Especial,3,13,16,1,1,"Cabezal de Tren, Futbolero","Cada vez que ataca, pierde la mitad de su daño (Hasta 1). Además, su primer ataque tiene 2 de rango",Cartas Miscelanias
+80,Biblioteca Escolar,building,Épica,5,N/A,N/A,N/A,N/A,Literatura,Las unidades con la tag Literatura ganan +1 de Rango de ataque.,Cartas Entorno
+81,Jose (Enmascarado),unit,Especial,3,13,16,1,2,"Cabezal de Tren, Futboleros","Cada vez que ataca, pierde la mitad de su daño (Hasta 1). Además, su primer ataque tiene 2 de rango",Cartas Miscelanias
+82,Bichots,unit,Común,4,16,13,2,1,"Cabezal de Tren, 3_NAI, Futboleros",,Cartas Iniciales 3_NAI

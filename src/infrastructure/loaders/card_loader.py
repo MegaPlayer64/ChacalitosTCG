@@ -98,15 +98,17 @@ class CardLoader:
     @staticmethod
     def load_deck(deck_recipe_path, csv_path="src/data/cards.csv", ruta_perfil="src/data/user_profile.json"):
         """
-        Detecta si la referencia es un mazo predefinido (.json) o un mazo personal 
-        almacenado dentro del perfil del usuario. Retorna una lista de OBJETOS instanciados.
+        Detecta si la referencia es un mazo predefinido (.json), un mazo personal 
+        almacenado dentro del perfil del usuario, o una lista directa de IDs.
+        Retorna una lista de OBJETOS instanciados.
         """
         import copy
         card_ids = []
 
-        # === 1. EXTRAER LAS IDs DE CARTAS DEL ORIGEN CORRECTO ===
+        if isinstance(deck_recipe_path, list):
+            card_ids = deck_recipe_path
         # Caso A: Es un mazo personal guardado en el perfil (No termina en .json)
-        if not str(deck_recipe_path).endswith('.json'):
+        elif not str(deck_recipe_path).endswith('.json'):
             if os.path.exists(ruta_perfil):
                 try:
                     with open(ruta_perfil, "r", encoding="utf-8") as f:
