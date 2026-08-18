@@ -170,7 +170,7 @@ class AbilityManager:
                     'target_unit': (tx, ty)
                 }
                 print(f">> [Zander] Ahora selecciona una casilla adyacente vacía para mover a {ally.name}.")
-                return False
+                return True
             else:
                 print(">> [Zander] Selecciona un aliado válido.")
                 return False
@@ -414,7 +414,7 @@ class AbilityManager:
         target_unit = game_state.board.get_unit_at(*target)
         if not target_unit: return False
         
-        target_unit.temporary_buffs.append({"type": "speed_set", "value": 0, "duration": 1})
+        target_unit.temporary_buffs.append({"type": "speed_set", "value": 0, "duration": 2})
         print(f">> ¡La velocidad de {target_unit.name} se redujo a 0 por un turno!")
         return True
 
@@ -715,37 +715,12 @@ class AbilityManager:
         fx, fy = target
         print(f">> [Daiaodama] {target_unit.name} se prepara para lanzar un gran ataque (Rango 3, Daño 7).")
         
-        ex, ey = None, None
-        player = game_state.players[target_unit.owner_id]
-        if getattr(player, 'is_ai', False):
-            # Buscar enemigo en rango 3
-            enemy_id = 1 - target_unit.owner_id
-            for dx in range(-3, 4):
-                for dy in range(-3, 4):
-                    nx, ny = fx + dx, fy + dy
-                    if max(abs(dx), abs(dy)) <= 3 and game_state.board.is_within_bounds(nx, ny):
-                        u = game_state.board.get_unit_at(nx, ny)
-                        if u and u.owner_id == enemy_id:
-                            ex, ey = nx, ny
-                            break
-                if ex is not None: break
-                
-            if ex is not None and game_state.board.is_within_bounds(ex, ey):
-                enemy_unit = game_state.board.get_unit_at(ex, ey)
-                dist = max(abs(fx - ex), abs(fy - ey))
-                if enemy_unit and enemy_unit.owner_id != target_unit.owner_id and dist <= 3:
-                    murio = enemy_unit.take_damage(7, game_state)
-                    if murio:
-                        game_state.board.remove_unit(ex, ey)
-                    return True
-            return False
-        else:
-            game_state.pending_ability = {
-                'ability': 'daiaodama',
-                'source_coords': (fx, fy)
-            }
-            print(">> [Daiaodama] Selecciona una unidad enemiga a 3 casillas o menos.")
-            return True
+        game_state.pending_ability = {
+            'ability': 'daiaodama',
+            'source_coords': (fx, fy)
+        }
+        print(">> [Daiaodama] Selecciona una unidad enemiga a 3 casillas o menos.")
+        return True
 
     @staticmethod
     def _cristobal_on_enter(unit, game_state):
@@ -800,22 +775,11 @@ class AbilityManager:
     @staticmethod
     def _josefa_a_on_enter(unit, game_state):
         print(">> [Habilidad Josefa A]: Buscando aliado para proteger...")
-        target = None
-
-        player = game_state.players[unit.owner_id]
-        if getattr(player, 'is_ai', False):
-            # La IA busca al aliado con más vida para hacerlo un "tanque"
-            aliados = [u for u in game_state.board.get_all_units() if u.owner_id == unit.owner_id and u is not unit]
-            if aliados:
-                target = max(aliados, key=lambda u: u.health)
-                target.has_shield = True
-                print(f">> ¡{target.name} recibió el Escudo de Josefa A!")
-        else:
-            game_state.pending_ability = {
-                'ability': 'josefa_a',
-                'owner_id': unit.owner_id
-            }
-            print(">> [Josefa A] Selecciona un aliado para darle Escudo.")
+        game_state.pending_ability = {
+            'ability': 'josefa_a',
+            'owner_id': unit.owner_id
+        }
+        print(">> [Josefa A] Selecciona un aliado para darle Escudo.")
 
     @staticmethod
     def _richi_on_enter(unit, game_state):
@@ -834,27 +798,13 @@ class AbilityManager:
                     break
             if pos: break
             
+        if not pos: return
         fx, fy = pos
-        tx, ty = None, None
-
-        player = game_state.players[unit.owner_id]
-        if getattr(player, 'is_ai', False):
-            # La IA de Kapsi busca una casilla vacía cerca para retroceder
-            for dx in [-1, 0, 1]:
-                for dy in [-1, 0, 1]:
-                    nx, ny = fx + dx, fy + dy
-                    if game_state.board.is_within_bounds(nx, ny) and not game_state.board.is_occupied(nx, ny):
-                        tx, ty = nx, ny
-                        break
-            if tx is not None and game_state.board.is_within_bounds(tx, ty) and not game_state.board.is_occupied(tx, ty):
-                game_state.board.move_unit(fx, fy, tx, ty)
-                print(f">> Kapsi se retiró a ({tx}, {ty})")
-        else:
-            game_state.pending_ability = {
-                'ability': 'kapsi_retreat',
-                'unit_coords': (fx, fy)
-            }
-            print(">> [Kapsi] Selecciona una casilla adyacente para retirarte.")
+        game_state.pending_ability = {
+            'ability': 'kapsi_retreat',
+            'unit_coords': (fx, fy)
+        }
+        print(">> [Kapsi] Selecciona una casilla adyacente para retirarte.")
 
     @staticmethod
     def _amira_presidenta_on_attack(unit, game_state):
@@ -1030,40 +980,18 @@ class AbilityManager:
 
     @staticmethod
     def _cutino_on_activate(unit, game_state):
-        if getattr(game_state.get_current_player(), 'is_ai', False):
-            player = game_state.players[unit.owner_id]
-            if player.current_energy < 3: return False
-            from src.infrastructure.loaders.card_loader import CardLoader
-            gandan_card = CardLoader.get_card_stats_by_id(65)
-            if not gandan_card: return False
-            
-            spawn_coords = None
-            for nx, ny in game_state.board.get_neighbors(unit.pos_x, unit.pos_y):
-                if not game_state.board.is_occupied(nx, ny):
-                    spawn_coords = (nx, ny)
-                    break
-            if spawn_coords:
-                player.current_energy -= 3
-                gandan_card.owner_id = unit.owner_id
-                game_state.board.set_unit_at(spawn_coords[0], spawn_coords[1], gandan_card)
-                unit.has_activated_this_turn = True
-                print(f">> [Cutiño] ¡Invocó a Gandan en {spawn_coords}!")
-                return True
-            return False
-        else:
-            game_state.pending_ability = {
-                'ability': 'cutino_summon',
-                'source_coords': (unit.pos_x, unit.pos_y)
-            }
-            print(">> [Cutiño] Selecciona una casilla adyacente vacía para invocar a Gandan.")
-            return True
+        player = game_state.players[unit.owner_id]
+        if player.current_energy < 3: return False
+        
+        game_state.pending_ability = {
+            'ability': 'cutino_summon',
+            'source_coords': (unit.pos_x, unit.pos_y)
+        }
+        print(">> [Cutiño] Selecciona una casilla adyacente vacía para invocar a Gandan.")
+        return True
 
     @staticmethod
     def _zander_on_activate(unit, game_state):
-        if getattr(game_state.get_current_player(), 'is_ai', False):
-            print(">> [Zander] AI no sabe usar esta habilidad aún.")
-            return False
-            
         game_state.pending_ability = {
             'ability': 'zander_move_1',
             'source_coords': (unit.pos_x, unit.pos_y)
@@ -1073,36 +1001,13 @@ class AbilityManager:
 
     @staticmethod
     def _dante_yukata_on_activate(unit, game_state):
-        if getattr(game_state.get_current_player(), 'is_ai', False):
-            enemy_unit = None
-            ex, ey = -1, -1
-            for y in range(game_state.board.height):
-                for x in range(game_state.board.width):
-                    u = game_state.board.get_unit_at(x, y)
-                    if u and u.owner_id != unit.owner_id:
-                        dist = max(abs(unit.pos_x - x), abs(unit.pos_y - y))
-                        eff_range = game_state.get_effective_stats(unit)["range_atk"]
-                        if dist <= (eff_range + 1):
-                            enemy_unit = u
-                            ex, ey = x, y
-                            break
-                if enemy_unit: break
-            if enemy_unit:
-                murio = enemy_unit.take_damage(6, game_state)
-                if murio:
-                    print(f">> ¡{enemy_unit.name} ha sido destruido por el Miku Peluche!")
-                    game_state.board.remove_unit(ex, ey)
-                unit.has_activated_this_turn = True
-                return True
-            return False
-        else:
-            game_state.pending_ability = {
-                'ability': 'dante_yukata_attack',
-                'source_coords': (unit.pos_x, unit.pos_y)
-            }
-            eff_range = game_state.get_effective_stats(unit)["range_atk"]
-            print(f">> [Dante Yukata] Selecciona a un enemigo a rango {eff_range + 1} para atacar con Miku Peluche.")
-            return True
+        game_state.pending_ability = {
+            'ability': 'dante_yukata_attack',
+            'source_coords': (unit.pos_x, unit.pos_y)
+        }
+        eff_range = game_state.get_effective_stats(unit)["range_atk"]
+        print(f">> [Dante Yukata] Selecciona a un enemigo a rango {eff_range + 1} para atacar con Miku Peluche.")
+        return True
 
     @staticmethod
     def _dragon_menor_on_turn_start(unit, game_state):

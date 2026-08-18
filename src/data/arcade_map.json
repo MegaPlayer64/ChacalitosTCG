@@ -1,0 +1,140 @@
+[
+  {
+    "stage": 1,
+    "title": "¡Primer Recreo!",
+    "options": [
+      {
+        "id": "p1_3nai_basic",
+        "title": "Nuevo TikTok",
+        "ai_type": "IA Fácil",
+        "ai_deck": "src/data/premade_decks/arcade/3nai_basic_deck.json",
+        "reward": 35,
+        "desc": "Las chicas de 3_NAI se reúnen para un nuevo Tik-Tok. Hora de bailar."
+      },
+      {
+        "id": "p1_fev_novatos",
+        "title": "¿Su Brawl?",
+        "ai_type": "IA Fácil",
+        "ai_deck": "src/data/premade_decks/arcade/fev_novatos_deck.json",
+        "reward": 35,
+        "desc": "¡Balón Brawl 5v5! Equipo reunido y listo para pelear el balón."
+      },
+      {
+        "id": "p1_dermapatch_basic",
+        "title": "Planeación de Proyecto",
+        "ai_type": "IA Fácil",
+        "ai_deck": "src/data/premade_decks/arcade/dermapatch_basic_deck.json",
+        "reward": 40,
+        "desc": "Una tarde en la Sala STEAM. ¿Qué novedades nos traerá Derma-patch?"
+      },
+      {
+        "id": "p1_tralaleros_amateur",
+        "title": "Reunión Variada",
+        "ai_type": "IA Normal",
+        "ai_deck": "src/data/premade_decks/arcade/tralaleros_amateur_deck.json",
+        "reward": 50,
+        "desc": "Un mazo ensalada impredecible."
+      },
+      {
+        "id": "p1_futboleros_rush",
+        "title": "Partido de Fútbol",
+        "ai_type": "IA Normal",
+        "ai_deck": "src/data/premade_decks/arcade/futboleros_rush_deck.json",
+        "reward": 55,
+        "desc": "¡Nos dieron tiempo libre! Los Cabezal de Tren ya armaron el partido"
+      }
+    ]
+  },
+  {
+    "stage": 2,
+    "title": "¡Segundo Recreo!",
+    "options": [
+      {
+        "id": "p2_misha_enjambre",
+        "title": "Almuerzo y UNO",
+        "ai_type": "IA Normal",
+        "ai_deck": "src/data/premade_decks/arcade/misha_enjambre_deck.json",
+        "reward": 65,
+        "desc": "Combos intensos, gritos y muchas risas en la mesa del Feña."
+      },
+      {
+        "id": "p2_nuevos_tacticos",
+        "title": "Reunión de Trabajo",
+        "ai_type": "IA Normal",
+        "ai_deck": "src/data/premade_decks/arcade/nuevos_tacticos_deck.json",
+        "reward": 70,
+        "desc": "Puede que no tengan mucho en común, pero este equipo está preparado para todo."
+      },
+      {
+        "id": "p2_3nai_coreografia",
+        "title": "Organización de Baile",
+        "ai_type": "IA Difícil",
+        "ai_deck": "src/data/premade_decks/arcade/3nai_coreografia_deck.json",
+        "reward": 90,
+        "desc": "Naty y Ami están organizando el show. No las decepciones."
+      },
+      {
+        "id": "p2_mishb_control",
+        "title": "Centro de Sala",
+        "ai_type": "IA Difícil",
+        "ai_deck": "src/data/premade_decks/arcade/mishb_control_deck.json",
+        "reward": 95,
+        "desc": "Los tres en cosas totalmente distintas, pero complementándose con puras locuras."
+      },
+      {
+        "id": "p2_dermapatch_avanzado",
+        "title": "Construcción de Mascota",
+        "ai_type": "IA Difícil",
+        "ai_deck": "src/data/premade_decks/arcade/dermapatch_avanzado_deck.json",
+        "reward": 100,
+        "desc": "Derma-patch tuvo una idea para el proyecto... ¡Y es de color rojo brillante!"
+      }
+    ]
+  },
+  {
+    "stage": 3,
+    "title": "¡Recreo de Almuerzo!",
+    "options": [
+      {
+        "id": "p3_ct_barrabrava",
+        "title": "Los más xoros",
+        "ai_type": "IA Difícil",
+        "ai_deck": "src/data/premade_decks/arcade/ct_barrabrava_boss.json",
+        "reward": 180,
+        "desc": "El jefe entró a la sala. ¿Qué pasa? Atacan con todo."
+      },
+      {
+        "id": "p3_fev_muralla",
+        "title": "Noche de Juegos",
+        "ai_type": "IA Difícil",
+        "ai_deck": "src/data/premade_decks/arcade/fev_muralla_boss.json",
+        "reward": 180,
+        "desc": "Prepárense, porque aquí vienen los FEV con el aura completamente maxeada."
+      },
+      {
+        "id": "p3_tralaleros_fundacion",
+        "title": "Hora de Juegos de Mesa",
+        "ai_type": "IA Difícil",
+        "ai_deck": "src/data/premade_decks/arcade/tralaleros_fundacion_boss.json",
+        "reward": 200,
+        "desc": "Te invitaron a jugar al Lobo. ¿Qué sorpresas saldrán de ahí?"
+      },
+      {
+        "id": "p3_mish_overdrive",
+        "title": "Reunión máxima",
+        "ai_type": "IA Difícil",
+        "ai_deck": "src/data/premade_decks/arcade/mish_overdrive_boss.json",
+        "reward": 220,
+        "desc": "Los Mish se reunen. Ahora no hay nadie que los puedan parar"
+      },
+      {
+        "id": "p3_alianza_allstars",
+        "title": "Ensalada Explosiva",
+        "ai_type": "IA Pesadilla",
+        "ai_deck": "src/data/premade_decks/arcade/alianza_allstars_boss.json",
+        "reward": 300,
+        "desc": "Como esa ensalada de 8vo de los FEV... pero esta vez sí que explotará la mesa."
+      }
+    ]
+  }
+]

@@ -8,7 +8,7 @@ from kivy.clock import Clock
 from src.domain.audio_manager import AudioManager
 from src.domain.game_state import GameState
 from src.domain.action import Action, ActionType
-
+from src.domain.player import Player
 
 class PantallaJuego(Screen):
     def __init__(self, **kwargs):
@@ -42,7 +42,7 @@ class PantallaJuego(Screen):
         barra_info.add_widget(self.lbl_j1)
         barra_info.add_widget(btn_rendirse)
         barra_info.add_widget(btn_habilidad)
-        barra_info.add_widget(self.lbl_turno) # Centro
+        barra_info.add_widget(self.lbl_turno)
         barra_info.add_widget(self.btn_atacar_base)
         barra_info.add_widget(self.btn_pasar_turno)
         barra_info.add_widget(btn_cancelar)
@@ -50,7 +50,7 @@ class PantallaJuego(Screen):
         
         layout_tablero_global.add_widget(barra_info)
         
-        # --- 1.5. BARRA DE ENTORNO/EDIFICIO (Active Environment) ---
+        # --- 1.5. BARRA DE ENTORNO/EDIFICIO ---
         self.lbl_entorno = Label(
             text="[color=888888][b]Entorno Activo:[/b] Ninguno[/color]", 
             markup=True, 
@@ -97,7 +97,6 @@ class PantallaJuego(Screen):
     def aplicar_accion_y_notificar(self, accion):
         exito = self.game_state.apply_action(accion)
         if exito and getattr(self.manager, 'is_online_game', False):
-            # Clonar payload para evitar problemas de referencia
             payload = accion.payload.copy()
             self.manager.online_controller.send_action(accion.type.name, payload)
         return exito
@@ -155,7 +154,6 @@ class PantallaJuego(Screen):
         jugador = self.game_state.get_current_player()
         unidad_en_celda = self.game_state.board.get_unit_at(x, y)
         
-        # MODO A: RESOLVIENDO HABILIDAD PENDIENTE (Targeting)
         if getattr(self.game_state, 'pending_ability', None):
             accion = Action(player_id=jugador.id, type=ActionType.RESOLVE_ABILITY, payload={'target': (x, y)})
             if self.aplicar_accion_y_notificar(accion):
@@ -165,7 +163,6 @@ class PantallaJuego(Screen):
             self.actualizar_interfaz_completa()
             return
         
-        # MODO B: CARTA DE LA MANO SELECCIONADA (Invocación o Spell)
         if self.carta_seleccionada_index is not None:
             carta = jugador.hand[self.carta_seleccionada_index]
             is_spell = getattr(carta, 'card_type', 'unit').lower() == 'spell'
@@ -185,17 +182,14 @@ class PantallaJuego(Screen):
                 AudioManager().play_sfx("error2")
             return
 
-        # MODO C: UNIDAD DEL TABLERO SELECCIONADA (Mover, Atacar o Deseleccionar)
         if self.unidad_seleccionada_coords:
             origen = self.unidad_seleccionada_coords
             
-            # Clic sobre sí misma -> DESELECCIONAR (cancela la selección limpiamente)
             if origen == (x, y):
                 self.unidad_seleccionada_coords = None
                 self.actualizar_interfaz_completa()
                 return
 
-            # Clic sobre unidad enemiga -> ATAQUE NORMAL
             elif unidad_en_celda and unidad_en_celda.owner_id != jugador.id:
                 accion = Action(player_id=jugador.id, type=ActionType.ATTACK, payload={'from': origen, 'target': (x, y)})
                 if self.aplicar_accion_y_notificar(accion):
@@ -203,7 +197,6 @@ class PantallaJuego(Screen):
                 else:
                     AudioManager().play_sfx("error1")
             
-            # Clic sobre casilla vacía -> MOVIMIENTO
             else:
                 accion = Action(player_id=jugador.id, type=ActionType.MOVE, payload={'from': origen, 'to': (x, y)})
                 if self.aplicar_accion_y_notificar(accion):
@@ -215,7 +208,6 @@ class PantallaJuego(Screen):
             self.actualizar_interfaz_completa()
             return
 
-        # MODO D: SELECCIÓN INICIAL DE UNIDAD
         if unidad_en_celda and unidad_en_celda.owner_id == jugador.id:
             self.unidad_seleccionada_coords = (x, y)
             self.actualizar_interfaz_completa()
@@ -285,7 +277,7 @@ class PantallaJuego(Screen):
         if ya_seleccionada:
             self.carta_seleccionada_index = None
         else:
-            instance.background_color = (0.8, 0.6, 0.1, 1) # Dorado seleccionado
+            instance.background_color = (0.8, 0.6, 0.1, 1)
             self.carta_seleccionada_index = instance.indice_mano
 
     def actualizar_interfaz_completa(self):
@@ -296,7 +288,6 @@ class PantallaJuego(Screen):
         p1 = self.game_state.players[0]
         p2 = self.game_state.players[1]
         
-        # Estado de la IA / Turno
         turno_actual = getattr(self.game_state, 'turn', 0)
         self.lbl_turno.text = f"[color=aaffaa][b]TURNO {turno_actual}[/b][/color]\nActivo: {jugador_actual.name}"
         
@@ -306,7 +297,6 @@ class PantallaJuego(Screen):
         self.lbl_j1.text = f"J1: {p1.health} HP\nEnergía: {getattr(p1, 'current_energy', 0)}/{getattr(p1, 'max_energy', 0)}" + (lbl_estado if self.game_state.current_player_id == 0 else "")
         self.lbl_j2.text = f"J2: {p2.health} HP\nEnergía: {getattr(p2, 'current_energy', 0)}/{getattr(p2, 'max_energy', 0)}" + (lbl_estado if self.game_state.current_player_id == 1 else "")
         
-        # Actualizar Entorno Activo
         env = getattr(self.game_state, 'active_environment', None)
         if env and getattr(env, 'card', None):
             creador_nombre = self.game_state.players[env.owner_id].name
@@ -315,47 +305,38 @@ class PantallaJuego(Screen):
         else:
             self.lbl_entorno.text = "[color=888888][b]Entorno Activo:[/b] Ninguno[/color]"
         
-        # --- Limpiar Tablero Visual ---
         for (cx, cy), btn in self.celdas_graficas.items():
             btn.text = "."
             btn.background_color = (0.15, 0.15, 0.15, 1) 
             
-        # --- Redibujar Tropas ---
         for (cx, cy), unit in self.game_state.board.grid.items():
             boton = self.celdas_graficas[(cx, cy)]
             boton.text = f"{unit.name}\n{unit.attack} Dmg | {unit.health} Hp \n {unit.speed} Vel | {unit.range_atk} Rng"
             boton.background_color = (0.2, 0.5, 0.8, 1) if unit.owner_id == 0 else (0.8, 0.3, 0.3, 1)
 
-        # --- RESALTADO DE RANGOS DE MOVIMIENTO Y ATAQUE ---
         if self.unidad_seleccionada_coords:
             ux, uy = self.unidad_seleccionada_coords
             unidad_sel = self.game_state.board.get_unit_at(ux, uy)
             
             if unidad_sel:
-                # 1. Resaltar la unidad seleccionada en Verde brillante
                 self.celdas_graficas[(ux, uy)].background_color = (0.2, 0.8, 0.2, 1)
                 
-                # 2. Calcular alcance para todas las celdas
                 for (cx, cy), btn in self.celdas_graficas.items():
                     if (cx, cy) == (ux, uy):
                         continue
                     
-                    distancia = abs(cx - ux) + abs(cy - uy) # Distancia Manhattan (casillas)
+                    distancia = abs(cx - ux) + abs(cy - uy)
                     target_unit = self.game_state.board.get_unit_at(cx, cy)
                     
-                    # Clic/Alcance de ATAQUE (Enemigo al alcance -> ROJO)
                     if distancia <= unidad_sel.range_atk and target_unit and target_unit.owner_id != jugador_actual.id:
-                        btn.background_color = (0.9, 0.2, 0.2, 1) # Rojo Intenso
+                        btn.background_color = (0.9, 0.2, 0.2, 1)
                     
-                    # Clic/Alcance de MOVIMIENTO (Casilla vacía al alcance de velocidad -> AZUL)
                     elif distancia <= unidad_sel.speed and not target_unit:
-                        btn.background_color = (0.2, 0.5, 0.9, 1) # Azul Movimiento
+                        btn.background_color = (0.2, 0.5, 0.9, 1)
                     
-                    # Zona de ataque a casilla vacía (Púrpura tenue)
                     elif distancia <= unidad_sel.range_atk and not target_unit:
                         btn.background_color = (0.5, 0.2, 0.5, 0.6)
 
-        # Redibujar Mano (Con Fog of War si es online)
         is_online = getattr(self.manager, 'is_online_game', False)
         my_role = getattr(self.manager, 'online_role', None)
         
@@ -371,11 +352,9 @@ class PantallaJuego(Screen):
             ]
         self.dibujar_mano(mano_formateada)
         
-        # Deshabilitar botón "Pasar Turno" si no es mi turno
         if is_online:
             self.btn_pasar_turno.disabled = not self.is_my_turn()
         
-        # Evaluar Condición de Victoria
         if p1.health <= 0 or p2.health <= 0:
             ganador = p1 if p2.health <= 0 else p2
             perdedor = p2 if ganador == p1 else p1
@@ -432,8 +411,20 @@ class PantallaJuego(Screen):
             elif p1.is_ai:
                 self.ai_controller = AIController(player_id=0, difficulty=_dificultad(settings['p1']['tipo']), delay=0)
 
-        # OJO AQUÍ: Asegúrate que GameState inicializa turn=1 si quieres que empiece en 1.
         self.game_state = GameState([p1, p2], deck1, deck2, seed=getattr(self.manager, 'online_seed', None))
+
+        # --- APLICAR MODIFICADORES DEL MODO ARCADE SI APLICA ---
+        if not is_online and settings.get('mode') == 'arcade':
+            stage_data = settings.get('stage_data', {})
+            modifier = stage_data.get('modifier', 'none')
+            
+            if modifier == 'p2_extra_hp':
+                p2.health += 10
+                print(">> [ARCADE MOD] Jefe inicia con +10 de vida.")
+            elif modifier == 'p2_extra_energy':
+                p2.max_energy += 1
+                p2.current_energy += 1
+                print(">> [ARCADE MOD] Rival inicia con +1 de Energía de ventaja.")
 
         if is_online:
             self.online_controller = self.manager.online_controller
@@ -451,7 +442,6 @@ class PantallaJuego(Screen):
         
         if not is_online:
             self._ejecutar_turno_ia_si_toca()
-            self.pasar_turno(instance=None)
 
     def pasar_turno(self, instance):
         if not self.is_my_turn():
@@ -473,7 +463,6 @@ class PantallaJuego(Screen):
         self._ejecutar_turno_ia_si_toca()
 
     def cancelar_accion(self, instance=None):
-        """ Cancela habilidades pendientes o desselecciona unidades/cartas. """
         if not self.is_my_turn():
             return
             
@@ -482,14 +471,12 @@ class PantallaJuego(Screen):
 
         jugador = self.game_state.get_current_player()
         
-        # Si hay una habilidad esperando objetivo, enviamos la acción de cancelar
         if getattr(self.game_state, 'pending_ability', None):
             accion = Action(player_id=jugador.id, type=ActionType.CANCEL_ABILITY, payload={})
             self.aplicar_accion_y_notificar(accion)
             print(">> [UI] Habilidad cancelada por el usuario.")
             AudioManager().play_sfx("error1")
             
-        # Limpiamos las selecciones locales de la interfaz
         self.unidad_seleccionada_coords = None
         self.carta_seleccionada_index = None
         self.actualizar_interfaz_completa()
@@ -544,8 +531,6 @@ class PantallaJuego(Screen):
             self._ia_corriendo = False
 
     def finalizar_partida_ui(self, ganador_obj, perdedor_obj):
-        # Programamos el cambio para dentro de 0.1 segundos
-        # Esto evita que Kivy crashee por cambiar de pantalla durante un cálculo
         def _cambiar(dt):
             pantalla_resultados = self.manager.get_screen('result_screen')
             pantalla_resultados.configurar(
@@ -559,7 +544,6 @@ class PantallaJuego(Screen):
         Clock.schedule_once(_cambiar, 0.1)
 
     def activar_habilidad_unidad(self, instance=None):
-        """ Activa la habilidad de la unidad actualmente seleccionada """
         if not self.is_my_turn():
             print(">> [!] Es el turno del oponente...")
             AudioManager().play_sfx("error1")

@@ -60,6 +60,11 @@ class AIController:
         time.sleep(self.delay)
 
         try:
+            # INTERCEPTAR HABILIDADES PENDIENTES
+            if getattr(game_state, 'pending_ability', None):
+                action = self._resolve_pending_ability_ai(game_state)
+                return self._log_and_return_action(action, game_state)
+
             legal_actions = self._get_all_legal_actions(game_state)
             
             if not legal_actions:
@@ -85,6 +90,145 @@ class AIController:
             
         return self._log_and_return_action(Action(ActionType.END_TURN, self.player_id, {}), game_state)
 
+    def _resolve_pending_ability_ai(self, game_state) -> Action:
+        pending = game_state.pending_ability
+        ability_name = pending['ability']
+        
+        # 1. encore: mover la unidad adyacente vacía
+        if ability_name == 'encore':
+            fx, fy = pending['unit_coords']
+            # buscar casilla vacía adyacente
+            for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+                tx, ty = fx + dx, fy + dy
+                if game_state.board.is_within_bounds(tx, ty) and not game_state.board.is_occupied(tx, ty):
+                    return Action(ActionType.RESOLVE_ABILITY, self.player_id, {'target': (tx, ty)})
+            return Action(ActionType.CANCEL_ABILITY, self.player_id, {})
+            
+        # 2. daiaodama: hacer 7 de daño a un enemigo a rango 3
+        elif ability_name == 'daiaodama':
+            fx, fy = pending['source_coords']
+            enemy_id = 1 - self.player_id
+            best_target = None
+            max_value = -1
+            for y in range(game_state.board.height):
+                for x in range(game_state.board.width):
+                    u = game_state.board.get_unit_at(x, y)
+                    if u and u.owner_id == enemy_id:
+                        dist = max(abs(fx - x), abs(fy - y))
+                        if dist <= 3:
+                            val = u.attack + u.health
+                            if val > max_value:
+                                max_value = val
+                                best_target = (x, y)
+            if best_target:
+                return Action(ActionType.RESOLVE_ABILITY, self.player_id, {'target': best_target})
+            return Action(ActionType.CANCEL_ABILITY, self.player_id, {})
+            
+        # 3. josefa_a: escudo a un aliado
+        elif ability_name == 'josefa_a':
+            best_target = None
+            max_hp = -1
+            for y in range(game_state.board.height):
+                for x in range(game_state.board.width):
+                    u = game_state.board.get_unit_at(x, y)
+                    if u and u.owner_id == self.player_id:
+                        if u.health > max_hp:
+                            max_hp = u.health
+                            best_target = (x, y)
+            if best_target:
+                return Action(ActionType.RESOLVE_ABILITY, self.player_id, {'target': best_target})
+            return Action(ActionType.CANCEL_ABILITY, self.player_id, {})
+            
+        # 4. kapsi_retreat: Kapsi retrocede a una casilla vacía
+        elif ability_name == 'kapsi_retreat':
+            fx, fy = pending['unit_coords']
+            for dx in [-1, 0, 1]:
+                for dy in [-1, 0, 1]:
+                    if dx == 0 and dy == 0: continue
+                    tx, ty = fx + dx, fy + dy
+                    if game_state.board.is_within_bounds(tx, ty) and not game_state.board.is_occupied(tx, ty):
+                        return Action(ActionType.RESOLVE_ABILITY, self.player_id, {'target': (tx, ty)})
+            return Action(ActionType.CANCEL_ABILITY, self.player_id, {})
+            
+        # 5. cutino_summon: invocar a Gandan en una casilla adyacente vacía
+        elif ability_name == 'cutino_summon':
+            sx, sy = pending['source_coords']
+            for dx, dy in [(-1,0), (1,0), (0,-1), (0,1), (-1,-1), (-1,1), (1,-1), (1,1)]:
+                tx, ty = sx + dx, sy + dy
+                if game_state.board.is_within_bounds(tx, ty) and not game_state.board.is_occupied(tx, ty):
+                    return Action(ActionType.RESOLVE_ABILITY, self.player_id, {'target': (tx, ty)})
+            return Action(ActionType.CANCEL_ABILITY, self.player_id, {})
+            
+        # 6. zander_move_1: seleccionar un aliado
+        elif ability_name == 'zander_move_1':
+            sx, sy = pending['source_coords']
+            best_target = None
+            max_atk = -1
+            for y in range(game_state.board.height):
+                for x in range(game_state.board.width):
+                    u = game_state.board.get_unit_at(x, y)
+                    if u and u.owner_id == self.player_id and (x, y) != (sx, sy):
+                        has_empty_adj = False
+                        for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+                            nx, ny = x + dx, y + dy
+                            if game_state.board.is_within_bounds(nx, ny) and not game_state.board.is_occupied(nx, ny):
+                                has_empty_adj = True
+                                break
+                        if has_empty_adj and u.attack > max_atk:
+                            max_atk = u.attack
+                            best_target = (x, y)
+            if best_target:
+                return Action(ActionType.RESOLVE_ABILITY, self.player_id, {'target': best_target})
+            return Action(ActionType.CANCEL_ABILITY, self.player_id, {})
+            
+        # 7. zander_move_2: mover el aliado seleccionado a una casilla adyacente vacía
+        elif ability_name == 'zander_move_2':
+            tux, tuy = pending['target_unit']
+            for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+                tx, ty = tux + dx, tuy + dy
+                if game_state.board.is_within_bounds(tx, ty) and not game_state.board.is_occupied(tx, ty):
+                    return Action(ActionType.RESOLVE_ABILITY, self.player_id, {'target': (tx, ty)})
+            return Action(ActionType.CANCEL_ABILITY, self.player_id, {})
+            
+        # 8. dante_yukata_attack: atacar a un enemigo en rango + 1
+        elif ability_name == 'dante_yukata_attack':
+            sx, sy = pending['source_coords']
+            unit = game_state.board.get_unit_at(sx, sy)
+            if not unit:
+                return Action(ActionType.CANCEL_ABILITY, self.player_id, {})
+            eff_range = game_state.get_effective_stats(unit)["range_atk"]
+            
+            enemy_id = 1 - self.player_id
+            best_target = None
+            max_atk = -1
+            for y in range(game_state.board.height):
+                for x in range(game_state.board.width):
+                    u = game_state.board.get_unit_at(x, y)
+                    if u and u.owner_id == enemy_id:
+                        dist = max(abs(sx - x), abs(sy - y))
+                        if dist <= (eff_range + 1):
+                            if u.attack > max_atk:
+                                max_atk = u.attack
+                                best_target = (x, y)
+            if best_target:
+                return Action(ActionType.RESOLVE_ABILITY, self.player_id, {'target': best_target})
+            return Action(ActionType.CANCEL_ABILITY, self.player_id, {})
+            
+        # 9. chino_quemadas: esquivar daño moviéndose a una casilla adyacente vacía
+        elif ability_name == 'chino_quemadas':
+            fx, fy = pending['unit_coords']
+            speed = pending['speed']
+            for dx in range(-speed, speed + 1):
+                for dy in range(-speed, speed + 1):
+                    dist = abs(dx) + abs(dy)
+                    if 0 < dist <= speed:
+                        tx, ty = fx + dx, fy + dy
+                        if game_state.board.is_within_bounds(tx, ty) and not game_state.board.is_occupied(tx, ty):
+                            return Action(ActionType.RESOLVE_ABILITY, self.player_id, {'target': (tx, ty)})
+            return Action(ActionType.CANCEL_ABILITY, self.player_id, {})
+            
+        return Action(ActionType.CANCEL_ABILITY, self.player_id, {})
+
     # --- CLASIFICADOR DE HECHIZOS POR ID Y PROPIEDADES ---
     def _get_spell_type(self, card) -> str:
         if hasattr(card, 'effect_type') and card.effect_type:
@@ -93,8 +237,8 @@ class AIController:
         card_id = str(getattr(card, 'id', ''))
         
         heals = {'33', '39', '41', '43', '50', '71', '77'}
-        buffs = {'34', '36', '47', '48', '72', '76'}
-        damages = {'42', '46', '51'}
+        buffs = {'34', '36', '47', '48', '72', '76', '51'}
+        damages = {'42', '46'}
         debuffs = {'35', '37'}
         draws = {'40', '44', '45'}
         
@@ -201,6 +345,17 @@ class AIController:
                                         action_mv = Action(ActionType.MOVE, self.player_id, {'from': (x, y), 'to': (tx, ty)})
                                         if game_state.validate_action(action_mv):
                                             actions.append(action_mv)
+
+                    # Habilidades Activas: solo para unidades que TIENEN habilidad en trigger_on_activate
+                    UNITS_WITH_ACTIVE_ABILITY = {12, 25, 59, 63, 64, 68}
+                    if not getattr(unit, 'has_activated_this_turn', False) and not getattr(unit, 'ability_used_this_turn', False):
+                        if int(unit.id) in UNITS_WITH_ACTIVE_ABILITY:
+                            if int(unit.id) == 63 and player.current_energy < 3:
+                                pass
+                            else:
+                                action_act = Action(ActionType.ACTIVATE_ABILITY, self.player_id, {'from': (x, y)})
+                                if game_state.validate_action(action_act):
+                                    actions.append(action_act)
 
         actions.append(Action(ActionType.END_TURN, self.player_id, {}))
         return actions
@@ -331,6 +486,11 @@ class AIController:
             if self._evaluate_spell_action(game_state, best_spell) > 0:
                 return best_spell
 
+        # 2.5 Habilidades Activas
+        activations = [a for a in legal_actions if a.type == ActionType.ACTIVATE_ABILITY]
+        if activations:
+            return activations[0]
+
         env_actions = [a for a in legal_actions if a.type == ActionType.PLAY_CARD and game_state.players[self.player_id].hand[a.payload['card_index']].card_type.lower() in ('environment', 'building')]
         if env_actions:
             best_env = max(env_actions, key=lambda a: self._evaluate_environment_action(game_state, a))
@@ -449,6 +609,9 @@ class AIController:
                             
                     elif card_type in ('environment', 'building'):
                         score = self._evaluate_environment_action(game_state, action)
+
+            elif action.type == ActionType.ACTIVATE_ABILITY:
+                score = 35.0
 
             elif action.type == ActionType.MOVE:
                 fx, fy = action.payload['from']

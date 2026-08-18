@@ -86,6 +86,9 @@ class ChacalitosTCG(App):
         from src.interfaces.options_screen import PantallaOpciones
         sm.add_widget(PantallaOpciones(name='options_screen'))
         
+        from src.interfaces.arcade_screen import PantallaArcade
+        sm.add_widget(PantallaArcade(name='arcade_screen'))
+        
         print(f"Pantallas registradas: {sm.screen_names}")
         
         # Guardar una referencia de la app en el manager para facilitar accesos directos

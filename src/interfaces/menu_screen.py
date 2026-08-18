@@ -34,6 +34,7 @@ class MenuPrincipal(Screen):
         
         btn_jugar = Button(text="PARTIDA LOCAL", font_size='18sp', size_hint_y=None, height=50)
         btn_online = Button(text="MULTIJUGADOR ONLINE", font_size='18sp', size_hint_y=None, height=50)
+        btn_arcade = Button(text="TORRE", font_size='18sp', size_hint_y=None, height=50)
         btn_mazos = Button(text="COLECCIÓN Y MAZOS", font_size='18sp', size_hint_y=None, height=50)
         btn_gacha = Button(text="TIENDA / BANNERS", font_size='18sp', size_hint_y=None, height=50)
         btn_opciones = Button(text="OPCIONES", font_size='18sp', size_hint_y=None, height=50)
@@ -45,10 +46,12 @@ class MenuPrincipal(Screen):
         btn_mazos.bind(on_release=lambda x: self.cambiar_pantalla('inventory_screen'))
         btn_gacha.bind(on_release=lambda x: self.cambiar_pantalla('banner_screen'))
         btn_opciones.bind(on_release=lambda x: self.cambiar_pantalla('options_screen'))
+        btn_arcade.bind(on_release=lambda x: self.cambiar_pantalla('arcade_screen'))
         btn_salir.bind(on_release=lambda x: self.manager.app.stop() if hasattr(self.manager, 'app') else exit())
         
         layout_botones2.add_widget(btn_jugar)
         layout_botones2.add_widget(btn_online)
+        layout_botones2.add_widget(btn_arcade)
         layout_botones.add_widget(layout_botones2)
         layout_botones.add_widget(btn_mazos)
         layout_botones.add_widget(btn_gacha)
