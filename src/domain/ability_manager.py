@@ -116,6 +116,14 @@ class AbilityManager:
             dist = max(abs(fx - tx), abs(fy - ty))
             if enemy_unit and enemy_unit.owner_id != unit.owner_id and dist <= 3:
                 murio = enemy_unit.take_damage(7, game_state)
+                if unit.owner_id == 0:
+                    try:
+                        from src.domain.mission_manager import MissionManager
+                        MissionManager.track_damage(0, 7, getattr(unit, 'groups', ''))
+                        if murio:
+                            MissionManager.track_kill(0, getattr(unit, 'groups', ''), getattr(enemy_unit, 'groups', ''))
+                    except Exception:
+                        pass
                 if murio:
                     print(f">> ¡{enemy_unit.name} ha sido destruido por Daiaodama!")
                     game_state.board.remove_unit(tx, ty)
@@ -205,6 +213,14 @@ class AbilityManager:
             eff_range = game_state.get_effective_stats(unit)["range_atk"]
             if enemy_unit and enemy_unit.owner_id != unit.owner_id and dist <= (eff_range + 1):
                 murio = enemy_unit.take_damage(6, game_state)
+                if unit.owner_id == 0:
+                    try:
+                        from src.domain.mission_manager import MissionManager
+                        MissionManager.track_damage(0, 6, getattr(unit, 'groups', ''))
+                        if murio:
+                            MissionManager.track_kill(0, getattr(unit, 'groups', ''), getattr(enemy_unit, 'groups', ''))
+                    except Exception:
+                        pass
                 if murio:
                     print(f">> ¡{enemy_unit.name} ha sido destruido por el Miku Peluche!")
                     game_state.board.remove_unit(tx, ty)
@@ -381,6 +397,12 @@ class AbilityManager:
         else:
             target_unit.health = min(target_unit.max_health, target_unit.health + heal_amount)
             print(f">> ¡{target_unit.name} ha sido curado por {heal_amount} PV! (Vida actual: {target_unit.health})")
+            if target_unit.owner_id == 0:
+                try:
+                    from src.domain.mission_manager import MissionManager
+                    MissionManager.track_heal(0, heal_amount, getattr(target_unit, 'groups', ''))
+                except Exception:
+                    pass
         return True
 
     @staticmethod
@@ -443,6 +465,12 @@ class AbilityManager:
         else:
             target_unit.health = min(target_unit.max_health, target_unit.health + heal_amount)
             print(f">> ¡{target_unit.name} ha sido curado por {heal_amount} PV! (Vida actual: {target_unit.health})")
+            if target_unit.owner_id == 0:
+                try:
+                    from src.domain.mission_manager import MissionManager
+                    MissionManager.track_heal(0, heal_amount, getattr(target_unit, 'groups', ''))
+                except Exception:
+                    pass
         
         tags = str(getattr(target_unit, 'groups', ''))
         if 'Danza' in tags or 'Música' in tags:
@@ -540,6 +568,12 @@ class AbilityManager:
         if getattr(player, 'cant_heal_turns', 0) == 0:
             target_unit.health = min(target_unit.max_health, target_unit.health + 12)
             print(f">> ¡{target_unit.name} ha sido curado por 12 PV! (Vida actual: {target_unit.health})")
+            if target_unit.owner_id == 0:
+                try:
+                    from src.domain.mission_manager import MissionManager
+                    MissionManager.track_heal(0, 12, getattr(target_unit, 'groups', ''))
+                except Exception:
+                    pass
         else:
             print(f">> [!] {player.name} está bajo un efecto que impide la curación.")
         
@@ -566,6 +600,14 @@ class AbilityManager:
         
         for x, y, u in enemies_on_board:
             murio = u.take_damage(damage, game_state)
+            if game_state.current_player_id == 0:
+                try:
+                    from src.domain.mission_manager import MissionManager
+                    MissionManager.track_damage(0, damage, getattr(card, 'groups', ''))
+                    if murio:
+                        MissionManager.track_kill(0, getattr(card, 'groups', ''), getattr(u, 'groups', ''))
+                except Exception:
+                    pass
             if murio:
                 print(f">> ¡{u.name} ha sido destruido por la explosión!")
                 game_state.board.remove_unit(x, y)
@@ -581,6 +623,12 @@ class AbilityManager:
         if getattr(player, 'cant_heal_turns', 0) == 0:
             target_unit.health = min(target_unit.max_health, target_unit.health + 4)
             print(f">> ¡{target_unit.name} ha sido curado por 4 PV! (Vida actual: {target_unit.health})")
+            if target_unit.owner_id == 0:
+                try:
+                    from src.domain.mission_manager import MissionManager
+                    MissionManager.track_heal(0, 4, getattr(target_unit, 'groups', ''))
+                except Exception:
+                    pass
         else:
             print(f">> [!] {player.name} está bajo un efecto que impide la curación.")
         
@@ -638,21 +686,47 @@ class AbilityManager:
 
     @staticmethod
     def _spell_46_effect(card, target, game_state):
-        # Destruye una unidad con 12 o menos de ataque.
-        if not isinstance(target, tuple): return False
+        # Normalizar target (soporta tuplas y listas [x, y])
+        if isinstance(target, list):
+            target = tuple(target)
+        if not isinstance(target, tuple) or len(target) < 2:
+            return False
+
         tx, ty = target
         target_unit = game_state.board.get_unit_at(tx, ty)
-        player = game_state.players[target_unit.owner_id]
-        if not target_unit or target_unit.owner_id == player.id: return False
-            
+
+        # 1. Validar que la casilla no esté vacía PRIMERO
+        if not target_unit:
+            print(">> [Expulsión de clase] Debes seleccionar una unidad en el tablero.")
+            return False
+
+        # 2. Impedir seleccionar unidades propias
+        if target_unit.owner_id == game_state.current_player_id:
+            print(">> [Expulsión de clase] No puedes destruir una unidad aliada.")
+            return False
+
         effective_attack = game_state.get_effective_stats(target_unit)["attack"]
-        
+
+        # 3. Validar tope de ataque (12 o 9 según corresponda)
         if effective_attack <= 12:
             print(f">> [Expulsión de clase] ¡{target_unit.name} (ATK: {effective_attack}) ha sido destruida!")
+            
+            # Guardar tags para las Misiones Diarias
+            victim_tags = str(getattr(target_unit, 'groups', '')).lower()
+            
             game_state.board.remove_unit(tx, ty)
+
+            # Notificar la baja al tracker
+            from domain.mission_manager import MissionManager
+            MissionManager.track_kill(
+                killer_player_id=game_state.current_player_id,
+                killer_tags="hechizo",
+                victim_tags=victim_tags
+            )
+            return True
         else:
-            print(f">> [Expulsión de clase] {target_unit.name} tiene más de 12 de ataque ({effective_attack}). Inmune al efecto.")
-        return True
+            print(f">> [Expulsión de clase] {target_unit.name} tiene más de 12 de ataque ({effective_attack}). Inmune.")
+            return False
 
     @staticmethod
     def _spell_47_effect(card, target, game_state):
@@ -719,6 +793,12 @@ class AbilityManager:
             if getattr(player, 'cant_heal_turns', 0) == 0:
                 target_unit.health = min(target_unit.max_health, target_unit.health + 15)
                 print(f">> [Escuadrón Paramédico] {target_unit.name} ha sido curado por 15 PV por tener {adj_count} aliados cerca. Vida actual: {target_unit.health}")
+                if target_unit.owner_id == 0:
+                    try:
+                        from src.domain.mission_manager import MissionManager
+                        MissionManager.track_heal(0, 15, getattr(target_unit, 'groups', ''))
+                    except Exception:
+                        pass
             else:
                 print(f">> [!] {player.name} está bajo un efecto que impide la curación.")
         else:
@@ -917,6 +997,12 @@ class AbilityManager:
             if "Derma-patch" in unit.groups and unit.health < unit.max_health: 
                 unit.health = min(unit.max_health, unit.health + 2)
                 print(f">> [Habilidad STEAM]: {unit.name} ha recibido 2 HP de curación.")
+                if unit.owner_id == 0:
+                    try:
+                        from src.domain.mission_manager import MissionManager
+                        MissionManager.track_heal(0, 2, getattr(unit, 'groups', ''))
+                    except Exception:
+                        pass
     
     @staticmethod
     def _nico_on_turn_start(unit, game_state):
@@ -932,6 +1018,12 @@ class AbilityManager:
             if target and target.owner_id == unit.owner_id and target.health < target.max_health:
                 target.health = min(target.max_health, target.health + 1)
                 print(f">> [Habilidad Sofi]: {target.name} ha recibido 1 HP de curación.")
+                if unit.owner_id == 0:
+                    try:
+                        from src.domain.mission_manager import MissionManager
+                        MissionManager.track_heal(0, 1, getattr(target, 'groups', ''))
+                    except Exception:
+                        pass
                 break
                 
     @staticmethod
@@ -1046,7 +1138,7 @@ class AbilityManager:
         eff_range = game_state.get_effective_stats(unit)["range_atk"]
         print(f">> [Dante Yukata] Selecciona a un enemigo a rango {eff_range + 1} para atacar con Miku Peluche.")
         if game_state.pending_ability:
-            AudioManager.play_sfx('yukatamiku')
+            AudioManager().play_sfx("yukatamiku")
             unit.ability_used_this_turn = True
         return True
 
@@ -1116,6 +1208,12 @@ class AbilityManager:
         for u in allies:
             u.health = min(u.max_health, u.health + heal_amt)
             print(f">> [Tren] {u.name} se curó {heal_amt} PV.")
+            if game_state.current_player_id == 0:
+                try:
+                    from src.domain.mission_manager import MissionManager
+                    MissionManager.track_heal(0, heal_amt, getattr(u, 'groups', ''))
+                except Exception:
+                    pass
         return True
 
     @staticmethod
@@ -1169,6 +1267,12 @@ class AbilityManager:
         
         target_unit.health = min(target_unit.max_health, target_unit.health + 6)
         print(f">> [Ensayo PAES] {target_unit.name} recuperó 6 PV.")
+        if target_unit.owner_id == 0:
+            try:
+                from src.domain.mission_manager import MissionManager
+                MissionManager.track_heal(0, 6, getattr(target_unit, 'groups', ''))
+            except Exception:
+                pass
         
         tags = str(getattr(target_unit, 'groups', '')).lower()
         if 'literatura' in tags or 'tecnológico' in tags or 'tecnologico' in tags or 'nuevo' in tags:

@@ -1,6 +1,6 @@
 {
   "username": "TesterDante",
-  "coins": 0,
+  "coins": 189,
   "inventory": {
     "23": 4,
     "22": 4,
@@ -11,7 +11,25 @@
     "34": 4,
     "42": 4,
     "44": 4,
-    "46": 4
+    "46": 4,
+    "36": 1,
+    "71": 4,
+    "68": 4,
+    "54": 1,
+    "78": 2,
+    "50": 1,
+    "16": 1,
+    "32": 1,
+    "74": 4,
+    "62": 1,
+    "49": 1,
+    "47": 1,
+    "33": 2,
+    "77": 1,
+    "1": 1,
+    "14": 1,
+    "25": 1,
+    "79": 1
   },
   "decks": {
     "starter": [
@@ -57,6 +75,45 @@
       46
     ]
   },
-  "craft_essence": 0,
-  "tickets": 0
+  "craft_essence": 242,
+  "tickets": 0,
+  "active_missions": [
+    {
+      "id": "m_damage_3nai",
+      "description": "Inflige 40 de daño con unidades 3_NAI",
+      "type": "deal_damage",
+      "target_tag": "3_nai",
+      "required_amount": 40,
+      "progress": 40,
+      "completed": true,
+      "claimed": true,
+      "reward_coins": 50,
+      "reward_essence": 10
+    },
+    {
+      "id": "m_damage_futboleros",
+      "description": "Inflige 50 de daño con unidades Futboleros",
+      "type": "deal_damage",
+      "target_tag": "futboleros",
+      "required_amount": 50,
+      "progress": 28,
+      "completed": false,
+      "claimed": false,
+      "reward_coins": 60,
+      "reward_essence": 15
+    },
+    {
+      "id": "m_kill_target_futboleros",
+      "description": "Elimina 2 unidades enemigas de la facción Futboleros",
+      "type": "kill_target_tag",
+      "target_tag": "futboleros",
+      "required_amount": 2,
+      "progress": 2,
+      "completed": true,
+      "claimed": true,
+      "reward_coins": 50,
+      "reward_essence": 10
+    }
+  ],
+  "last_daily_reset": "2026-08-26"
 }

@@ -1,0 +1,254 @@
+[
+  {
+    "id": "m_damage_futboleros",
+    "description": "Inflige 50 de daño con unidades Futboleros",
+    "type": "deal_damage",
+    "target_tag": "futboleros",
+    "required_amount": 50,
+    "reward_coins": 60,
+    "reward_essence": 15
+  },
+  {
+    "id": "m_damage_3nai",
+    "description": "Inflige 40 de daño con unidades 3_NAI",
+    "type": "deal_damage",
+    "target_tag": "3_nai",
+    "required_amount": 40,
+    "reward_coins": 50,
+    "reward_essence": 10
+  },
+  {
+    "id": "m_damage_fev",
+    "description": "Inflige 50 de daño con Fuerzas Especiales Valenzuela",
+    "type": "deal_damage",
+    "target_tag": "fuerzas especiales valenzuela",
+    "required_amount": 50,
+    "reward_coins": 60,
+    "reward_essence": 15
+  },
+  {
+    "id": "m_damage_cabezal",
+    "description": "Inflige 50 de daño con tropas Cabezal de Tren",
+    "type": "deal_damage",
+    "target_tag": "cabezal de tren",
+    "required_amount": 50,
+    "reward_coins": 60,
+    "reward_essence": 15
+  },
+  {
+    "id": "m_damage_mish",
+    "description": "Inflige 45 de daño con unidades Mish",
+    "type": "deal_damage",
+    "target_tag": "mish",
+    "required_amount": 45,
+    "reward_coins": 55,
+    "reward_essence": 10
+  },
+  {
+    "id": "m_damage_tralaleros",
+    "description": "Inflige 40 de daño con unidades Tralaleros",
+    "type": "deal_damage",
+    "target_tag": "tralaleros",
+    "required_amount": 40,
+    "reward_coins": 50,
+    "reward_essence": 10
+  },
+  {
+    "id": "m_damage_dermapatch",
+    "description": "Inflige 45 de daño con tropas Derma-patch",
+    "type": "deal_damage",
+    "target_tag": "derma-patch",
+    "required_amount": 45,
+    "reward_coins": 55,
+    "reward_essence": 10
+  },
+  {
+    "id": "m_damage_danza",
+    "description": "Inflige 40 de daño con unidades de la etiqueta Danza",
+    "type": "deal_damage",
+    "target_tag": "danza",
+    "required_amount": 40,
+    "reward_coins": 50,
+    "reward_essence": 10
+  },
+  {
+    "id": "m_damage_artista",
+    "description": "Inflige 40 de daño con personajes Artista",
+    "type": "deal_damage",
+    "target_tag": "artista",
+    "required_amount": 40,
+    "reward_coins": 50,
+    "reward_essence": 10
+  },
+  {
+    "id": "m_damage_tecnologico",
+    "description": "Inflige 35 de daño con unidades de la etiqueta Tecnológico",
+    "type": "deal_damage",
+    "target_tag": "tecnológico",
+    "required_amount": 35,
+    "reward_coins": 45,
+    "reward_essence": 10
+  },
+  {
+    "id": "m_damage_general",
+    "description": "Inflige 80 de daño en combate a enemigos o bases",
+    "type": "deal_damage",
+    "target_tag": "todos",
+    "required_amount": 80,
+    "reward_coins": 75,
+    "reward_essence": 20
+  },
+  {
+    "id": "m_heal_general",
+    "description": "Restaura 30 puntos de vida a tus unidades",
+    "type": "heal_hp",
+    "target_tag": "todos",
+    "required_amount": 30,
+    "reward_coins": 50,
+    "reward_essence": 15
+  },
+  {
+    "id": "m_heal_dermapatch",
+    "description": "Restaura 20 puntos de vida a unidades Derma-patch",
+    "type": "heal_hp",
+    "target_tag": "derma-patch",
+    "required_amount": 20,
+    "reward_coins": 50,
+    "reward_essence": 10
+  },
+  {
+    "id": "m_heal_fev",
+    "description": "Restaura 25 puntos de vida a Fuerzas Especiales Valenzuela",
+    "type": "heal_hp",
+    "target_tag": "fuerzas especiales valenzuela",
+    "required_amount": 25,
+    "reward_coins": 55,
+    "reward_essence": 10
+  },
+  {
+    "id": "m_kill_with_tralaleros",
+    "description": "Elimina 3 unidades enemigas usando Tralaleros",
+    "type": "kill_unit_with_tag",
+    "target_tag": "tralaleros",
+    "required_amount": 3,
+    "reward_coins": 60,
+    "reward_essence": 15
+  },
+  {
+    "id": "m_kill_with_mish",
+    "description": "Elimina 3 unidades enemigas usando unidades Mish",
+    "type": "kill_unit_with_tag",
+    "target_tag": "mish",
+    "required_amount": 3,
+    "reward_coins": 60,
+    "reward_essence": 15
+  },
+  {
+    "id": "m_kill_with_nuevo",
+    "description": "Elimina 3 unidades enemigas usando cartas Nuevo",
+    "type": "kill_unit_with_tag",
+    "target_tag": "nuevo",
+    "required_amount": 3,
+    "reward_coins": 60,
+    "reward_essence": 15
+  },
+  {
+    "id": "m_kill_with_cabezal",
+    "description": "Elimina 3 unidades enemigas usando Cabezal de Tren",
+    "type": "kill_unit_with_tag",
+    "target_tag": "cabezal de tren",
+    "required_amount": 3,
+    "reward_coins": 60,
+    "reward_essence": 15
+  },
+  {
+    "id": "m_kill_with_fev",
+    "description": "Elimina 3 unidades enemigas usando Fuerzas Especiales Valenzuela",
+    "type": "kill_unit_with_tag",
+    "target_tag": "fuerzas especiales valenzuela",
+    "required_amount": 3,
+    "reward_coins": 60,
+    "reward_essence": 15
+  },
+  {
+    "id": "m_kill_with_deportistas",
+    "description": "Elimina 3 unidades enemigas usando tropas Deportistas",
+    "type": "kill_unit_with_tag",
+    "target_tag": "deportistas",
+    "required_amount": 3,
+    "reward_coins": 50,
+    "reward_essence": 10
+  },
+  {
+    "id": "m_kill_with_musico",
+    "description": "Elimina 3 unidades enemigas usando personajes Músico",
+    "type": "kill_unit_with_tag",
+    "target_tag": "músico",
+    "required_amount": 3,
+    "reward_coins": 55,
+    "reward_essence": 10
+  },
+  {
+    "id": "m_kill_target_futboleros",
+    "description": "Elimina 2 unidades enemigas de la facción Futboleros",
+    "type": "kill_target_tag",
+    "target_tag": "futboleros",
+    "required_amount": 2,
+    "reward_coins": 50,
+    "reward_essence": 10
+  },
+  {
+    "id": "m_kill_target_cabezal",
+    "description": "Elimina 3 unidades enemigas de la facción Cabezal de Tren",
+    "type": "kill_target_tag",
+    "target_tag": "cabezal de tren",
+    "required_amount": 3,
+    "reward_coins": 55,
+    "reward_essence": 10
+  },
+  {
+    "id": "m_kill_target_3nai",
+    "description": "Elimina 2 unidades enemigas de la facción 3_NAI",
+    "type": "kill_target_tag",
+    "target_tag": "3_nai",
+    "required_amount": 2,
+    "reward_coins": 50,
+    "reward_essence": 10
+  },
+  {
+    "id": "m_kill_target_mish",
+    "description": "Elimina 3 unidades enemigas de la facción Mish",
+    "type": "kill_target_tag",
+    "target_tag": "mish",
+    "required_amount": 3,
+    "reward_coins": 60,
+    "reward_essence": 15
+  },
+  {
+    "id": "m_kill_target_deportistas",
+    "description": "Elimina 3 unidades enemigas con la etiqueta Deportistas",
+    "type": "kill_target_tag",
+    "target_tag": "deportistas",
+    "required_amount": 3,
+    "reward_coins": 50,
+    "reward_essence": 10
+  },
+  {
+    "id": "m_kill_target_musico",
+    "description": "Elimina 3 unidades enemigas con la etiqueta Músico",
+    "type": "kill_target_tag",
+    "target_tag": "músico",
+    "required_amount": 3,
+    "reward_coins": 55,
+    "reward_essence": 10
+  },
+  {
+    "id": "m_kill_target_general",
+    "description": "Elimina 5 unidades enemigas en combate",
+    "type": "kill_target_tag",
+    "target_tag": "todos",
+    "required_amount": 5,
+    "reward_coins": 70,
+    "reward_essence": 20
+  }
+]

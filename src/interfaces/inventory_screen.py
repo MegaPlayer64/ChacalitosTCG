@@ -6,14 +6,115 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
-from kivy.uix.spinner import Spinner  # <-- IMPORTANTE PARA LOS DROPDOWNS
+from kivy.uix.spinner import Spinner
+from kivy.uix.modalview import ModalView  # <-- CAPA FLOTANTE / MODAL
 
 from src.infrastructure.loaders.card_loader import CardLoader
 
+
+# ==========================================
+# 1. CAPA / MODAL DE INSPECCIÓN DE CARTA
+# ==========================================
+class ModalDetalleCarta(ModalView):
+    def __init__(self, datos_carta, **kwargs):
+        super().__init__(size_hint=(0.75, 0.8), auto_dismiss=True, **kwargs)
+        
+        obj = datos_carta["objeto"]
+        tipo = datos_carta["tipo"]
+        rareza = datos_carta["rareza"]
+        grupos_str = ", ".join(datos_carta["grupos"]) if datos_carta["grupos"] else "Ninguno"
+        desc = getattr(obj, 'description', getattr(obj, 'descripcion', 'Sin descripción disponible.'))
+
+        # Color de fondo según tipo
+        if tipo == 'spell':
+            color_header = "[color=bb88ff]"
+            bg_card = (0.2, 0.1, 0.3, 1)
+        elif tipo == 'building':
+            color_header = "[color=88ffbb]"
+            bg_card = (0.1, 0.25, 0.15, 1)
+        else:
+            color_header = "[color=88ccff]"
+            bg_card = (0.1, 0.2, 0.35, 1)
+
+        layout_contenido = BoxLayout(orientation='vertical', padding=15, spacing=10)
+
+        # Encabezado: Nombre y Coste
+        lbl_titulo = Label(
+            text=f"{color_header}[b]{obj.name.upper()}[/b][/color]\n[size=14sp]Coste: {obj.cost}E | Rareza: {rareza}[/size]",
+            markup=True,
+            font_size='20sp',
+            size_hint_y=0.18,
+            halign='center'
+        )
+        layout_contenido.add_widget(lbl_titulo)
+
+        # Si es UNIDAD, mostramos sus estadísticas de combate
+        if tipo == 'unit':
+            atk = getattr(obj, 'attack', 0)
+            hp = getattr(obj, 'health', getattr(obj, 'max_health', 0))
+            spd = getattr(obj, 'speed', 0)
+            rng = getattr(obj, 'range_atk', 1)
+
+            lbl_stats = Label(
+                text=f"[color=ff5555][b]⚔️ Daño: {atk}[/b][/color]  |  [color=55ff55][b]❤️ Vida: {hp}[/b][/color]\n"
+                     f"[color=55ffffff][b]⚡ Vel: {spd}[/b][/color]  |  [color=ffff55][b]🎯 Rango: {rng}[/b][/color]",
+                markup=True,
+                font_size='15sp',
+                size_hint_y=0.15,
+                halign='center'
+            )
+            layout_contenido.add_widget(lbl_stats)
+
+        # Tags / Grupos
+        lbl_tags = Label(
+            text=f"[color=aaaaaa][i]Grupos / Tags:[/i] {grupos_str}[/color]",
+            markup=True,
+            font_size='13sp',
+            size_hint_y=0.1,
+            halign='center'
+        )
+        layout_contenido.add_widget(lbl_tags)
+
+        # Descripción / Lore / Efecto Especial
+        scroll_desc = ScrollView(size_hint_y=0.45)
+        lbl_desc = Label(
+            text=f"[i]{desc}[/i]",
+            markup=True,
+            font_size='14sp',
+            size_hint_y=None,
+            halign='center',
+            valign='top'
+        )
+        lbl_desc.bind(width=lambda instance, value: setattr(instance, 'text_size', (value, None)))
+        lbl_desc.bind(texture_size=lambda instance, value: setattr(instance, 'height', value[1]))
+        scroll_desc.add_widget(lbl_desc)
+        layout_contenido.add_widget(scroll_desc)
+
+        # Botón para cerrar
+        btn_cerrar = Button(
+            text="CERRAR",
+            size_hint_y=0.12,
+            background_color=(0.8, 0.2, 0.2, 1)
+        )
+        btn_cerrar.bind(on_release=self.dismiss)
+        layout_contenido.add_widget(btn_cerrar)
+
+        self.add_widget(layout_contenido)
+
+
+# ==========================================
+# 2. TARJETA DEL ÁLBUM
+# ==========================================
 class TarjetaAlbum(BoxLayout):
-    def __init__(self, nombre, coste, rareza, tipo, cantidad, **kwargs):
+    def __init__(self, datos_carta, **kwargs):
         super().__init__(orientation='vertical', size_hint_y=None, height=180, **kwargs)
         
+        nombre = datos_carta["nombre"]
+        coste = datos_carta["coste"]
+        rareza = datos_carta["rareza"]
+        tipo = datos_carta["tipo"]
+        cantidad = datos_carta["cantidad"]
+
         if tipo == 'spell':
             color_fondo = (0.5, 0.2, 0.6, 1) # Morado
         elif tipo == 'building':
@@ -27,14 +128,19 @@ class TarjetaAlbum(BoxLayout):
             halign='center'
         )
         
+        # Al presionar el botón de la carta, abrimos la capa Modal
+        btn_visual.bind(on_release=lambda instance: ModalDetalleCarta(datos_carta).open())
+
         lbl_cant = Label(text=f"Poseídas: x{cantidad}", size_hint_y=0.2, color=(1, 1, 1, 1))
         
         self.add_widget(btn_visual)
         self.add_widget(lbl_cant)
 
 
+# ==========================================
+# 3. PANTALLA PRINCIPAL
+# ==========================================
 class PantallaInventario(Screen):
-    # Peso jerárquico para ordenar correctamente por rareza
     PESO_RAREZA = {
         "Común": 1,
         "Especial": 2,
@@ -45,18 +151,17 @@ class PantallaInventario(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.ruta_perfil = "src/data/user_profile.json"
-        self.coleccion_datos = [] # Guardará la lista de dicts: [{'id', 'objeto', 'cantidad', 'tipo', 'rareza', 'grupos'}, ...]
+        self.coleccion_datos = []
         
         layout_principal = BoxLayout(orientation='vertical', padding=10, spacing=10)
         
-        # 1. Header (Título + Economía)
+        # 1. Header
         self.lbl_titulo = Label(text="ÁLBUM DE COLECCIÓN", size_hint_y=0.08, font_size='18sp')
         layout_principal.add_widget(self.lbl_titulo)
         
-        # 2. BARRA DE FILTROS Y ORDENAMIENTO (NUEVA)
+        # 2. Filtros
         layout_filtros = BoxLayout(orientation='horizontal', spacing=10, size_hint_y=0.08)
         
-        # Selector de Criterio de Orden
         self.spn_orden = Spinner(
             text="Ordenar: ID",
             values=["Ordenar: ID", "Ordenar: Rareza", "Ordenar: Coste", "Ordenar: Cantidad", "Ordenar: Nombre"],
@@ -64,7 +169,6 @@ class PantallaInventario(Screen):
         )
         self.spn_orden.bind(text=self.actualizar_vista)
 
-        # Selector de Tipo de Carta
         self.spn_tipo = Spinner(
             text="Tipo: Todos",
             values=["Tipo: Todos", "Unidades", "Trucos (Spells)", "Entornos (Buildings)"],
@@ -72,7 +176,6 @@ class PantallaInventario(Screen):
         )
         self.spn_tipo.bind(text=self.actualizar_vista)
 
-        # Selector de Tag / Grupo
         self.spn_tag = Spinner(
             text="Tag: Todas",
             values=["Tag: Todas"],
@@ -113,7 +216,6 @@ class PantallaInventario(Screen):
         self.add_widget(layout_principal)
 
     def on_enter(self):
-        """Carga datos del JSON al entrar a la pantalla"""
         self.cargar_inventario_desde_json()
 
     def cargar_inventario_desde_json(self):
@@ -128,13 +230,11 @@ class PantallaInventario(Screen):
             print(f"[!] Error al parsear el JSON del perfil: {e}")
             return
 
-        # Actualizar Header
         usuario = perfil_data.get("username", "Jugador")
         monedas = perfil_data.get("coins", 0)
         esencia = perfil_data.get("craft_essence", 0)
         self.lbl_titulo.text = f"ÁLBUM DE {usuario.upper()}  |  🪙 Monedas: {monedas}  |  ✨ Esencia: {esencia}"
 
-        # Procesar cartas e indexar en memory list
         inventario_usuario = perfil_data.get("inventory", {})
         self.coleccion_datos.clear()
         tags_detectadas = set()
@@ -147,7 +247,6 @@ class PantallaInventario(Screen):
                 rareza = getattr(carta_objeto, 'rarity', 'Común')
                 tipo = 'unit' if hasattr(carta_objeto, 'attack') else getattr(carta_objeto, 'card_type', 'unit')
                 
-                # Normalizar los grupos/tags para filtrado
                 grupos_raw = getattr(carta_objeto, 'groups', getattr(carta_objeto, 'grupos', ''))
                 
                 if isinstance(grupos_raw, str):
@@ -157,7 +256,6 @@ class PantallaInventario(Screen):
                 else:
                     lista_preliminar = []
 
-                # Limpia espacios y elimina vacíos y guiones ('-') de un solo paso
                 grupos = [str(g).strip() for g in lista_preliminar if str(g).strip() not in ('', '-')]
 
                 for tag in grupos:
@@ -174,19 +272,14 @@ class PantallaInventario(Screen):
                     "grupos": grupos
                 })
 
-        # Actualizar valores del Spinner de Tags automáticamente
         self.spn_tag.values = ["Tag: Todas"] + sorted(list(tags_detectadas))
-        
-        # Renderizar la lista
         self.actualizar_vista()
 
     def actualizar_vista(self, *args):
-        """Filtra, ordena y redibuja las cartas en la grilla"""
         self.grilla_cartas.clear_widgets()
-        
         cartas_filtradas = list(self.coleccion_datos)
 
-        # --- A) FILTRAR POR TIPO ---
+        # Filtros
         tipo_sel = self.spn_tipo.text
         if tipo_sel == "Unidades":
             cartas_filtradas = [c for c in cartas_filtradas if c["tipo"] == "unit"]
@@ -195,16 +288,14 @@ class PantallaInventario(Screen):
         elif tipo_sel == "Entornos (Buildings)":
             cartas_filtradas = [c for c in cartas_filtradas if c["tipo"] == "building"]
 
-        # --- B) FILTRAR POR TAG / GRUPO ---
         tag_sel = self.spn_tag.text
         if tag_sel != "Tag: Todas":
             tag_limpia = tag_sel.replace("Tag: ", "")
             cartas_filtradas = [c for c in cartas_filtradas if tag_limpia in c["grupos"]]
 
-        # --- C) ORDENAR ---
+        # Orden
         orden_sel = self.spn_orden.text
         if orden_sel == "Ordenar: Rareza":
-            # Ordena de mayor rareza a menor rareza
             cartas_filtradas.sort(key=lambda c: self.PESO_RAREZA.get(c["rareza"], 0), reverse=True)
         elif orden_sel == "Ordenar: Coste":
             cartas_filtradas.sort(key=lambda c: c["coste"])
@@ -212,18 +303,12 @@ class PantallaInventario(Screen):
             cartas_filtradas.sort(key=lambda c: c["cantidad"], reverse=True)
         elif orden_sel == "Ordenar: Nombre":
             cartas_filtradas.sort(key=lambda c: c["nombre"].lower())
-        else: # Ordenar por ID por defecto
+        else:
             cartas_filtradas.sort(key=lambda c: c["id"])
 
-        # --- D) DIBUJAR EN UI ---
+        # Renderizar en UI
         for c in cartas_filtradas:
-            tarjeta = TarjetaAlbum(
-                nombre=c["nombre"], 
-                coste=c["coste"], 
-                rareza=c["rareza"], 
-                tipo=c["tipo"], 
-                cantidad=c["cantidad"]
-            )
+            tarjeta = TarjetaAlbum(datos_carta=c)  # Pass dict directly
             self.grilla_cartas.add_widget(tarjeta)
 
     def ejecutar_reciclaje_ui(self, instance):

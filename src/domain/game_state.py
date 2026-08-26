@@ -629,10 +629,29 @@ class GameState:
                 enemy = self.players[enemy_id]
                 enemy.health -= effective_attack
                 print(f">>> ¡{attacker.name} ataca la Base Enemiga y causa {effective_attack} de daño! (Vida enemiga: {enemy.health}) <<<")
+                
+                # --- EVENT TRACKING: DAÑO A BASE ---
+                if action.player_id == 0:
+                    try:
+                        from src.domain.mission_manager import MissionManager
+                        MissionManager.track_damage(0, effective_attack, getattr(attacker, 'groups', ''))
+                    except Exception as e:
+                        print(f"[!] Error en tracking de misiones (Daño Base): {e}")
             else:
                 target = self.board.get_unit_at(tx, ty)
                 # Aplicar daño
                 murió = target.take_damage(effective_attack, self)
+                
+                # --- EVENT TRACKING: DAÑO A UNIDAD Y BAJAS ---
+                if action.player_id == 0:
+                    try:
+                        from src.domain.mission_manager import MissionManager
+                        MissionManager.track_damage(0, effective_attack, getattr(attacker, 'groups', ''))
+                        if murió:
+                            MissionManager.track_kill(0, getattr(attacker, 'groups', ''), getattr(target, 'groups', ''))
+                    except Exception as e:
+                        print(f"[!] Error en tracking de misiones (Ataque): {e}")
+                        
                 if murió:
                     print(f">>> ¡{target.name} ha sido derrotado! <<<")
                     self.board.remove_unit(tx, ty)

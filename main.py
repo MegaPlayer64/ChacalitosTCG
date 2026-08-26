@@ -36,7 +36,6 @@ try:
     from src.infrastructure.loaders.card_loader import CardLoader
     from src.domain.player import Player
     from src.domain.game_state import GameState
-    from src.application.game_engine import GameEngine
     from src.interfaces.controllers.human_controller import HumanController
     from src.interfaces.controllers.ai_controller import AIController
     from src.interfaces.view import ConsoleView
@@ -88,6 +87,9 @@ class ChacalitosTCG(App):
         
         from src.interfaces.arcade_screen import PantallaArcade
         sm.add_widget(PantallaArcade(name='arcade_screen'))
+        
+        from src.views.pantalla_misiones import PantallaMisiones
+        sm.add_widget(PantallaMisiones(name='missions_screen'))
         
         print(f"Pantallas registradas: {sm.screen_names}")
         
