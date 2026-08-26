@@ -47,6 +47,9 @@ class AudioManager:
         self.preload_sound('error1', 'error1.wav')
         self.preload_sound('error2', 'error2.wav')
         self.preload_sound('error3', 'error3.wav')
+        self.preload_sound('gundam1','gundamappear.wav')
+        self.preload_sound('quemadasdodge','quemadasdodge.wav')
+        self.preload_sound('yukatamiku','yukatamiku.ogg')
 
 
 

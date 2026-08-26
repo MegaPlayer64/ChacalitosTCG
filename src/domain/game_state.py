@@ -19,7 +19,7 @@ class GameState:
             
         self.players = players
         self.board = Board(width=6, height=5) # El tablero se inicia limpio (vacío)
-        self.current_player_id = 0
+        self.turn = 1
         self.turn_number = 1
         self.game_over = False
         self.active_environment = None
@@ -46,6 +46,18 @@ class GameState:
             for _ in range(4):
                 if p.deck and len(p.hand) < 10:
                     p.hand.append(p.deck.pop(0))
+
+        # --- Sorteo de turno inicial (Coin Flip) ---
+        if seed is not None:
+            rng = random.Random(seed)
+            self.coin_flip_winner = rng.choice([0, 1])
+        else:
+            self.coin_flip_winner = random.choice([0, 1])
+
+        self.first_player_id = self.coin_flip_winner
+        self.current_player_id = self.coin_flip_winner
+        winner_name = self.players[self.coin_flip_winner].name
+        print(f">> [COIN FLIP] ¡{winner_name} ganó el sorteo y empieza el turno 1!")
 
         # Iniciar el turno 1 oficialmente
         self._start_turn()
@@ -329,7 +341,7 @@ class GameState:
             
             # 6. ¿No tiene paralisis de algun tipo?
             if getattr(unit, 'immobile_turns', 0) > 0:
-                print(f">> [!] {unit.name} no se puede mover. Turnos de inmovilidad: {getattr(unit, 'immobile_turns', 0)}")
+                print(">> [!] La unidad está inmovilizada")
                 return False 
 
             # 7. ¿Es Margaret en turno impar?
@@ -373,7 +385,7 @@ class GameState:
                 return False
 
             if getattr(attacker, 'immobile_turns', 0) > 0:
-                print(f">> [!] {attacker.name} no puede atacar (inmovilizado/recargando por {getattr(attacker, 'immobile_turns', 0)} turnos).")
+                print(">> [!] La unidad está inmovilizada y no puede atacar")
                 return False
 
             if tx == 'B':
@@ -447,7 +459,7 @@ class GameState:
                 return False
                 
             # 3. ¿Ya se usó la habilidad de esta unidad en este turno?
-            if getattr(unit, 'has_activated_this_turn', False) or getattr(unit, 'ability_used_this_turn', False):
+            if getattr(unit, 'ability_used_this_turn', False):
                 print(f">> [!] {unit.name} ya usó su habilidad activa en este turno.")
                 return False
                 
@@ -710,9 +722,6 @@ class GameState:
                                 if buff['duration'] > 0:
                                     buffs_to_keep.append(buff)
                         unit.temporary_buffs = buffs_to_keep
-                        
-                    if hasattr(unit, 'immobile_turns') and unit.immobile_turns > 0:
-                        unit.immobile_turns -= 1
 
         # Decrementar penalización de curación
         current_p = self.get_current_player()
@@ -724,8 +733,9 @@ class GameState:
         
         # 2. Cambiar de jugador
         self.current_player_id = 1 - self.current_player_id
-        if self.current_player_id == 0:
+        if self.current_player_id == getattr(self, 'first_player_id', getattr(self, 'coin_flip_winner', 0)):
             self.turn_number += 1
+            self.turn += 1
         
         next_player = self.get_current_player()
         next_player.failed_spells_this_turn.clear()

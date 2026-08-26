@@ -5,6 +5,7 @@ from kivy.uix.image import Image
 from kivy.clock import Clock
 import os
 from src.domain.grid_background import FondoCuadriculado
+from src.domain.audio_manager import AudioManager
 
 class PantallaVersus(Screen):
     def __init__(self, **kwargs):
@@ -82,6 +83,8 @@ class PantallaVersus(Screen):
                 self.lbl_p2_nombre.text = f"[b]IA ({settings['p2']['tipo']})[/b]"
             else:
                 self.lbl_p2_nombre.text = "[b]Jugador 2[/b]"
+
+        AudioManager().play_bgm('tetrisjavasong.ogg')
 
         # Programar cambio a la pantalla del juego
         # Pasamos un tiempo corto para que el jugador pueda ver la pantalla (ej. 2.5 segundos)

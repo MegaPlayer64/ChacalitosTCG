@@ -1,3 +1,4 @@
+from src.domain import unit
 from kivy.uix.screenmanager import Screen
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
@@ -21,7 +22,7 @@ class PantallaJuego(Screen):
         barra_info = BoxLayout(orientation='horizontal', size_hint_y=0.15, spacing=10)
         
         self.lbl_j1 = Label(text="J1 (Tú): 80 HP\nEnergía: 1/1", halign='left', markup=True)
-        self.lbl_turno = Label(text="[b]TURNO --[/b]", halign='center', markup=True, font_size='18sp')
+        self.lbl_turno = Label(text="[b]TURNO 1[/b]", halign='center', markup=True, font_size='18sp')
         self.lbl_j2 = Label(text="J2 (Rival): 80 HP\nEnergía: 1/1", halign='right', markup=True)
         
         btn_rendirse = Button(text="Rendirse", size_hint_x=0.15, background_color=(0.5, 0.2, 0.2, 1))
@@ -66,7 +67,7 @@ class PantallaJuego(Screen):
         
         for y in range(5):
             for x in range(6):
-                btn_celda = Button(text=".", font_size='14sp')
+                btn_celda = Button(text=".", font_size='14sp', markup=True)
                 btn_celda.coordenadas = (x, y)
                 btn_celda.bind(on_release=self.celda_clickeada)
                 
@@ -87,11 +88,12 @@ class PantallaJuego(Screen):
         self.carta_seleccionada_index = None
 
     def is_my_turn(self) -> bool:
-        if not getattr(self.manager, 'is_online_game', False):
-            return True
-        role = getattr(self.manager, 'online_role', None)
         if not self.game_state:
             return False
+        if not getattr(self.manager, 'is_online_game', False):
+            jugador_actual = self.game_state.get_current_player()
+            return not getattr(jugador_actual, 'is_ai', False)
+        role = getattr(self.manager, 'online_role', None)
         return self.game_state.current_player_id == role
 
     def aplicar_accion_y_notificar(self, accion):
@@ -245,10 +247,19 @@ class PantallaJuego(Screen):
             return
 
         for i, carta in enumerate(mano_jugador):
-            texto_carta = f"{carta['nombre']}\nCoste: {carta['coste']}E"
+            if carta.get('descuento', False):
+                # Muestra el costo rebajado en verde y el original tachado/gris entre paréntesis
+                texto_carta = (
+                    f"{carta['nombre']}\n"
+                    f"Coste: [color=00ff88][b]{carta['coste']}E[/b][/color] "
+                    f"[color=888888]({carta['coste_original']}E)[/color]"
+                )
+            else:
+                texto_carta = f"{carta['nombre']}\nCoste: {carta['coste']}E"
             
             btn_carta = Button(
                 text=texto_carta,
+                markup=True,  # Habilita el renderizado de etiquetas de color [color=...]
                 font_size='14sp',
                 background_color=(0.1, 0.1, 0.3, 1) if carta['tipo'] == 'spell' else (0.3, 0.3, 0.3, 1),
                 halign='center'
@@ -288,14 +299,16 @@ class PantallaJuego(Screen):
         p1 = self.game_state.players[0]
         p2 = self.game_state.players[1]
         
-        turno_actual = getattr(self.game_state, 'turn', 0)
-        self.lbl_turno.text = f"[color=aaffaa][b]TURNO {turno_actual}[/b][/color]\nActivo: {jugador_actual.name}"
+        turno_actual = getattr(self.game_state, 'turn', getattr(self.game_state, 'turn_number', 1))
+        ganador_sorteo_id = getattr(self.game_state, 'first_player_id', getattr(self.game_state, 'coin_flip_winner', 0))
+        ganador_nombre = self.game_state.players[ganador_sorteo_id].name
+        self.lbl_turno.text = f"[color=aaffaa][b]TURNO {turno_actual}[/b][/color]\nActivo: {jugador_actual.name}\n[size=10sp][color=ffff88](1º: {ganador_nombre})[/color][/size]"
         
         pending = getattr(self.game_state, 'pending_ability', None)
         lbl_estado = "\n[color=ff3333][b]¡SELECCIONA OBJETIVO![/b][/color]" if pending else ""
         
-        self.lbl_j1.text = f"J1: {p1.health} HP\nEnergía: {getattr(p1, 'current_energy', 0)}/{getattr(p1, 'max_energy', 0)}" + (lbl_estado if self.game_state.current_player_id == 0 else "")
-        self.lbl_j2.text = f"J2: {p2.health} HP\nEnergía: {getattr(p2, 'current_energy', 0)}/{getattr(p2, 'max_energy', 0)}" + (lbl_estado if self.game_state.current_player_id == 1 else "")
+        self.lbl_j1.text = f"J1: {p1.health} HP\nEnergía: {getattr(p1, 'current_energy', 1)}/{getattr(p1, 'max_energy', 1)}" + (lbl_estado if self.game_state.current_player_id == 0 else "")
+        self.lbl_j2.text = f"J2: {p2.health} HP\nEnergía: {getattr(p2, 'current_energy', 1)}/{getattr(p2, 'max_energy', 1)}" + (lbl_estado if self.game_state.current_player_id == 1 else "")
         
         env = getattr(self.game_state, 'active_environment', None)
         if env and getattr(env, 'card', None):
@@ -309,11 +322,58 @@ class PantallaJuego(Screen):
             btn.text = "."
             btn.background_color = (0.15, 0.15, 0.15, 1) 
             
+        # --- Redibujar Tropas (Con estadísticas efectivas y visualización de Buffs) ---
         for (cx, cy), unit in self.game_state.board.grid.items():
             boton = self.celdas_graficas[(cx, cy)]
-            boton.text = f"{unit.name}\n{unit.attack} Dmg | {unit.health} Hp \n {unit.speed} Vel | {unit.range_atk} Rng"
-            boton.background_color = (0.2, 0.5, 0.8, 1) if unit.owner_id == 0 else (0.8, 0.3, 0.3, 1)
+            boton.markup = True  # Habilitamos Kivy Markup en la celda
+            
+            # 1. Obtener estadísticas reales calculadas por el motor
+            stats_efectivas = self.game_state.get_effective_stats(unit)
+            atk_eff = stats_efectivas["attack"]
+            spd_eff = stats_efectivas["speed"]
+            rng_eff = stats_efectivas["range_atk"]
 
+            # 2. Formatear Ataque (Verde si subió, Rojo si bajó)
+            if atk_eff > unit.attack:
+                txt_atk = f"[color=00ff88][b]{atk_eff}[/b][/color]"
+            elif atk_eff < unit.attack:
+                txt_atk = f"[color=ff4444][b]{atk_eff}[/b][/color]"
+            else:
+                txt_atk = f"{atk_eff}"
+
+            # 3. Formatear Velocidad
+            if spd_eff > unit.speed:
+                txt_spd = f"[color=00ff88][b]{spd_eff}[/b][/color]"
+            elif spd_eff < unit.speed:
+                txt_spd = f"[color=ff4444][b]{spd_eff}[/b][/color]"
+            else:
+                txt_spd = f"{spd_eff}"
+
+            # 4. Formatear Rango de Ataque
+            if rng_eff > unit.range_atk:
+                txt_rng = f"[color=00ff88][b]{rng_eff}[/b][/color]"
+            elif rng_eff < unit.range_atk:
+                txt_rng = f"[color=ff4444][b]{rng_eff}[/b][/color]"
+            else:
+                txt_rng = f"{rng_eff}"
+
+            # 5. Renderizar el texto final en la celda
+            if unit.immobile_turns > 0:
+                # Texto en Cian brillante para resaltar sobre fondos oscuros o rojos
+                lbl_inmovil = f" | [color=00e5ff][b]Inmovil ({unit.immobile_turns})[/b][/color]"
+                # Color de fondo congelado / apagado para indicar que la unidad está bloqueada
+                boton.background_color = (0.1, 0.3, 0.5, 1) if unit.owner_id == 0 else (0.5, 0.2, 0.3, 1)
+            else:
+                lbl_inmovil = ""
+                # Colores normales de equipo (Azul J1 / Rojo J2)
+                boton.background_color = (0.2, 0.5, 0.8, 1) if unit.owner_id == 0 else (0.8, 0.3, 0.3, 1)
+
+            boton.text = (
+                f"{unit.name}\n"
+                f"{txt_atk} Dmg | {unit.health}/{unit.max_health} Hp\n"
+                f"{txt_spd} Vel | {txt_rng} Rng{lbl_inmovil}"
+            )
+                
         if self.unidad_seleccionada_coords:
             ux, uy = self.unidad_seleccionada_coords
             unidad_sel = self.game_state.board.get_unit_at(ux, uy)
@@ -342,18 +402,30 @@ class PantallaJuego(Screen):
         
         if is_online and jugador_actual.id != my_role:
             mano_formateada = [
-                {"nombre": "Dorso", "coste": "?", "tipo": "hidden"} 
+                {
+                    "nombre": "Dorso", 
+                    "coste": "?", 
+                    "coste_original": "?", 
+                    "descuento": False, 
+                    "tipo": "hidden"
+                } 
                 for c in jugador_actual.hand
             ]
         else:
-            mano_formateada = [
-                {"nombre": c.name, "coste": c.cost, "tipo": getattr(c, 'card_type', 'unit')} 
-                for c in jugador_actual.hand
-            ]
+            mano_formateada = []
+            for c in jugador_actual.hand:
+                costo_efectivo, tiene_desc = jugador_actual.calcular_costo_efectivo(c)
+                mano_formateada.append({
+                    "nombre": c.name,
+                    "coste": costo_efectivo,
+                    "coste_original": c.cost,
+                    "descuento": tiene_desc,
+                    "tipo": getattr(c, 'card_type', 'unit')
+                })
+
         self.dibujar_mano(mano_formateada)
         
-        if is_online:
-            self.btn_pasar_turno.disabled = not self.is_my_turn()
+        self.btn_pasar_turno.disabled = not self.is_my_turn()
         
         if p1.health <= 0 or p2.health <= 0:
             ganador = p1 if p2.health <= 0 else p2
@@ -437,13 +509,12 @@ class PantallaJuego(Screen):
         self._ia_corriendo = False
         self._ia_fallos_consecutivos = 0
 
-        AudioManager().play_bgm('tetoris8bit.ogg')
         self.actualizar_interfaz_completa()
         
         if not is_online:
             self._ejecutar_turno_ia_si_toca()
 
-    def pasar_turno(self, instance):
+    def pasar_turno(self, instance=None, *args):
         if not self.is_my_turn():
             print(">> [!] Es el turno del oponente...")
             AudioManager().play_sfx("error1")

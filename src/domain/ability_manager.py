@@ -1,5 +1,6 @@
 from src.domain import unit
 from src.domain.game_state import GameState
+from src.domain.audio_manager import AudioManager
 
 class AbilityManager:
 
@@ -7,7 +8,7 @@ class AbilityManager:
     def trigger_on_enter(unit, game_state):
         uid = int(unit.id)
         if uid == 31:
-            AbilityManager._isidora_on_enter(unit, game_state)
+            AbilityManager._martina_nueva_on_enter(unit, game_state)
         elif uid == 28:
             AbilityManager._cristobal_on_enter(unit, game_state)
         elif uid == 24:
@@ -60,7 +61,9 @@ class AbilityManager:
             AbilityManager._iara_on_damage_received(unit, damage, game_state)
         elif int(unit.id) == 79:
             AbilityManager._axel_on_damage_receaved(unit, game_state)
- 
+        elif int(unit.id) == 31:
+            AbilityManager._martina_nueva_on_damage_received(unit, damage, game_state)
+  
     @staticmethod
     def trigger_on_turn_start(unit, game_state):
         active_env = getattr(game_state, 'active_environment', None)
@@ -152,7 +155,7 @@ class AbilityManager:
                 gandan_card = CardLoader.get_card_stats_by_id(65)
                 gandan_card.owner_id = unit.owner_id
                 game_state.board.set_unit_at(tx, ty, gandan_card)
-                unit.has_activated_this_turn = True
+                unit.ability_used_this_turn = True
                 print(f">> [Cutiño] ¡Gandan fue invocado en ({tx}, {ty})!")
                 return True
             else:
@@ -185,7 +188,7 @@ class AbilityManager:
                     sx, sy = pending['source_coords']
                     unit = game_state.board.get_unit_at(sx, sy)
                     if unit:
-                        unit.has_activated_this_turn = True
+                        unit.ability_used_this_turn = True
                         
                     print(f">> [Zander] ¡{ally.name} fue movido a ({tx}, {ty})!")
                     return True
@@ -205,7 +208,7 @@ class AbilityManager:
                 if murio:
                     print(f">> ¡{enemy_unit.name} ha sido destruido por el Miku Peluche!")
                     game_state.board.remove_unit(tx, ty)
-                unit.has_activated_this_turn = True
+                unit.ability_used_this_turn = True
                 return True
             else:
                 print(">> [Dante Yukata] Objetivo inválido o fuera de rango.")
@@ -278,39 +281,51 @@ class AbilityManager:
 
     @staticmethod
     def _spell_32_effect(card, target, game_state):
-        # Llamado de otro punto: Atrae un enemigo hasta 2 casillas hacia el aliado más cercano
-        if not isinstance(target, tuple): 
+        # Ida al Casino / Llamado de otro punto:
+        # Atrae una unidad en el tablero (aliada o enemiga) hasta 2 casillas hacia tu unidad aliada más cercana.
+        
+        # 1. Normalizar target (Aceptar tanto tuplas como listas [x, y])
+        if isinstance(target, list):
+            target = tuple(target)
+        if not isinstance(target, tuple) or len(target) < 2: 
             return False
             
         tx, ty = target
         target_unit = game_state.board.get_unit_at(tx, ty)
-        if not target_unit or target_unit.owner_id == game_state.current_player_id:
+        
+        # 2. Debe ser una unidad válida en el tablero
+        if not target_unit:
+            print(">> [Llamado de otro punto] Debes seleccionar una unidad en el tablero.")
             return False
         
-        # 1. Buscar la unidad aliada más cercana
-        aliados = game_state.board.get_all_units(game_state.current_player_id)
-        if not aliados:
-            print(">> [Llamado de otro punto] No tienes unidades aliadas para atraer el objetivo.")
+        # 3. Buscar unidades aliadas en el tablero
+        todos_los_aliados = game_state.board.get_all_units(game_state.current_player_id)
+        
+        # Si el objetivo es una unidad aliada propia, la excluimos para no atraerla hacia sí misma
+        aliados_destino = [u for u in todos_los_aliados if u is not target_unit]
+        
+        if not aliados_destino:
+            print(">> [Llamado de otro punto] No tienes otra unidad aliada en el tablero hacia la cual atraer el objetivo.")
             return False
+            
+        # Buscar la unidad aliada de destino más cercana (Manhattan distance)
+        aliado_cercano = min(aliados_destino, key=lambda u: abs(u.pos_x - target_unit.pos_x) + abs(u.pos_y - target_unit.pos_y))
         
-        # Encontrar el aliado con la menor distancia de Manhattan
-        aliado_cercano = min(aliados, key=lambda u: abs(u.pos_x - target_unit.pos_x) + abs(u.pos_y - target_unit.pos_y))
-        
-        # 2. Calcular vector de dirección (eje principal)
+        # 4. Calcular vector de dirección
         dx = aliado_cercano.pos_x - target_unit.pos_x
         dy = aliado_cercano.pos_y - target_unit.pos_y
         
         step_x = 1 if dx > 0 else (-1 if dx < 0 else 0)
         step_y = 1 if dy > 0 else (-1 if dy < 0 else 0)
         
-        # Si no están alineados perfectamente, priorizar el eje con mayor distancia
+        # Priorizar el eje principal si no están alineados
         if step_x != 0 and step_y != 0:
             if abs(dx) >= abs(dy):
                 step_y = 0
             else:
                 step_x = 0
         
-        # 3. Mover hasta 2 casillas en esa dirección mientras esté vacío
+        # 5. Mover hasta 2 casillas hacia el destino mientras las casillas estén vacías
         board = game_state.board
         casillas_movidas = 0
         current_x, current_y = target_unit.pos_x, target_unit.pos_y
@@ -319,34 +334,30 @@ class AbilityManager:
             next_x = current_x + step_x
             next_y = current_y + step_y
             
-            # Verificar límites y colisión
+            # Verificar límites de tablero y que la casilla esté libre
             if board.is_within_bounds(next_x, next_y) and not board.is_occupied(next_x, next_y):
-                # No sobrepasar al aliado que lo atrae
-                if (step_x != 0 and next_x == aliado_cercano.pos_x) or (step_y != 0 and next_y == aliado_cercano.pos_y):
-                    break
                 current_x, current_y = next_x, next_y
                 casillas_movidas += 1
             else:
                 break
         
-        # 4. Actualizar posición del enemigo en el tablero
+        # 6. Actualizar posición si se movió
         if casillas_movidas > 0:
             board.remove_unit(target_unit.pos_x, target_unit.pos_y)
             board.set_unit_at(current_x, current_y, target_unit)
-            print(f">> [Llamado de otro punto] ¡{target_unit.name} fue atraído a ({current_x}, {current_y})!")
+            print(f">> [Ida al casino] ¡{target_unit.name} fue atraído a ({current_x}, {current_y})!")
         else:
-            print(f">> [Llamado de otro punto] ¡{target_unit.name} está bloqueado y no puede ser atraído!")
-            return False
+            print(f">> [Ida al casino] {target_unit.name} no se pudo desplazar (bloqueado o adyacente).")
         
-        # 5. Condición de robo: Si tiene la etiqueta "Nuevo"
+        # 7. Condición de robo: Si la unidad objetivo tiene la etiqueta/tag "Nuevo"
         if hasattr(target_unit, 'groups') and target_unit.groups:
             groups_str = str(target_unit.groups).lower()
-            if 'Nuevo' in groups_str:
+            if 'nuevo' in groups_str:
                 player = game_state.get_current_player()
                 if len(player.hand) < 10 and player.deck:
                     drawn_card = player.deck.pop(0)
                     player.hand.append(drawn_card)
-                    print(f">> [Llamado de otro punto] ¡Objetivo con etiqueta 'Nuevo'! Robaste: {drawn_card.name}")
+                    print(f">> [Ida al casino] ¡Objetivo con etiqueta 'Nuevo'! Robaste: {drawn_card.name}")
         
         return True
 
@@ -420,11 +431,20 @@ class AbilityManager:
 
     @staticmethod
     def _spell_38_effect(card, target, game_state):
+        # Curar 4, si es Danza o Músico, mueve 1 casilla
         if not isinstance(target, tuple): return False
         target_unit = game_state.board.get_unit_at(*target)
         if not target_unit: return False
         
-        tags = str(getattr(target_unit, 'groups', '')).lower()
+        heal_amount = 4
+        player = game_state.players[target_unit.owner_id]
+        if getattr(player, 'cant_heal_turns', 0) > 0:
+            print(f">> [!] {player.name} está bajo un efecto que impide la curación.")
+        else:
+            target_unit.health = min(target_unit.max_health, target_unit.health + heal_amount)
+            print(f">> ¡{target_unit.name} ha sido curado por {heal_amount} PV! (Vida actual: {target_unit.health})")
+        
+        tags = str(getattr(target_unit, 'groups', ''))
         if 'Danza' in tags or 'Música' in tags:
             fx, fy = target
             
@@ -443,7 +463,7 @@ class AbilityManager:
                     'unit_coords': (fx, fy),
                     'unit_name': target_unit.name
                 }
-                print(f">> [Encore!] Selecciona la casilla a la que moverás a {target_unit.name} (Distancia máx 1).")
+                print(f">> [Farmeo de aura!] Selecciona la casilla a la que moverás a {target_unit.name} (Distancia máx 1).")
                 return True
         else:
             print(">> [!] La unidad seleccionada no es Danza ni Música.")
@@ -886,6 +906,7 @@ class AbilityManager:
                 'speed': effective_speed
             }
             print(f">> [Habilidad Chino Quemadas]: ¡Recibiste daño! Selecciona una casilla para esquivar (anula daño).")
+            AudioManager.play_sfx('quemadasdodge')
             unit.ability_used_this_turn = True
             return 0
         
@@ -937,14 +958,28 @@ class AbilityManager:
         player.d_economia_cost_reduction_active = True
     
     @staticmethod
-    def _isidora_on_enter(unit, game_state):
+    def _martina_nueva_on_enter(unit, game_state):
         # Da +3 de vida máxima a TODAS las unidades aliadas
         for u in game_state.board.get_all_units():
-            if u.id != unit.id: # No modificarse a sí misma
+            if u.id != unit.id and u.owner_id == unit.owner_id: # No modificarse a sí misma y no curar a enemigos
                 u.max_health += 3
                 u.health = min(u.max_health, u.health + 3) # Si ya tenía vida, se la aumenta
-                print(f">> [Habilidad Isidora]: {u.name} ha ganado +3 de vida máxima.")
-    
+                print(f">> [Habilidad Martina Nueva]: {u.name} ha ganado +3 de vida máxima.")
+                
+    @staticmethod
+    def _martina_nueva_on_damage_received(unit, damage, game_state):
+        # Mientras tenga al menos un aliado adyacente, reduce en 2 todo el daño recibido.
+        has_adj = False
+        for nx, ny in game_state.board.get_neighbors(unit.pos_x, unit.pos_y):
+            adj = game_state.board.get_unit_at(nx, ny)
+            if adj and adj.owner_id == unit.owner_id:
+                has_adj = True
+                break
+        if has_adj:
+            print(f">> [Habilidad Martina Nueva]: {unit.name} ha reducido el daño recibido en 2.")
+            return max(0, damage - 2)
+        return damage
+
     @staticmethod
     def _nico_on_activate(unit, game_state):
         if unit.immobile_turns == 0:
@@ -987,6 +1022,7 @@ class AbilityManager:
             'ability': 'cutino_summon',
             'source_coords': (unit.pos_x, unit.pos_y)
         }
+        AudioManager.play_sfx('gundam1')
         print(">> [Cutiño] Selecciona una casilla adyacente vacía para invocar a Gandan.")
         return True
 
@@ -997,6 +1033,8 @@ class AbilityManager:
             'source_coords': (unit.pos_x, unit.pos_y)
         }
         print(">> [Zander] Selecciona al aliado que quieres mover (Paso 1/2).")
+        if game_state.pending_ability:
+            unit.ability_used_this_turn = True
         return True
 
     @staticmethod
@@ -1007,6 +1045,9 @@ class AbilityManager:
         }
         eff_range = game_state.get_effective_stats(unit)["range_atk"]
         print(f">> [Dante Yukata] Selecciona a un enemigo a rango {eff_range + 1} para atacar con Miku Peluche.")
+        if game_state.pending_ability:
+            AudioManager.play_sfx('yukatamiku')
+            unit.ability_used_this_turn = True
         return True
 
     @staticmethod

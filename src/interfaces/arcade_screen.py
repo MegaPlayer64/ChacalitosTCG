@@ -34,6 +34,8 @@ class PantallaArcade(Screen):
             markup=True,
             size_hint_y=0.1
         )
+        self.lbl_advertencia = Label(text="[color=ff0000][b]SI SALES DEL MODO, NO PUEDES SEGUIR DESDE EL ÚLTIMO PUNTO DEJADO[/b][/color]", markup=True, size_hint_y=0.1, halign='center', valign='middle')
+        self.layout_global.add_widget(self.lbl_advertencia)
         self.layout_global.add_widget(self.lbl_titulo)
 
         # Panel para las 2 Tarjetas de Oponentes de la Run
@@ -166,17 +168,17 @@ class PantallaArcade(Screen):
 
     def obtener_lista_mazos(self):
         mazos = []
-        base_path = "src/data/premade_decks"
-        if os.path.exists(base_path):
-            for root, dirs, files in os.walk(base_path):
-                for file in files:
-                    if file.endswith('.json'):
-                        full_path = os.path.join(root, file).replace('\\', '/')
-                        mazos.append({
-                            'nombre': f"[Premade] {file.replace('.json', '')}",
-                            'ruta': full_path,
-                            'tipo_origen': 'archivo'
-                        })
+        # base_path = "src/data/premade_decks"
+        # if os.path.exists(base_path):
+            # for root, dirs, files in os.walk(base_path):
+                # for file in files:
+                    # if file.endswith('.json'):
+                        # full_path = os.path.join(root, file).replace('\\', '/')
+                        # mazos.append({
+                            # 'nombre': f"[Premade] {file.replace('.json', '')}",
+                           # 'ruta': full_path,
+                            #'tipo_origen': 'archivo'
+                        # })
 
         if os.path.exists(self.ruta_perfil):
             try:

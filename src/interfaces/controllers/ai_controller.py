@@ -11,6 +11,7 @@ class AIController:
         self.delay = delay
         self.turn_energy_spent = 0
         self.turn_cards_played = 0
+        self.abilitiestried = 0
 
     def update_policy(self, result: str):
         """
@@ -212,6 +213,8 @@ class AIController:
                                 best_target = (x, y)
             if best_target:
                 return Action(ActionType.RESOLVE_ABILITY, self.player_id, {'target': best_target})
+            
+            self.abilitiestried += 1
             return Action(ActionType.CANCEL_ABILITY, self.player_id, {})
             
         # 9. chino_quemadas: esquivar daño moviéndose a una casilla adyacente vacía
@@ -348,9 +351,11 @@ class AIController:
 
                     # Habilidades Activas: solo para unidades que TIENEN habilidad en trigger_on_activate
                     UNITS_WITH_ACTIVE_ABILITY = {12, 25, 59, 63, 64, 68}
-                    if not getattr(unit, 'has_activated_this_turn', False) and not getattr(unit, 'ability_used_this_turn', False):
+                    if not getattr(unit, 'ability_used_this_turn', False):
                         if int(unit.id) in UNITS_WITH_ACTIVE_ABILITY:
                             if int(unit.id) == 63 and player.current_energy < 3:
+                                pass
+                            elif (int(unit.id) == 68 or int(unit.id) == 64) and self.abilitiestried >= 3:
                                 pass
                             else:
                                 action_act = Action(ActionType.ACTIVATE_ABILITY, self.player_id, {'from': (x, y)})
