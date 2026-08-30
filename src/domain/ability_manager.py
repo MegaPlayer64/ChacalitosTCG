@@ -38,7 +38,8 @@ class AbilityManager:
             AbilityManager._zander_on_activate(unit, game_state)
         elif int(unit.id) == 68:
             AbilityManager._dante_yukata_on_activate(unit, game_state)
-        
+        elif int(unit.id) == 83:
+            AbilityManager._jose_oso_on_activate(unit, game_state)
 
     @staticmethod
     def trigger_on_attack(unit, game_state):
@@ -165,6 +166,7 @@ class AbilityManager:
                 game_state.board.set_unit_at(tx, ty, gandan_card)
                 unit.ability_used_this_turn = True
                 print(f">> [Cutiño] ¡Gandan fue invocado en ({tx}, {ty})!")
+                AudioManager().play_sfx("gundam1")
                 return True
             else:
                 print(">> [Cutiño] Debes invocar a Gandan en una casilla adyacente vacía.")
@@ -224,6 +226,7 @@ class AbilityManager:
                 if murio:
                     print(f">> ¡{enemy_unit.name} ha sido destruido por el Miku Peluche!")
                     game_state.board.remove_unit(tx, ty)
+                AudioManager().play_sfx("yukatamiku")
                 unit.ability_used_this_turn = True
                 return True
             else:
@@ -239,6 +242,7 @@ class AbilityManager:
             if game_state.board.is_within_bounds(tx, ty) and not game_state.board.is_occupied(tx, ty) and dist <= effective_speed:
                 game_state.board.move_unit(fx, fy, tx, ty)
                 print(f">> ¡ESQUIVA! Chino se movió a ({tx}, {ty}) y anuló el daño.")
+                AudioManager().play_sfx("quemadasdodge")
                 return True
             else:
                 print(">> [!] Casilla de escape inválida.")
@@ -422,7 +426,7 @@ class AbilityManager:
         if not target_unit: return False
         
         tags = str(getattr(target_unit, 'groups', '')).lower()
-        amount = -2 if 'Tecnológicos' in tags or 'Tecnológicos' in tags else -4
+        amount = -2 if ('tecnológico' in tags or 'tecnologico' in tags) else -4
         
         target_unit.temporary_buffs.append({"type": "attack", "amount": amount, "duration": 1})
         print(f">> ¡{target_unit.name} pierde {abs(amount)} de daño este turno!")
@@ -578,7 +582,7 @@ class AbilityManager:
             print(f">> [!] {player.name} está bajo un efecto que impide la curación.")
         
         tags = str(getattr(target_unit, 'groups', '')).lower()
-        if 'Derma-patch' in tags or 'Derma-patch' in tags:
+        if 'derma-patch' in tags:
             target_unit.temporary_buffs.append({"type": "attack", "amount": 2, "duration": 1})
             print(f">> ¡Al ser Derma-patch, gana +2 de daño este turno!")
             
@@ -669,7 +673,7 @@ class AbilityManager:
                 ally = game_state.board.get_unit_at(x, y)
                 if ally and ally.owner_id == player.id:
                     tags = str(getattr(ally, 'groups', '')).lower()
-                    if 'Futboleros' in tags:
+                    if 'futboleros' in tags or 'futbolero' in tags:
                         futbolero_count += 1
                         
         cards_to_draw = 3 if futbolero_count >= 2 else 2
@@ -754,7 +758,7 @@ class AbilityManager:
         print(f">> [Cafe Frio] {target_unit.name} gana +1 de velocidad este turno.")
         
         tags = str(getattr(target_unit, 'groups', '')).lower()
-        if 'Tralaleros' not in tags:
+        if 'tralaleros' not in tags:
             # Debuff para el siguiente turno
             target_unit.temporary_buffs.append({"type": "speed", "amount": -1, "duration": 1, "delay": 1})
             print(f">> [Cafe Frio] Al no ser Tralaleros, {target_unit.name} perderá 1 de velocidad el próximo turno (Subidón de azúcar).")
@@ -924,6 +928,22 @@ class AbilityManager:
             print(f">> [Habilidad Stefano]: Stefano sacrificó 1 HP. ATK actual: {unit.attack}, HP actual: {unit.health}")
         else:
             print(">> [Habilidad Stefano]: Stefano no tiene suficiente vida para sacrificar.")
+
+    @staticmethod
+    def _jose_oso_on_activate(unit, game_state):
+        if getattr(unit, 'ability_used_this_turn', False):
+            print(f">> [Habilidad Jose Oso]: {unit.name} ya usó su habilidad en este turno.")
+            return False
+
+        if unit.health > 4:
+            unit.health -= 4
+            unit.attack += 4
+            unit.ability_used_this_turn = True
+            print(f">> [Habilidad Jose Oso]: {unit.name} sacrificó 4 PV y ganó +4 de Ataque permanentemente. (HP: {unit.health}, ATK: {unit.attack})")
+            return True
+        else:
+            print(f">> [Habilidad Jose Oso]: {unit.name} no tiene suficiente vida para activar su habilidad (requiere más de 4 PV).")
+            return False
 
     @staticmethod
     def _jose_enmascarado_on_attack(unit, game_state):
@@ -1114,7 +1134,6 @@ class AbilityManager:
             'ability': 'cutino_summon',
             'source_coords': (unit.pos_x, unit.pos_y)
         }
-        AudioManager.play_sfx('gundam1')
         print(">> [Cutiño] Selecciona una casilla adyacente vacía para invocar a Gandan.")
         return True
 
@@ -1138,7 +1157,6 @@ class AbilityManager:
         eff_range = game_state.get_effective_stats(unit)["range_atk"]
         print(f">> [Dante Yukata] Selecciona a un enemigo a rango {eff_range + 1} para atacar con Miku Peluche.")
         if game_state.pending_ability:
-            AudioManager().play_sfx("yukatamiku")
             unit.ability_used_this_turn = True
         return True
 

@@ -10,7 +10,8 @@ class RewardsSystem:
         duracion_segundos=60, 
         ruta_perfil="src/data/user_profile.json",
         monedas_base_override=None,
-        mult_extra=1.0
+        mult_extra=1.0,
+        turn_count=1
     ):
         if not os.path.exists(ruta_perfil):
             print(f"[!] No se encontró el archivo de perfil en {ruta_perfil}")
@@ -56,18 +57,43 @@ class RewardsSystem:
             # 3. Actualizar economías en la estructura del JSON
             perfil["coins"] = perfil.get("coins", 0) + monedas_finales
             perfil["craft_essence"] = perfil.get("craft_essence", 0) + esencia_final_ganada
+            
+            # Sincronizar currencies dict
+            currencies = perfil.setdefault("currencies", {})
+            currencies["coins"] = perfil["coins"]
+            currencies["essence"] = perfil["craft_essence"]
+            currencies["tickets"] = perfil.get("tickets", 0)
 
-            # 4. Guardar en disco
+            # 4. Guardar en disco las monedas
             with open(ruta_perfil, "w", encoding="utf-8") as f:
                 json.dump(perfil, f, indent=2, ensure_ascii=False)
 
+            # 5. Otorgar EXP de Pase de Batalla
+            exp_pase = 0
+            level_up = False
+            new_level = 1
+            try:
+                from src.domain.battle_pass_manager import BattlePassManager
+                bp_manager = BattlePassManager(profile_path=ruta_perfil)
+                bp_res = bp_manager.add_match_exp(won=victoria, turns_played=turn_count)
+                if bp_res:
+                    exp_pase = bp_res.get("exp_gained", 0)
+                    level_up = bp_res.get("level_up", False)
+                    new_level = bp_res.get("new_level", 1)
+            except Exception as e_bp:
+                print(f">> [!] Error al actualizar EXP de Pase de Batalla: {e_bp}")
+
             msg_ticket = " | 🎟️ ¡1 Ticket de Gacha obtenido!" if ticket_ganado else ""
-            print(f"[💰] Recompensas aplicadas: +{monedas_finales} 🪙, +{esencia_final_ganada} ✨{msg_ticket} (Rival: {dificultad_rival})")
+            msg_bp = f" | 🎖️ +{exp_pase} EXP Pase" + (f" (¡Subiste a Nivel {new_level}!)" if level_up else "")
+            print(f"[💰] Recompensas aplicadas: +{monedas_finales} 🪙, +{esencia_final_ganada} ✨{msg_ticket}{msg_bp} (Rival: {dificultad_rival})")
 
             return {
                 "monedas": monedas_finales, 
                 "esencia": esencia_final_ganada,
                 "tickets": 1 if ticket_ganado else 0,
+                "exp_pase": exp_pase,
+                "level_up": level_up,
+                "new_level": new_level
             }
 
         except Exception as e:

@@ -109,10 +109,23 @@ class GameState:
                         if ability['type'] == 'buff_all_attack':
                             effective_attack += ability['amount']
                         elif ability['type'] == 'buff_tag_attack':
-                            if ability['tag'] in unit_tags:
+                            tag = ability['tag']
+                            if (isinstance(tag, str) and (tag in unit_tags or int(unit.id) == 22)) or \
+                               (isinstance(tag, list) and (any(t in unit_tags for t in tag) or int(unit.id) == 22)):
                                 effective_attack += ability['amount']
+                        elif ability['type'] == 'buff_tag_speed':
+                            tag = ability['tag']
+                            if (isinstance(tag, str) and (tag in unit_tags or int(unit.id) == 22)) or \
+                               (isinstance(tag, list) and (any(t in unit_tags for t in tag) or int(unit.id) == 22)):
+                                effective_speed += ability['amount']
                         elif ability['type'] == 'buff_tag_speed_if_tag_present':
-                            if ability['target_tag'] in unit_tags and ability['condition_tag'] in board_ally_tags:
+                            t_tag = ability['target_tag']
+                            c_tag = ability['condition_tag']
+                            t_match = (isinstance(t_tag, str) and (t_tag in unit_tags or int(unit.id) == 22)) or \
+                                      (isinstance(t_tag, list) and (any(t in unit_tags for t in t_tag) or int(unit.id) == 22))
+                            c_match = (isinstance(c_tag, str) and c_tag in board_ally_tags) or \
+                                      (isinstance(c_tag, list) and any(c in board_ally_tags for c in c_tag))
+                            if t_match and c_match:
                                 effective_speed += ability['amount']
 
         # Procesar buffs temporales (Hechizos)
@@ -135,15 +148,15 @@ class GameState:
         if getattr(self, 'active_environment', None):
             env_id = int(self.active_environment.card.id)
             if env_id == 53: # Cancha de Futbol
-                if 'Futboleros' in unit_tags and not getattr(unit, 'has_attacked', False):
+                if 'futboleros' in unit_tags and not getattr(unit, 'has_attacked', False):
                     effective_speed += 1
                 elif int(unit.id) == 22:
                     effective_speed += 1
             elif env_id == 54: # La Fundación
-                if 'Tralaleros' in unit_tags or int(unit.id) == 22:
+                if 'tralaleros' in unit_tags or int(unit.id) == 22:
                     effective_attack -= 1
             elif env_id == 80: # Biblioteca Escolar
-                if 'Literatura' in unit_tags or int(unit.id) == 22:
+                if 'literatura' in unit_tags or int(unit.id) == 22:
                     effective_range += 1
                 
                 # Los enemigos no pueden recibir buffs de ataque
@@ -236,39 +249,38 @@ class GameState:
                 return False
                 
             if card.card_type.lower() == 'unit':
-                if self.board.is_occupied(tx, ty):
-                    if int(card.id) == 69:
-                        pass # Permitir sobre-escribir para Duales
-                    else:
-                        print(f">> [!] La casilla ({tx}, {ty}) ya está ocupada.")
-                        return False
-                        
-                if int(card.id) == 69:
-                    naty_pos = None
-                    ami_pos = None
+                dual_pairs = {
+                    69: (8, 9, "Naty", "Ami"),
+                    86: (17, 13, "Richi", "Emi"),
+                    87: (22, 16, "Rin", "Martina")
+                }
+                card_id_int = int(card.id)
+                if card_id_int in dual_pairs:
+                    id_a, id_b, name_a, name_b = dual_pairs[card_id_int]
+                    pos_a = None
+                    pos_b = None
                     for y in range(self.board.height):
                         for x in range(self.board.width):
                             u = self.board.get_unit_at(x, y)
                             if u and int(u.owner_id) == int(action.player_id):
-                                # Obtenemos la ID de la carta real de la unidad
-                                u_card_id = getattr(u, 'card_id', getattr(u, 'id', None))
-                                
-                                if int(u_card_id) == 8: 
-                                    naty_pos = (x, y)
-                                elif int(u_card_id) == 9: 
-                                    ami_pos = (x, y)
-                                    
-                    if not naty_pos or not ami_pos:
-                        print(">> [!] Faltan Naty o Ami en el tablero para la invocación Dual.")
+                                u_card_id = int(getattr(u, 'card_id', getattr(u, 'id', 0)))
+                                if u_card_id == id_a and pos_a is None:
+                                    pos_a = (x, y)
+                                elif u_card_id == id_b and pos_b is None:
+                                    pos_b = (x, y)
+                    if not pos_a or not pos_b:
+                        print(f">> [!] Faltan {name_a} o {name_b} en el tablero para la invocación Dual.")
                         return False
-                        
-                    if (tx, ty) not in (naty_pos, ami_pos):
-                        print(">> [!] Debes invocar encima de la ubicación de Naty o Ami.")
+                    if (tx, ty) not in (pos_a, pos_b):
+                        print(f">> [!] Debes invocar encima de la ubicación de {name_a} o {name_b}.")
                         return False
-
-                if not self.validate_summon(action.player_id, tx, ty):
-                    print(f">> [!] Zona de invocación inválida para el jugador {action.player_id}.")
-                    return False
+                else:
+                    if self.board.is_occupied(tx, ty):
+                        print(f">> [!] La casilla ({tx}, {ty}) ya está ocupada.")
+                        return False
+                    if not self.validate_summon(action.player_id, tx, ty):
+                        print(f">> [!] Zona de invocación inválida para el jugador {action.player_id}.")
+                        return False
             
             return True
 
@@ -503,32 +515,33 @@ class GameState:
             player.current_energy -= final_cost
             
             if card.card_type.lower() == 'unit':
-                if int(card.id) == 69:
-                    # Variables para almacenar la posición de 1 Naty y 1 Ami
-                    pos_naty = None
-                    pos_ami = None
-                    
-                    # 1. Localizar las casillas exactas
+                dual_pairs = {
+                    69: (8, 9, "Naty", "Ami"),
+                    86: (17, 13, "Richi", "Emi"),
+                    87: (22, 16, "Rin", "Martina")
+                }
+                card_id_int = int(card.id)
+                if card_id_int in dual_pairs:
+                    id_a, id_b, name_a, name_b = dual_pairs[card_id_int]
+                    pos_a = None
+                    pos_b = None
                     for y in range(self.board.height):
                         for x in range(self.board.width):
                             u = self.board.get_unit_at(x, y)
                             if u and int(u.owner_id) == int(player.id):
-                                # Obtenemos el ID de la carta asegurando compatibilidad
                                 u_card_id = int(getattr(u, 'card_id', getattr(u, 'id', 0)))
-                                
-                                if u_card_id == 8 and pos_naty is None:
-                                    pos_naty = (x, y)
-                                elif u_card_id == 9 and pos_ami is None:
-                                    pos_ami = (x, y)
+                                if u_card_id == id_a and pos_a is None:
+                                    pos_a = (x, y)
+                                elif u_card_id == id_b and pos_b is None:
+                                    pos_b = (x, y)
 
-                    # 2. Sacrificar ambas unidades
-                    if pos_naty:
-                        self.board.remove_unit(pos_naty[0], pos_naty[1])
-                        print(f">> [Sacrificio] Naty eliminada en {pos_naty}")
+                    if pos_a:
+                        self.board.remove_unit(pos_a[0], pos_a[1])
+                        print(f">> [Sacrificio Dual] {name_a} eliminada en {pos_a}")
                         
-                    if pos_ami:
-                        self.board.remove_unit(pos_ami[0], pos_ami[1])
-                        print(f">> [Sacrificio] Ami eliminada en {pos_ami}")
+                    if pos_b:
+                        self.board.remove_unit(pos_b[0], pos_b[1])
+                        print(f">> [Sacrificio Dual] {name_b} eliminada en {pos_b}")
                 
                 card.owner_id = int(player.id)
                 self.board.set_unit_at(tx, ty, card)
@@ -605,6 +618,39 @@ class GameState:
             
             # Realizamos el movimiento en el tablero
             unit = self.board.get_unit_at(fx, fy)
+            
+            # Mecánica Nico Cóndor (ID 85): Inflige 6 de daño a los enemigos que sobrevuela
+            if int(unit.id) == 85:
+                passed_coords = set()
+                cur_x, cur_y = fx, fy
+                step_x = 1 if tx > fx else (-1 if tx < fx else 0)
+                step_y = 1 if ty > fy else (-1 if ty < fy else 0)
+                while cur_x != tx:
+                    cur_x += step_x
+                    if (cur_x, cur_y) != (tx, ty):
+                        passed_coords.add((cur_x, cur_y))
+                while cur_y != ty:
+                    cur_y += step_y
+                    if (cur_x, cur_y) != (tx, ty):
+                        passed_coords.add((cur_x, cur_y))
+                
+                for px, py in passed_coords:
+                    enemy_on_path = self.board.get_unit_at(px, py)
+                    if enemy_on_path and enemy_on_path.owner_id != unit.owner_id:
+                        print(f">> [Nico Cóndor] ¡Vuela sobre {enemy_on_path.name} e inflige 6 de daño!")
+                        murio = enemy_on_path.take_damage(6, self)
+                        if action.player_id == 0:
+                            try:
+                                from src.domain.mission_manager import MissionManager
+                                MissionManager.track_damage(0, 6, getattr(unit, 'groups', ''))
+                                if murio:
+                                    MissionManager.track_kill(0, getattr(unit, 'groups', ''), getattr(enemy_on_path, 'groups', ''))
+                            except Exception:
+                                pass
+                        if murio:
+                            print(f">> ¡{enemy_on_path.name} ha sido derrotado por el sobrevuelo de Nico Cóndor!")
+                            self.board.remove_unit(px, py)
+
             self.board.move_unit(fx, fy, tx, ty)
             
             # Marcamos la unidad como "ya movida"
@@ -627,14 +673,27 @@ class GameState:
             if tx == 'B':
                 enemy_id = 1 - action.player_id
                 enemy = self.players[enemy_id]
-                enemy.health -= effective_attack
-                print(f">>> ¡{attacker.name} ataca la Base Enemiga y causa {effective_attack} de daño! (Vida enemiga: {enemy.health}) <<<")
+                
+                # Chequeo pasiva Emi & Richi (ID 86) del defensor
+                # "Mientras esta unidad esté en juego, cualquier daño que vaya a recibir la Base se reduce en 5. Si la Base recibe daño de todas formas, esta unidad gana +1 de ataque permanentemente."
+                damage_to_base = effective_attack
+                demonios_units = [u for u in self.board.get_all_units(enemy_id) if int(u.id) == 86]
+                if demonios_units:
+                    damage_to_base = max(0, damage_to_base - 5)
+                    print(f">> [Emi & Richi] ¡El daño a la base se redujo en 5! (Daño final: {damage_to_base})")
+                    if damage_to_base > 0:
+                        for d_unit in demonios_units:
+                            d_unit.attack += 1
+                            print(f">> [Emi & Richi] ¡{d_unit.name} gana +1 de ataque permanente por el daño recibido en la Base! (Ataque actual: {d_unit.attack})")
+                
+                enemy.health -= damage_to_base
+                print(f">>> ¡{attacker.name} ataca la Base Enemiga y causa {damage_to_base} de daño! (Vida enemiga: {enemy.health}) <<<")
                 
                 # --- EVENT TRACKING: DAÑO A BASE ---
                 if action.player_id == 0:
                     try:
                         from src.domain.mission_manager import MissionManager
-                        MissionManager.track_damage(0, effective_attack, getattr(attacker, 'groups', ''))
+                        MissionManager.track_damage(0, damage_to_base, getattr(attacker, 'groups', ''))
                     except Exception as e:
                         print(f"[!] Error en tracking de misiones (Daño Base): {e}")
             else:
@@ -741,6 +800,38 @@ class GameState:
                                 if buff['duration'] > 0:
                                     buffs_to_keep.append(buff)
                         unit.temporary_buffs = buffs_to_keep
+
+        # Pasiva de Fin de Turno: Martina & Rin Ángeles (ID 87)
+        # "Al final de tu turno, si la Base ha recibido daño, restaura 4 PV a la Base y 2 PV a todas las unidades aliadas adyacentes."
+        ending_player = self.get_current_player()
+        if ending_player.health < 80:
+            for y in range(self.board.height):
+                for x in range(self.board.width):
+                    unit_m_r = self.board.get_unit_at(x, y)
+                    if unit_m_r and int(unit_m_r.id) == 87 and unit_m_r.owner_id == ending_player.id:
+                        heal_base = min(4, 80 - ending_player.health)
+                        if heal_base > 0 and getattr(ending_player, 'cant_heal_turns', 0) == 0:
+                            ending_player.health += heal_base
+                            print(f">> [Martina & Rin]: Restaura {heal_base} PV a la Base (Vida Base: {ending_player.health}/80).")
+                            if ending_player.id == 0:
+                                try:
+                                    from src.domain.mission_manager import MissionManager
+                                    MissionManager.track_heal(0, heal_base, "Base")
+                                except Exception:
+                                    pass
+                        
+                        for nx, ny in self.board.get_neighbors(x, y):
+                            adj_ally = self.board.get_unit_at(nx, ny)
+                            if adj_ally and adj_ally.owner_id == ending_player.id and getattr(ending_player, 'cant_heal_turns', 0) == 0:
+                                if adj_ally.health < adj_ally.max_health:
+                                    adj_ally.health = min(adj_ally.max_health, adj_ally.health + 2)
+                                    print(f">> [Martina & Rin]: Cura 2 PV a {adj_ally.name} (Vida: {adj_ally.health}/{adj_ally.max_health}).")
+                                    if ending_player.id == 0:
+                                        try:
+                                            from src.domain.mission_manager import MissionManager
+                                            MissionManager.track_heal(0, 2, getattr(adj_ally, 'groups', ''))
+                                        except Exception:
+                                            pass
 
         # Decrementar penalización de curación
         current_p = self.get_current_player()

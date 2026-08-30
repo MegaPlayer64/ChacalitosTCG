@@ -23,10 +23,12 @@ class Unit(Card):
         # Habilidades estáticas
         self.static_abilities = []
         if str(self.id) == "56" or self.name == 'Margarita (Vintage)':
-            self.static_abilities.append({"type": "buff_all_attack", "amount": 1})
-        elif str(self.id) == "59" or self.name == 'Melsizis (DT)':
+            self.static_abilities.append({"type": "buff_tag_attack", "tag": ["tralaleros", "artista"], "amount": 1})
+        elif str(self.id) == "60" or self.name == 'Melsizis (DT)':
             self.static_abilities.append({"type": "buff_tag_attack", "tag": "fuerzas especiales valenzuela", "amount": 1})
             self.static_abilities.append({"type": "buff_tag_speed_if_tag_present", "target_tag": "fuerzas especiales valenzuela", "condition_tag": "cabezal de tren", "amount": 1})
+        elif str(self.id) == "84" or self.name == 'Stefano (Viejo)':
+            self.static_abilities.append({"type": "buff_tag_speed", "tag": "cabezal de tren", "amount": 1})
         self.immobile_turns = 0
         self.ability_used_this_turn = False
         # Buffs temporales (Hechizos y estados por turnos)
@@ -38,14 +40,20 @@ class Unit(Card):
 
     def take_damage(self, amount: int, game_state) -> bool:
         # """Resta vida y devuelve True si la unidad murió."""
-        from domain.ability_manager import AbilityManager
+        from src.domain.ability_manager import AbilityManager
         AbilityManager.trigger_on_damage_received(self, amount, game_state)
         
         # Entorno ID 73: Escenario de Baile
         active_env = getattr(game_state, 'active_environment', None)
         if active_env and int(active_env.card.id) == 73:
             tags = str(getattr(self, 'groups', '')).lower()
-            if '3_nai' in tags or 'músico' in tags or 'musico' in tags or 'danza' in tags:
+            if '3_nai' in tags or 'músico' in tags or 'musico' in tags or 'danza' in tags or int(self.id) == 22:
+                amount = max(0, amount - 1)
+
+        # Entorno ID 54: La Fundación (-1 de daño recibido a Tralaleros)
+        if active_env and int(active_env.card.id) == 54:
+            tags = str(getattr(self, 'groups', '')).lower()
+            if 'tralaleros' in tags or int(self.id) == 22:
                 amount = max(0, amount - 1)
                 
         if self.has_shield:
@@ -73,14 +81,14 @@ class Unit(Card):
             self.immobile_turns -= 1
 
     def on_enter(self, game_state):
-        from domain.ability_manager import AbilityManager
+        from src.domain.ability_manager import AbilityManager
         AbilityManager.trigger_on_enter(self, game_state)
 
     def on_attack(self, game_state):
-        from domain.ability_manager import AbilityManager
+        from src.domain.ability_manager import AbilityManager
         AbilityManager.trigger_on_attack(self, game_state)
 
     def on_activate(self, game_state):
-        from domain.ability_manager import AbilityManager
+        from src.domain.ability_manager import AbilityManager
         AbilityManager.trigger_on_activate(self, game_state)
 

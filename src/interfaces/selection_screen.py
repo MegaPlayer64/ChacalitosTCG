@@ -7,6 +7,7 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.spinner import Spinner
 from src.domain.grid_background import FondoCuadriculado
+from interfaces.controllers.llm_ai_controller import LLMAIController
 
 OPCION_MAZO_RANDOM = "[Aleatorio] Mazo Random"
 
@@ -31,7 +32,7 @@ class PantallaSeleccion(Screen):
         
         self.spinner_tipo_j1 = Spinner(
             text='Humano',
-            values=('Humano', 'IA Fácil', 'IA Normal', 'IA Difícil'),
+            values=('Humano', 'IA Fácil', 'IA Normal', 'IA Difícil', 'IA LLM'),
             size_hint=(None, None), size=(200, 44), pos_hint={'center_x': 0.5}
         )
         
@@ -51,7 +52,7 @@ class PantallaSeleccion(Screen):
         
         self.spinner_tipo_j2 = Spinner(
             text='IA Normal',  # Sugerencia por defecto para agilizar pruebas
-            values=('Humano', 'IA Fácil', 'IA Normal', 'IA Difícil'),
+            values=('Humano', 'IA Fácil', 'IA Normal', 'IA Difícil', 'IA LLM'),
             size_hint=(None, None), size=(200, 44), pos_hint={'center_x': 0.5}
         )
         self.spinner_mazo_j2 = Spinner(

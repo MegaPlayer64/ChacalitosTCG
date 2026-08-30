@@ -13,6 +13,7 @@ class PantallaResultado(Screen):
         self.layout = BoxLayout(orientation='vertical', padding=40, spacing=20)
         
         self.victoria_local = True 
+        self.turn_count = 1
         
         self.lbl_titulo = Label(
             text="",
@@ -78,16 +79,19 @@ class PantallaResultado(Screen):
                 victoria=True,
                 dificultad_rival=stage_data.get('ai_type', 'IA Normal'),
                 monedas_base_override=base_reward,
-                mult_extra=mult_extra
+                mult_extra=mult_extra,
+                turn_count=self.turn_count
             )
 
             if premios:
                 bonus_text = " [color=ffbb33](¡Bono 1.5x Mazo Random!)[/color]" if is_random else ""
                 msg_ticket = f"  |  +{premios['tickets']} 🎟️ Tickets" if premios['tickets'] > 0 else ""
+                msg_exp = f"  |  +{premios.get('exp_pase', 0)} 🎖️ EXP Pase"
+                msg_lvl = f"\n[color=ffd700][b]🎉 ¡NUEVO NIVEL EN EL PASE: Nivel {premios['new_level']}! 🎉[/b][/color]" if premios.get('level_up') else ""
                 
                 self.lbl_detalle.text += (
                     f"\n\n[color=00ff88][b]¡RECOMPENSA DE PISO![/b][/color]\n"
-                    f"+{premios['monedas']} 🪙 Monedas{bonus_text}  |  +{premios['esencia']} ✨ Esencia{msg_ticket}"
+                    f"+{premios['monedas']} 🪙 Monedas{bonus_text}  |  +{premios['esencia']} ✨ Esencia{msg_ticket}{msg_exp}{msg_lvl}"
                 )
 
             # Control de flujo de la torre
@@ -110,12 +114,14 @@ class PantallaResultado(Screen):
             # Derrota en Modo Arcade
             premios = RewardsSystem.otorgar_recompensa(
                 victoria=False,
-                dificultad_rival=stage_data.get('ai_type', 'IA Normal')
+                dificultad_rival=stage_data.get('ai_type', 'IA Normal'),
+                turn_count=self.turn_count
             )
             if premios:
+                msg_exp = f"  |  +{premios.get('exp_pase', 0)} 🎖️ EXP Pase"
                 self.lbl_detalle.text += (
                     f"\n\n[color=ff6666][b]RECOMPENSA DE CONSOLACIÓN[/b][/color]\n"
-                    f"+{premios['monedas']} 🪙 Monedas  |  +{premios['esencia']} ✨ Esencia"
+                    f"+{premios['monedas']} 🪙 Monedas  |  +{premios['esencia']} ✨ Esencia{msg_exp}"
                 )
 
             self.btn_accion_principal.text = "REINTENTAR TORRE 🔄"
@@ -128,13 +134,15 @@ class PantallaResultado(Screen):
             self.btn_accion_principal.unbind(on_release=self._callback_actual)
 
         tipo_rival = settings.get('p2', {}).get('tipo', 'IA Normal') if settings else "IA Normal"
-        premios = RewardsSystem.otorgar_recompensa(victoria=self.victoria_local, dificultad_rival=tipo_rival)
+        premios = RewardsSystem.otorgar_recompensa(victoria=self.victoria_local, dificultad_rival=tipo_rival, turn_count=self.turn_count)
             
         if premios:
             msg_ticket = f"  |  +{premios['tickets']} 🎟️ Ticket" if premios['tickets'] > 0 else ""
+            msg_exp = f"  |  +{premios.get('exp_pase', 0)} 🎖️ EXP Pase"
+            msg_lvl = f"\n[color=ffd700][b]🎉 ¡NUEVO NIVEL EN EL PASE: Nivel {premios['new_level']}! 🎉[/b][/color]" if premios.get('level_up') else ""
             self.lbl_detalle.text += (
                 f"\n\n[color=00ff88][b]¡BOTÍN DE GUERRA![/b][/color]\n"
-                f"+{premios['monedas']} 🪙 Monedas  |  +{premios['esencia']} ✨ Esencia{msg_ticket}"
+                f"+{premios['monedas']} 🪙 Monedas  |  +{premios['esencia']} ✨ Esencia{msg_ticket}{msg_exp}{msg_lvl}"
             )
 
         self.btn_accion_principal.text = "REVANCHA\n(Volver a selección)"
@@ -151,8 +159,9 @@ class PantallaResultado(Screen):
         pantalla_arcade.current_stage_index = 0
         self._ir_a('arcade_screen')
 
-    def configurar(self, ganador_nombre: str, perdedor_nombre: str, jugador_local_id: int, ganador_id: int):
+    def configurar(self, ganador_nombre: str, perdedor_nombre: str, jugador_local_id: int, ganador_id: int, turn_count: int = 1):
         self.victoria_local = (jugador_local_id == ganador_id) or jugador_local_id < 0
+        self.turn_count = max(1, turn_count)
         
         if self.victoria_local:
             self.lbl_titulo.text = "[color=00ff88][b]¡VICTORIA![/b][/color]"

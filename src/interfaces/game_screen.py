@@ -1,3 +1,4 @@
+from kivy.uix.scrollview import ScrollView
 from src.domain import unit
 from kivy.uix.screenmanager import Screen
 from kivy.uix.boxlayout import BoxLayout
@@ -10,7 +11,128 @@ from src.domain.audio_manager import AudioManager
 from src.domain.game_state import GameState
 from src.domain.action import Action, ActionType
 from src.domain.player import Player
+from kivy.uix.modalview import ModalView
 
+# =========================================================
+# BOTÓN TÁCTIL CON DETECCIÓN DE MANTENER PRESIONADO (MOBILE)
+# =========================================================
+class BotonLargo(Button):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._timer_largo = None
+        self.fue_presion_larga = False
+        self.callback_largo = None
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            self.fue_presion_larga = False
+            # Inicia temporizador de 0.4 segundos para considerar "Mantener Presionado"
+            self._timer_largo = Clock.schedule_once(self._ejecutar_presion_larga, 0.4)
+        return super().on_touch_down(touch)
+
+    def on_touch_up(self, touch):
+        if self._timer_largo:
+            Clock.unschedule(self._timer_largo)
+            self._timer_largo = None
+        # Si fue una presión larga, consumimos el evento para NO ejecutar el toque normal (tap)
+        if self.fue_presion_larga:
+            return True
+        return super().on_touch_up(touch)
+
+    def _ejecutar_presion_larga(self, dt):
+        self.fue_presion_larga = True
+        if self.callback_largo:
+            self.callback_largo(self)
+
+
+# =========================================================
+# CAPA MODAL FLOTANTE DE INSPECCIÓN DURANTE EL COMBATE
+# =========================================================
+class ModalDetalleCartaJuego(ModalView):
+    def __init__(self, objeto_carta_o_unidad, game_state=None, es_unidad_tablero=False, **kwargs):
+        super().__init__(size_hint=(0.8, 0.75), auto_dismiss=True, **kwargs)
+        
+        obj = objeto_carta_o_unidad
+        layout = BoxLayout(orientation='vertical', padding=15, spacing=8)
+
+        # 1. TIPO Y DATOS BASE
+        is_unit = hasattr(obj, 'attack') or getattr(obj, 'card_type', '') == 'unit'
+        is_spell = getattr(obj, 'card_type', '') == 'spell'
+        rareza = getattr(obj, 'rarity', getattr(obj, 'rareza', 'Común'))
+        coste = getattr(obj, 'cost', getattr(obj, 'coste', 0))
+
+        color_tipo = "[color=bb88ff]" if is_spell else ("[color=88ffbb]" if not is_unit else "[color=88ccff]")
+        
+        # Header
+        lbl_titulo = Label(
+            text=f"{color_tipo}[b]{obj.name.upper()}[/b][/color]\n[size=12sp]Coste: {coste}E | Rareza: {rareza}[/size]",
+            markup=True, font_size='18sp', size_hint_y=0.2, halign='center'
+        )
+        layout.add_widget(lbl_titulo)
+
+        # 2. ESTADÍSTICAS (Si es Unidad)
+        if is_unit:
+            if es_unidad_tablero and game_state:
+                # Muestra Stats Efectivas (Calculadas por el motor con buffs/debuffs activos)
+                stats_eff = game_state.get_effective_stats(obj)
+                atk = stats_eff["attack"]
+                spd = stats_eff["speed"]
+                rng = stats_eff["range_atk"]
+                hp_text = f"{obj.health}/{obj.max_health}"
+            else:
+                # Stats base de la carta en mano
+                atk = getattr(obj, 'attack', 0)
+                spd = getattr(obj, 'speed', 0)
+                rng = getattr(obj, 'range_atk', 1)
+                hp_val = getattr(obj, 'health', getattr(obj, 'max_health', 0))
+                hp_text = f"{hp_val} HP"
+
+            lbl_stats = Label(
+                text=f"[color=ff5555][b]⚔️ ATK: {atk}[/b][/color]  |  [color=55ff55][b]❤️ {hp_text}[/b][/color]\n"
+                     f"[color=55ffffff][b]⚡ VEL: {spd}[/b][/color]  |  [color=ffff55][b]🎯 RNG: {rng}[/b][/color]",
+                markup=True, font_size='15sp', size_hint_y=0.18, halign='center'
+            )
+            layout.add_widget(lbl_stats)
+
+            # Estado especial de inmovilizado
+            if es_unidad_tablero and getattr(obj, 'immobile_turns', 0) > 0:
+                layout.add_widget(Label(
+                    text=f"[color=00e5ff][b]🧊 Inmovilizado por {obj.immobile_turns} turno(s)[/b][/color]",
+                    markup=True, size_hint_y=0.1, font_size='13sp'
+                ))
+
+        # 3. GRUPOS / TAGS
+        grupos_raw = getattr(obj, 'groups', getattr(obj, 'grupos', ''))
+        if isinstance(grupos_raw, (list, tuple)):
+            tags_str = ", ".join(grupos_raw)
+        else:
+            tags_str = str(grupos_raw)
+        
+        if tags_str and tags_str != '-':
+            layout.add_widget(Label(
+                text=f"[color=aaaaaa][i]Tags:[/i] {tags_str}[/color]",
+                markup=True, size_hint_y=0.1, font_size='12sp'
+            ))
+
+        # 4. DESCRIPCIÓN / HABILIDAD
+        desc = getattr(obj, 'description', getattr(obj, 'descripcion', 'Sin efecto especial.'))
+        scroll_desc = ScrollView(size_hint_y=0.4)
+        lbl_desc = Label(
+            text=f"[i]{desc}[/i]", markup=True, font_size='13sp',
+            size_hint_y=None, halign='center', valign='top'
+        )
+        lbl_desc.bind(width=lambda inst, val: setattr(inst, 'text_size', (val, None)))
+        lbl_desc.bind(texture_size=lambda inst, val: setattr(inst, 'height', val[1]))
+        scroll_desc.add_widget(lbl_desc)
+        layout.add_widget(scroll_desc)
+
+        # Botón Cerrar
+        btn_close = Button(text="CERRAR", size_hint_y=0.12, background_color=(0.8, 0.2, 0.2, 1))
+        btn_close.bind(on_release=self.dismiss)
+        layout.add_widget(btn_close)
+
+        self.add_widget(layout)
+        
 class PantallaJuego(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -67,13 +189,14 @@ class PantallaJuego(Screen):
         
         for y in range(5):
             for x in range(6):
-                btn_celda = Button(text=".", font_size='14sp', markup=True)
+                btn_celda = BotonLargo(text=".", font_size='14sp', markup=True)
                 btn_celda.coordenadas = (x, y)
                 btn_celda.bind(on_release=self.celda_clickeada)
+                btn_celda.callback_largo = self.inspeccionar_celda_tablero
                 
                 grilla_tablero.add_widget(btn_celda)
                 self.celdas_graficas[(x, y)] = btn_celda
-                
+
         layout_tablero_global.add_widget(grilla_tablero)
         
         # --- 3. ZONA INFERIOR (Mano) ---
@@ -248,7 +371,6 @@ class PantallaJuego(Screen):
 
         for i, carta in enumerate(mano_jugador):
             if carta.get('descuento', False):
-                # Muestra el costo rebajado en verde y el original tachado/gris entre paréntesis
                 texto_carta = (
                     f"{carta['nombre']}\n"
                     f"Coste: [color=00ff88][b]{carta['coste']}E[/b][/color] "
@@ -257,15 +379,16 @@ class PantallaJuego(Screen):
             else:
                 texto_carta = f"{carta['nombre']}\nCoste: {carta['coste']}E"
             
-            btn_carta = Button(
+            btn_carta = BotonLargo(
                 text=texto_carta,
-                markup=True,  # Habilita el renderizado de etiquetas de color [color=...]
+                markup=True,
                 font_size='14sp',
                 background_color=(0.1, 0.1, 0.3, 1) if carta['tipo'] == 'spell' else (0.3, 0.3, 0.3, 1),
                 halign='center'
             )
             btn_carta.indice_mano = i 
             btn_carta.bind(on_release=self.seleccionar_carta)
+            btn_carta.callback_largo = self.inspeccionar_carta_mano  # <-- NUEVO
             self.layout_mano.add_widget(btn_carta)
 
     def seleccionar_carta(self, instance):
@@ -472,16 +595,26 @@ class PantallaJuego(Screen):
         p2.crisby_cost_reduction_active = False
         p2.d_economia_cost_reduction_active = False
 
+        # --- DENTRO DE PantallaJuego.on_pre_enter() ---
         self.ai_controller = None
         if not is_online:
-            def _dificultad(tipo):
-                if 'Fácil' in tipo: return 'EASY'
-                if 'Normal' in tipo: return 'MEDIUM'
-                return 'HARD'
+            def _crear_controller(tipo_string, p_id):
+                if 'LLM' in tipo_string:
+                    from interfaces.controllers.llm_ai_controller import LLMAIController
+                    print(f">> [IA SETUP] Inicializando LLMAIController (gemma2:2b) para Jugador {p_id + 1}")
+                    return LLMAIController(player_id=p_id, model_name="gemma2:2b")
+                else:
+                    from interfaces.controllers.ai_controller import AIController
+                    def _dificultad(tipo):
+                        if 'Fácil' in tipo: return 'EASY'
+                        if 'Normal' in tipo: return 'MEDIUM'
+                        return 'HARD'
+                    return AIController(player_id=p_id, difficulty=_dificultad(tipo_string), delay=0)
+
             if p2.is_ai:
-                self.ai_controller = AIController(player_id=1, difficulty=_dificultad(settings['p2']['tipo']), delay=0)
+                self.ai_controller = _crear_controller(settings['p2']['tipo'], p_id=1)
             elif p1.is_ai:
-                self.ai_controller = AIController(player_id=0, difficulty=_dificultad(settings['p1']['tipo']), delay=0)
+                self.ai_controller = _crear_controller(settings['p1']['tipo'], p_id=0)
 
         self.game_state = GameState([p1, p2], deck1, deck2, seed=getattr(self.manager, 'online_seed', None))
 
@@ -604,11 +737,13 @@ class PantallaJuego(Screen):
     def finalizar_partida_ui(self, ganador_obj, perdedor_obj):
         def _cambiar(dt):
             pantalla_resultados = self.manager.get_screen('result_screen')
+            turnos_jugados = getattr(self.game_state, 'turn_number', getattr(self.game_state, 'turn', 1)) if self.game_state else 1
             pantalla_resultados.configurar(
                 ganador_nombre=ganador_obj.name,
                 perdedor_nombre=perdedor_obj.name,
                 jugador_local_id=0,
-                ganador_id=ganador_obj.id
+                ganador_id=ganador_obj.id,
+                turn_count=turnos_jugados
             )
             self.manager.current = 'result_screen'
             
@@ -636,6 +771,33 @@ class PantallaJuego(Screen):
             AudioManager().play_sfx("error1")
             
         self.actualizar_interfaz_completa()
+
+    def inspeccionar_celda_tablero(self, instance):
+        """Abre inspección al mantener presionada una celda del tablero con tropa"""
+        if not self.game_state:
+            return
+        x, y = instance.coordenadas
+        unidad = self.game_state.board.get_unit_at(x, y)
+        if unidad:
+            ModalDetalleCartaJuego(
+                objeto_carta_o_unidad=unidad,
+                game_state=self.game_state,
+                es_unidad_tablero=True
+            ).open()
+
+    def inspeccionar_carta_mano(self, instance):
+        """Abre inspección al mantener presionada una carta de la mano"""
+        if not self.game_state:
+            return
+        jugador = self.game_state.get_current_player()
+        idx = getattr(instance, 'indice_mano', None)
+        if idx is not None and idx < len(jugador.hand):
+            carta_obj = jugador.hand[idx]
+            ModalDetalleCartaJuego(
+                objeto_carta_o_unidad=carta_obj,
+                game_state=self.game_state,
+                es_unidad_tablero=False
+            ).open()
 
     def reiniciar_partida(self, instance):
         self._ia_corriendo = False

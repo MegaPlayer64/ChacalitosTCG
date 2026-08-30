@@ -1,0 +1,52 @@
+{
+    "season_id": "08",
+    "season_name": "Temporada de La Tirana",
+    "exp_per_level": 100,
+    "max_level": 30,
+    "featured_card_id": "85",
+    "rewards": {
+        "1": {
+            "type": "coins",
+            "amount": 200,
+            "label": "200 Monedas"
+        },
+        "3": {
+            "type": "essence",
+            "amount": 50,
+            "label": "50 Esencia"
+        },
+        "5": {
+            "type": "card",
+            "card_id": "85",
+            "amount": 1,
+            "label": "Nico [Cóndor]"
+        },
+        "10": {
+            "type": "tickets",
+            "amount": 2,
+            "label": "2 Tickets"
+        },
+        "15": {
+            "type": "essence",
+            "amount": 150,
+            "label": "150 Esencia"
+        },
+        "20": {
+            "type": "card",
+            "card_id": "85",
+            "amount": 1,
+            "label": "Nico [Cóndor] (Copia 2)"
+        },
+        "25": {
+            "type": "coins",
+            "amount": 1000,
+            "label": "1000 Monedas"
+        },
+        "30": {
+            "type": "card",
+            "card_id": "85",
+            "amount": 2,
+            "label": "Nico [Cóndor] (Copias 3 y 4)"
+        }
+    }
+}

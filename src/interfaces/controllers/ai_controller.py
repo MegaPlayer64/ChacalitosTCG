@@ -12,12 +12,10 @@ class AIController:
         self.turn_energy_spent = 0
         self.turn_cards_played = 0
         self.abilitiestried = 0
+        self.failed_abilities_this_turn = set()  # Guarda coordenadas (x, y) de habilidades fallidas en el turno
 
     def update_policy(self, result: str):
-        """
-        Stub para futura implementación de Reinforcement Learning.
-        Recibe 'WIN' o 'LOSS' al final de la partida para ajustar pesos.
-        """
+        """Stub para futura implementación de Reinforcement Learning."""
         pass
 
     def _log_and_return_action(self, action: Action, game_state) -> Action:
@@ -52,8 +50,11 @@ class AIController:
             print(f">> [IA] [{action.type.name}]: {detalle}")
         else:
             print(f">> [IA] [Resumen de Turno]: Energía gastada: {self.turn_energy_spent}, Cartas jugadas: {self.turn_cards_played}")
+            # RESET DE ESTADOS DE TURNO
             self.turn_energy_spent = 0
             self.turn_cards_played = 0
+            self.abilitiestried = 0
+            self.failed_abilities_this_turn.clear()
 
         return action
 
@@ -61,14 +62,17 @@ class AIController:
         time.sleep(self.delay)
 
         try:
-            # INTERCEPTAR HABILIDADES PENDIENTES
+            # 1. INTERCEPTAR HABILIDADES PENDIENTES EN RESOLUCIÓN
             if getattr(game_state, 'pending_ability', None):
                 action = self._resolve_pending_ability_ai(game_state)
+                if action.type == ActionType.CANCEL_ABILITY:
+                    self.abilitiestried += 1
                 return self._log_and_return_action(action, game_state)
 
+            # 2. OBTENER Y FILTRAR ACCIONES LEGALES
             legal_actions = self._get_all_legal_actions(game_state)
             
-            if not legal_actions:
+            if not legal_actions or len(legal_actions) == 0:
                 return self._log_and_return_action(Action(ActionType.END_TURN, self.player_id, {}), game_state)
 
             if self.difficulty == "EASY":
@@ -93,19 +97,18 @@ class AIController:
 
     def _resolve_pending_ability_ai(self, game_state) -> Action:
         pending = game_state.pending_ability
-        ability_name = pending['ability']
+        ability_name = pending.get('ability', '')
         
         # 1. encore: mover la unidad adyacente vacía
         if ability_name == 'encore':
             fx, fy = pending['unit_coords']
-            # buscar casilla vacía adyacente
             for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
                 tx, ty = fx + dx, fy + dy
                 if game_state.board.is_within_bounds(tx, ty) and not game_state.board.is_occupied(tx, ty):
                     return Action(ActionType.RESOLVE_ABILITY, self.player_id, {'target': (tx, ty)})
             return Action(ActionType.CANCEL_ABILITY, self.player_id, {})
             
-        # 2. daiaodama: hacer 7 de daño a un enemigo a rango 3
+        # 2. daiaodama: hacer daño a un enemigo a rango 3
         elif ability_name == 'daiaodama':
             fx, fy = pending['source_coords']
             enemy_id = 1 - self.player_id
@@ -182,7 +185,7 @@ class AIController:
                 return Action(ActionType.RESOLVE_ABILITY, self.player_id, {'target': best_target})
             return Action(ActionType.CANCEL_ABILITY, self.player_id, {})
             
-        # 7. zander_move_2: mover el aliado seleccionado a una casilla adyacente vacía
+        # 7. zander_move_2: mover el aliado seleccionado
         elif ability_name == 'zander_move_2':
             tux, tuy = pending['target_unit']
             for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
@@ -197,11 +200,12 @@ class AIController:
             unit = game_state.board.get_unit_at(sx, sy)
             if not unit:
                 return Action(ActionType.CANCEL_ABILITY, self.player_id, {})
-            eff_range = game_state.get_effective_stats(unit)["range_atk"]
             
+            eff_range = game_state.get_effective_stats(unit)["range_atk"]
             enemy_id = 1 - self.player_id
             best_target = None
             max_atk = -1
+            
             for y in range(game_state.board.height):
                 for x in range(game_state.board.width):
                     u = game_state.board.get_unit_at(x, y)
@@ -214,13 +218,13 @@ class AIController:
             if best_target:
                 return Action(ActionType.RESOLVE_ABILITY, self.player_id, {'target': best_target})
             
-            self.abilitiestried += 1
+            # Si no hay objetivo válido, cancelar sin congelarse
             return Action(ActionType.CANCEL_ABILITY, self.player_id, {})
             
-        # 9. chino_quemadas: esquivar daño moviéndose a una casilla adyacente vacía
+        # 9. chino_quemadas: esquivar daño
         elif ability_name == 'chino_quemadas':
             fx, fy = pending['unit_coords']
-            speed = pending['speed']
+            speed = pending.get('speed', 1)
             for dx in range(-speed, speed + 1):
                 for dy in range(-speed, speed + 1):
                     dist = abs(dx) + abs(dy)
@@ -232,13 +236,12 @@ class AIController:
             
         return Action(ActionType.CANCEL_ABILITY, self.player_id, {})
 
-    # --- CLASIFICADOR DE HECHIZOS POR ID Y PROPIEDADES ---
+    # --- CLASIFICADOR DE HECHIZOS ---
     def _get_spell_type(self, card) -> str:
         if hasattr(card, 'effect_type') and card.effect_type:
             return card.effect_type.upper()
 
         card_id = str(getattr(card, 'id', ''))
-        
         heals = {'33', '39', '41', '43', '50', '71', '77'}
         buffs = {'34', '36', '47', '48', '72', '76', '51'}
         damages = {'42', '46'}
@@ -250,10 +253,69 @@ class AIController:
         if card_id in damages: return 'DAMAGE'
         if card_id in debuffs: return 'DEBUFF'
         if card_id in draws: return 'DRAW'
-        
         return 'UTILITY'
 
-    # --- GENERACIÓN FILTRADA Y OPTIMIZADA DE ACCIONES LEGALES ---
+    # --- PRE-VALIDACIÓN DE REQUISITOS DE HABILIDAD ---
+    def _can_unit_use_ability(self, unit, x, y, game_state) -> bool:
+        """Verifica si la unidad cumple los requisitos tácticos reales antes de proponer ACTIVATE_ABILITY."""
+        unit_id = int(unit.id)
+        player = game_state.players[self.player_id]
+        enemy_id = 1 - self.player_id
+
+        # Si ya falló en este turno o se sobrepasó de intentos, ignorar
+        if (x, y) in self.failed_abilities_this_turn or self.abilitiestried >= 3:
+            return False
+
+        # Dante Yukata (68): Requiere al menos UN enemigo en rango + 1
+        if unit_id == 68:
+            eff_range = game_state.get_effective_stats(unit)["range_atk"]
+            for ey in range(game_state.board.height):
+                for ex in range(game_state.board.width):
+                    target = game_state.board.get_unit_at(ex, ey)
+                    if target and target.owner_id == enemy_id:
+                        if max(abs(x - ex), abs(y - ey)) <= (eff_range + 1):
+                            return True
+            return False
+
+        # D. Cutiño (63): Requiere 3 de energía y espacio vacio adyacente
+        elif unit_id == 63:
+            if player.current_energy < 3:
+                return False
+            for dx, dy in [(-1,0), (1,0), (0,-1), (0,1), (-1,-1), (-1,1), (1,-1), (1,1)]:
+                tx, ty = x + dx, y + dy
+                if game_state.board.is_within_bounds(tx, ty) and not game_state.board.is_occupied(tx, ty):
+                    return True
+            return False
+
+        # Zander (64): Requiere otro aliado en tablero con espacio adyacente vacío
+        elif unit_id == 64:
+            for ey in range(game_state.board.height):
+                for ex in range(game_state.board.width):
+                    ally = game_state.board.get_unit_at(ex, ey)
+                    if ally and ally.owner_id == self.player_id and (ex, ey) != (x, y):
+                        for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+                            nx, ny = ex + dx, ey + dy
+                            if game_state.board.is_within_bounds(nx, ny) and not game_state.board.is_occupied(nx, ny):
+                                return True
+            return False
+
+        # Crisby Airsoft (59): Requiere enemigo adyacente
+        elif unit_id == 59:
+            for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+                tx, ty = x + dx, y + dy
+                if game_state.board.is_within_bounds(tx, ty):
+                    target = game_state.board.get_unit_at(tx, ty)
+                    if target and target.owner_id == enemy_id:
+                        return True
+            return False
+
+        # Stefano (12) o Nico (25): Habilidades propias instantáneas
+        elif unit_id in (12, 25):
+            return True
+
+        return False
+
+    # --- GENERACIÓN DE ACCIONES LEGALES ---
     def _get_all_legal_actions(self, game_state) -> list:
         actions = []
         player = game_state.players[self.player_id]
@@ -284,30 +346,25 @@ class AIController:
                 
                 spell_type = self._get_spell_type(card)
 
-                # Intentar objetivo global/base si aplica
                 for target_g in ['G', 'B']:
                     action = Action(ActionType.PLAY_SPELL, self.player_id, {'card_index': i, 'target': target_g})
                     if game_state.validate_action(action):
                         actions.append(action)
 
-                # Filtrado inteligente sobre el tablero para E-Ink/Mobile
                 for x in range(game_state.board.width):
                     for y in range(game_state.board.height):
                         unit = game_state.board.get_unit_at(x, y)
                         
-                        # Daño / Debuff -> Solo probar en ENEMIGOS
                         if spell_type in ('DAMAGE', 'DEBUFF') and unit and unit.owner_id != self.player_id:
                             action = Action(ActionType.PLAY_SPELL, self.player_id, {'card_index': i, 'target': (x, y)})
                             if game_state.validate_action(action):
                                 actions.append(action)
 
-                        # Cura / Buff -> Solo probar en ALIADOS
                         elif spell_type in ('HEAL', 'BUFF') and unit and unit.owner_id == self.player_id:
                             action = Action(ActionType.PLAY_SPELL, self.player_id, {'card_index': i, 'target': (x, y)})
                             if game_state.validate_action(action):
                                 actions.append(action)
                         
-                        # Utility / Control -> Probar en cualquier unidad
                         elif spell_type == 'UTILITY' and unit:
                             action = Action(ActionType.PLAY_SPELL, self.player_id, {'card_index': i, 'target': (x, y)})
                             if game_state.validate_action(action):
@@ -318,7 +375,7 @@ class AIController:
                 if game_state.validate_action(action):
                     actions.append(action)
 
-        # 2. Movimiento y Ataque
+        # 2. Movimiento, Ataques y Habilidades en Tablero
         for x in range(game_state.board.width):
             for y in range(game_state.board.height):
                 unit = game_state.board.get_unit_at(x, y)
@@ -349,128 +406,18 @@ class AIController:
                                         if game_state.validate_action(action_mv):
                                             actions.append(action_mv)
 
-                    # Habilidades Activas: solo para unidades que TIENEN habilidad en trigger_on_activate
-                    UNITS_WITH_ACTIVE_ABILITY = {12, 25, 59, 63, 64, 68}
+                    # Habilidades Activas: Con pre-validación de objetivos
                     if not getattr(unit, 'ability_used_this_turn', False):
-                        if int(unit.id) in UNITS_WITH_ACTIVE_ABILITY:
-                            if int(unit.id) == 63 and player.current_energy < 3:
-                                pass
-                            elif (int(unit.id) == 68 or int(unit.id) == 64) and self.abilitiestried >= 3:
-                                pass
-                            else:
-                                action_act = Action(ActionType.ACTIVATE_ABILITY, self.player_id, {'from': (x, y)})
-                                if game_state.validate_action(action_act):
-                                    actions.append(action_act)
+                        if self._can_unit_use_ability(unit, x, y, game_state):
+                            action_act = Action(ActionType.ACTIVATE_ABILITY, self.player_id, {'from': (x, y)})
+                            if game_state.validate_action(action_act):
+                                actions.append(action_act)
 
         actions.append(Action(ActionType.END_TURN, self.player_id, {}))
         return actions
 
-    def _is_enemy_unit_target(self, game_state, target):
-        if isinstance(target, tuple):
-            unit = game_state.board.get_unit_at(*target)
-            return unit and getattr(unit, 'owner_id', None) != self.player_id
-        return False
-
-    def _is_friendly_unit_target(self, game_state, target):
-        if isinstance(target, tuple):
-            unit = game_state.board.get_unit_at(*target)
-            return unit and getattr(unit, 'owner_id', None) == self.player_id
-        return False
-
-    def _evaluate_spell_action(self, game_state, action) -> float:
-        player = game_state.players[self.player_id]
-        card = player.hand[action.payload['card_index']]
-        spell_type = self._get_spell_type(card)
-        target = action.payload.get('target')
-        score = 0.0
-
-        if target in ('G', 'B'):
-            return 25.0
-
-        if isinstance(target, tuple):
-            unit = game_state.board.get_unit_at(*target)
-            if not unit:
-                return -50.0
-
-            is_enemy = (unit.owner_id != self.player_id)
-
-            if spell_type == 'DAMAGE':
-                if is_enemy:
-                    score += 30.0
-                    estimated_damage = getattr(card, 'power', 5)
-                    if unit.health <= estimated_damage:
-                        score += 40.0 + (unit.attack * 2)
-                else:
-                    return -100.0
-
-            elif spell_type == 'HEAL':
-                if not is_enemy:
-                    max_hp = getattr(unit, 'max_health', unit.health)
-                    missing_hp = max_hp - unit.health
-                    if missing_hp > 0:
-                        score += 20.0 + (missing_hp * 5)
-                    else:
-                        score -= 10.0
-                else:
-                    return -100.0
-
-            elif spell_type == 'BUFF':
-                if not is_enemy:
-                    score += 25.0 + (unit.attack * 2)
-                else:
-                    return -100.0
-
-            elif spell_type == 'DEBUFF':
-                if is_enemy:
-                    score += 25.0 + (unit.attack * 3)
-                else:
-                    return -100.0
-
-        return score
-
-    def _evaluate_environment_action(self, game_state, action) -> float:
-        score = 15.0
-        if getattr(game_state, 'active_environment', None) is None:
-            score += 15.0
-        else:
-            score += 5.0
-        return score
-
-    def _evaluate_attack_action(self, game_state, action) -> float:
-        target = action.payload['target']
-        if target == 'B':
-            return 60.0
-
-        fx, fy = action.payload['from']
-        tx, ty = action.payload['target']
-        attacker = game_state.board.get_unit_at(fx, fy)
-        defender = game_state.board.get_unit_at(tx, ty)
-
-        if not attacker or not defender:
-            return 0.0
-
-        score = 20.0
-
-        kills_defender = defender.health <= attacker.attack
-        retaliation_damage = getattr(defender, 'attack', 0)
-        dies_in_trade = attacker.health <= retaliation_damage
-
-        if kills_defender and not dies_in_trade:
-            score += 50.0
-        elif kills_defender and dies_in_trade:
-            our_value = attacker.attack + attacker.health
-            their_value = defender.attack + defender.health
-            if their_value >= our_value:
-                score += 30.0
-            else:
-                score -= 20.0
-        elif not kills_defender and dies_in_trade:
-            score -= 80.0
-
-        return score
-
     def _get_medium_action(self, game_state, legal_actions) -> Action:
-        # 1. Invocaciones de mayor ataque
+        # Invocaciones
         summons = [a for a in legal_actions if a.type == ActionType.PLAY_CARD]
         if summons:
             player = game_state.players[self.player_id]
@@ -484,30 +431,28 @@ class AIController:
             if best_summon:
                 return best_summon
 
-        # 2. Hechizos y Entornos
+        # Hechizos
         spell_actions = [a for a in legal_actions if a.type == ActionType.PLAY_SPELL]
         if spell_actions:
             best_spell = max(spell_actions, key=lambda a: self._evaluate_spell_action(game_state, a))
             if self._evaluate_spell_action(game_state, best_spell) > 0:
                 return best_spell
 
-        # 2.5 Habilidades Activas
+        # Habilidades Activas
         activations = [a for a in legal_actions if a.type == ActionType.ACTIVATE_ABILITY]
         if activations:
             return activations[0]
 
+        # Entornos
         env_actions = [a for a in legal_actions if a.type == ActionType.PLAY_CARD and game_state.players[self.player_id].hand[a.payload['card_index']].card_type.lower() in ('environment', 'building')]
         if env_actions:
-            best_env = max(env_actions, key=lambda a: self._evaluate_environment_action(game_state, a))
-            if self._evaluate_environment_action(game_state, best_env) > 10:
-                return best_env
+            return env_actions[0]
 
-        # 3. Movimientos
+        # Movimientos
         moves = [a for a in legal_actions if a.type == ActionType.MOVE]
         if moves:
             best_move = None
             best_eval = float('inf') if self.player_id == 1 else -float('inf')
-            
             for a in moves:
                 tx, ty = a.payload['to']
                 if self.player_id == 1:
@@ -521,64 +466,16 @@ class AIController:
             if best_move:
                 return best_move
 
-        # 4. Ataques a Unidades
+        # Ataques
         unit_attacks = [a for a in legal_actions if a.type == ActionType.ATTACK and a.payload['target'] != 'B']
         if unit_attacks:
-            best_attack = None
-            lowest_hp = float('inf')
-            for a in unit_attacks:
-                tx, ty = a.payload['target']
-                target = game_state.board.get_unit_at(tx, ty)
-                if target and target.health < lowest_hp:
-                    lowest_hp = target.health
-                    best_attack = a
-            if best_attack:
-                return best_attack
+            return unit_attacks[0]
         
-        # 5. Ataque a Base
         base_attacks = [a for a in legal_actions if a.type == ActionType.ATTACK and a.payload['target'] == 'B']
         if base_attacks:
             return base_attacks[0]
 
         return Action(ActionType.END_TURN, self.player_id, {})
-
-    def _get_groups_lower(self, card):
-        groups = getattr(card, 'groups', [])
-        if not groups:
-            return []
-        if isinstance(groups, str):
-            return [g.strip().lower() for g in groups.replace('\n', ',').split(',')]
-        elif isinstance(groups, list):
-            return [str(g).lower() for g in groups if g and len(str(g).strip()) > 0]
-        return []
-
-    def _calculate_synergy_score(self, card, game_state) -> int:
-        card_tags = set(self._get_groups_lower(card))
-        if not card_tags or card_tags == {''}:
-            return 0
-            
-        score = 0
-        for x in range(game_state.board.width):
-            for y in range(game_state.board.height):
-                unit = game_state.board.get_unit_at(x, y)
-                if unit and getattr(unit, 'owner_id', None) == self.player_id:
-                    unit_tags = set(self._get_groups_lower(unit))
-                    intersection = card_tags.intersection(unit_tags)
-                    score += len(intersection) * 20
-        return score
-
-    def _calculate_lethal_risk(self, game_state, unit, target_x, target_y, ignored_enemy_pos=None) -> bool:
-        for x in range(game_state.board.width):
-            for y in range(game_state.board.height):
-                if ignored_enemy_pos and (x, y) == ignored_enemy_pos:
-                    continue
-                enemy = game_state.board.get_unit_at(x, y)
-                if enemy and getattr(enemy, 'owner_id', None) != self.player_id:
-                    dist = max(abs(x - target_x), abs(y - target_y))
-                    if dist <= getattr(enemy, 'range_atk', 1):
-                        if getattr(enemy, 'attack', 0) >= getattr(unit, 'health', 0):
-                            return True
-        return False
 
     def _get_hard_action(self, game_state, legal_actions) -> Action:
         best_action = Action(ActionType.END_TURN, self.player_id, {})
@@ -605,29 +502,18 @@ class AIController:
 
                     if card_type == 'unit':
                         base_score = 25.0 + (getattr(card, 'attack', 0) * 3) + (getattr(card, 'health', 0) * 2)
-                        synergy = self._calculate_synergy_score(card, game_state)
-                        score = base_score + synergy
-
-                        tx, ty = action.payload['to']
-                        if self._calculate_lethal_risk(game_state, card, tx, ty):
-                            score -= 30.0
-                            
+                        score = base_score
                     elif card_type in ('environment', 'building'):
-                        score = self._evaluate_environment_action(game_state, action)
+                        score = 20.0
 
             elif action.type == ActionType.ACTIVATE_ABILITY:
-                score = 35.0
+                score = 45.0  # Alta prioridad si pasó la pre-validación
 
             elif action.type == ActionType.MOVE:
                 fx, fy = action.payload['from']
                 tx, ty = action.payload['to']
-                unit = game_state.board.get_unit_at(fx, fy)
-
                 progress = (fx - tx) if self.player_id == 1 else (tx - fx)
                 score += progress * 8.0
-
-                if unit and self._calculate_lethal_risk(game_state, unit, tx, ty):
-                    score -= 50.0
 
             score += random.uniform(0.0, 0.5)
 
@@ -636,3 +522,49 @@ class AIController:
                 best_action = action
 
         return best_action
+
+    def _evaluate_spell_action(self, game_state, action) -> float:
+        player = game_state.players[self.player_id]
+        card = player.hand[action.payload['card_index']]
+        spell_type = self._get_spell_type(card)
+        target = action.payload.get('target')
+
+        if target in ('G', 'B'):
+            return 25.0
+
+        if isinstance(target, tuple):
+            unit = game_state.board.get_unit_at(*target)
+            if not unit:
+                return -50.0
+
+            is_enemy = (unit.owner_id != self.player_id)
+
+            if spell_type == 'DAMAGE':
+                return 30.0 if is_enemy else -100.0
+            elif spell_type == 'HEAL':
+                return 25.0 if not is_enemy else -100.0
+            elif spell_type == 'BUFF':
+                return 25.0 if not is_enemy else -100.0
+            elif spell_type == 'DEBUFF':
+                return 25.0 if is_enemy else -100.0
+
+        return 0.0
+
+    def _evaluate_attack_action(self, game_state, action) -> float:
+        target = action.payload['target']
+        if target == 'B':
+            return 60.0
+
+        fx, fy = action.payload['from']
+        tx, ty = action.payload['target']
+        attacker = game_state.board.get_unit_at(fx, fy)
+        defender = game_state.board.get_unit_at(tx, ty)
+
+        if not attacker or not defender:
+            return 0.0
+
+        score = 20.0
+        if defender.health <= attacker.attack:
+            score += 40.0
+
+        return score

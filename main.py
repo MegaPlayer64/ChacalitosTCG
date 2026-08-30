@@ -88,8 +88,11 @@ class ChacalitosTCG(App):
         from src.interfaces.arcade_screen import PantallaArcade
         sm.add_widget(PantallaArcade(name='arcade_screen'))
         
-        from src.views.pantalla_misiones import PantallaMisiones
+        from src.interfaces.pantalla_misiones import PantallaMisiones
         sm.add_widget(PantallaMisiones(name='missions_screen'))
+        
+        from src.interfaces.battle_pass_view import BattlePassView
+        sm.add_widget(BattlePassView(name='battle_pass'))
         
         print(f"Pantallas registradas: {sm.screen_names}")
         

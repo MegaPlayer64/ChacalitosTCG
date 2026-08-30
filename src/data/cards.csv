@@ -86,3 +86,15 @@ Es requerido para invocar esta carta que en el tablero haya una Naty y una Ami a
 80,Biblioteca Escolar,building,Épica,5,N/A,N/A,N/A,N/A,Literatura,Las unidades con la tag Literatura ganan +1 de Rango de ataque.,Cartas Entorno
 81,Jose (Enmascarado),unit,Especial,3,13,16,1,2,"Cabezal de Tren, Futboleros","Cada vez que ataca, pierde la mitad de su daño (Hasta 1). Además, su primer ataque tiene 2 de rango",Cartas Miscelanias
 82,Bichots,unit,Común,4,16,13,2,1,"Cabezal de Tren, 3_NAI, Futboleros",,Cartas Iniciales 3_NAI
+83,Jose (Oso),unit,Épica,5,20,16,2,1,"Cabezal de Tren, Futboleros",Puede +4 daño perdiendo 4 vida (Una vez por turno),La Tirana
+84,Stefano (Viejo),unit,Épica,7,40,15,1,1,"Derma-patch, Cabezal de Tren, Futboleros",Mientras este activo: Todos los Cabezal de Tren adquieren +1 de velocidad,La Tirana
+85,Nico (Condor),unit,Evento,7,27,16,2,1,"Mish-A, Deportistas","Es capaz de pasar entre unidades en el campo, aumentando su rango de movimiento, infringiendo 6 de daño al pasar por ellas.",La Tirana
+86,Emi & Richi (Demonios),unit,Excelencia,7,45,15,1,1,"Derma-patch, Danza, Músico","Mientras esta unidad esté en juego, cualquier daño que vaya a recibir la Base se reduce en 5. Si la Base recibe daño de todas formas, esta unidad gana +1 de ataque permanentemente.
+
+Es requerido para invocar esta carta que en el tablero haya un Richi y una Emi activos para invocar, pudiendo colocarlo en cualquier de las ubicaciones que se encuentran.",La Tirana
+87,Martina & Rin (Ángeles),unit,Excelencia,6,35,10,1,1,"Derma-patch, Cabezal de Tren","Al final de tu turno, si la Base ha recibido daño, restaura 4 PV a la Base y 2 PV a todas las unidades aliadas adyacentes.
+
+
+Es requerido para invocar esta carta que en el tablero haya un Rin y una Martina activos para invocar, pudiendo colocarlo en cualquier de las ubicaciones que se encuentran.","La Tirana
+
+"
