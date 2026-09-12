@@ -2,16 +2,29 @@ import os
 import json
 import random
 import datetime
+from src.infrastructure.path_manager import PathManager
 
 class MissionManager:
-    PROFILE_PATH = "src/data/user_profile.json"
-    CATALOG_PATH = "src/data/daily_missions_catalog.json"
+    
+    CATALOG_PATH = PathManager.get_data_file_path("daily_missions_catalog.json")
+    PROFILE_PATH = PathManager.get_user_profile_path()
+
+    @classmethod
+    def get_profile_path(cls):
+        return cls.PROFILE_PATH
+
+    @classmethod
+    def get_catalog_path(cls):
+        return cls.CATALOG_PATH
 
     @classmethod
     def _load_profile(cls, profile_path=None):
-        path = profile_path or cls.PROFILE_PATH
+        path = profile_path or cls.get_profile_path()
         if not os.path.exists(path):
             return {
+                "auth_token": None,
+                "user_id": None,
+                "last_synced": 0,
                 "username": "Jugador",
                 "coins": 0,
                 "craft_essence": 0,
@@ -30,7 +43,7 @@ class MissionManager:
 
     @classmethod
     def _save_profile(cls, perfil, profile_path=None):
-        path = profile_path or cls.PROFILE_PATH
+        path = profile_path or cls.get_profile_path()
         try:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "w", encoding="utf-8") as f:
@@ -42,7 +55,7 @@ class MissionManager:
 
     @classmethod
     def _load_catalog(cls, catalog_path=None):
-        path = catalog_path or cls.CATALOG_PATH
+        path = catalog_path or cls.get_catalog_path()
         if not os.path.exists(path):
             print(f"[!] Catálogo de misiones no encontrado en {path}")
             return []

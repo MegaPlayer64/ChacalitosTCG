@@ -93,6 +93,9 @@ class ChacalitosTCG(App):
         
         from src.interfaces.battle_pass_view import BattlePassView
         sm.add_widget(BattlePassView(name='battle_pass'))
+
+        from src.interfaces.login_screen import LoginScreen
+        sm.add_widget(LoginScreen(name='login_screen'))
         
         print(f"Pantallas registradas: {sm.screen_names}")
         
@@ -101,10 +104,21 @@ class ChacalitosTCG(App):
         self.game_settings = None
         return sm
 
+    def on_start(self):
+        """Intento silencioso de sincronización con la nube al arrancar."""
+        try:
+            import threading
+            from server.cloud_sync import CloudSyncManager
+            if CloudSyncManager.is_logged_in():
+                print(">> [Main] Sesión de usuario activa. Sincronizando con la nube en segundo plano...")
+                threading.Thread(target=CloudSyncManager.sync_profile, daemon=True).start()
+        except Exception as e:
+            print(f">> [Main] Sincronización en segundo plano omitida: {e}")
+
 def main():
     try:
         print("Cargando Base de Datos de Cartas...")
-        CardLoader.load_units("src/data/cards.csv")
+        CardLoader.load_units()
         ChacalitosTCG().run()
     except Exception as e:
         print(f"\n[!] Error Inesperado: {e}")

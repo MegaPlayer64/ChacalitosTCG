@@ -29,7 +29,7 @@ ID,Nombre,CardType,Rareza,Coste,Vida,Ataque,Velocidad,Rango_ataque,Grupos,Descri
 28,Cristobal,unit,Común,2,10,5,1,1,Nuevo,"Al entrar, robas una carta de tu mazo. Si la carta robada es un truco, cura 4 a un aliado.",Cartas Iniciales Nuevos
 29,Crisby,unit,Común,2,11,6,1,1,"Mish-B, Nuevo,Tecnológico","Al entrar, tu próxima carta de coste 4 o menos cuesta 1 de energía menos este turno.",Cartas Iniciales Nuevos
 30,Josefa A,unit,Común,2,10,5,1,1,Nuevo,"Al entrar, selecciona una unidad aliada, esta recibe un escudo que reduce la mitad de daño recibido en el siguiente ataque.",Cartas Iniciales Nuevos
-31,Martina Nueva,unit,Común,5,22,9,1,1,Nuevo,"Al entrar al tablero, otorga +3 de Vida Máxima a todas las unidades aliadas. Mientras tenga al menos un aliado adyacente, Martina Nueva reduce en 2 todo el daño recibido.",Cartas Miscelanias
+31,Bichots,unit,Común,4,16,13,2,1,"Cabezal de Tren, 3_NAI, Futboleros",,Cartas Iniciales 3_NAI
 32,Ida al Casino,spell,Épica,4,N/A,N/A,N/A,N/A,Nuevo,"Selecciona una unidad en el tablero (aliada o enemiga) y atráela hasta 2 casillas en línea recta hacia tu unidad más cercana. Si la unidad objetivo es de la tag Nuevo, robas 1 carta.",Cartas Truco
 33,Pan con Mayo,spell,Común,2,N/A,N/A,N/A,N/A,"Fuerzas Especiales Valenzuela, Cabezal de Tren",Cura 10. Cura 12 si es Fuerzas Especiales Valenzuela o Cabezal de Tren,Cartas Truco
 34,Globo de eventos,spell,Común,3,N/A,N/A,N/A,N/A,-,Más 3 daño por 2 turnos,Cartas Truco
@@ -85,7 +85,7 @@ Es requerido para invocar esta carta que en el tablero haya una Naty y una Ami a
 79,Axel,unit,Especial,6,28,10,2,1,Mish-A,"Al recibir daño, adquiere +1 de daño",Cartas Iniciales Mish-A
 80,Biblioteca Escolar,building,Épica,5,N/A,N/A,N/A,N/A,Literatura,Las unidades con la tag Literatura ganan +1 de Rango de ataque.,Cartas Entorno
 81,Jose (Enmascarado),unit,Especial,3,13,16,1,2,"Cabezal de Tren, Futboleros","Cada vez que ataca, pierde la mitad de su daño (Hasta 1). Además, su primer ataque tiene 2 de rango",Cartas Miscelanias
-82,Bichots,unit,Común,4,16,13,2,1,"Cabezal de Tren, 3_NAI, Futboleros",,Cartas Iniciales 3_NAI
+82,Gorro Soviético,spell,Común,3,N/A,N/A,N/A,N/A,-,"Da más 6 de vida máxima a una unidad. (Curando esa cantidad)",Cartas Miscelanias
 83,Jose (Oso),unit,Épica,5,20,16,2,1,"Cabezal de Tren, Futboleros",Puede +4 daño perdiendo 4 vida (Una vez por turno),La Tirana
 84,Stefano (Viejo),unit,Épica,7,40,15,1,1,"Derma-patch, Cabezal de Tren, Futboleros",Mientras este activo: Todos los Cabezal de Tren adquieren +1 de velocidad,La Tirana
 85,Nico (Condor),unit,Evento,7,27,16,2,1,"Mish-A, Deportistas","Es capaz de pasar entre unidades en el campo, aumentando su rango de movimiento, infringiendo 6 de daño al pasar por ellas.",La Tirana
@@ -98,3 +98,5 @@ Es requerido para invocar esta carta que en el tablero haya un Richi y una Emi a
 Es requerido para invocar esta carta que en el tablero haya un Rin y una Martina activos para invocar, pudiendo colocarlo en cualquier de las ubicaciones que se encuentran.","La Tirana
 
 "
+88,Dante (Olimpiadas),unit,Excelencia,4,14,12,1,1,"Fuerzas Especiales Valenzuela, Mish-B, Artista, Músico, Tecnológico","Robas una carta, ganas el 50% del costo de la carta.
+EVOLUCIÓN DE DANTE: Ganas +2 de energia y 1 de velocidad",SIMCE

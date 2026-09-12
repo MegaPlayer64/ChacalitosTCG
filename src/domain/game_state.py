@@ -24,6 +24,7 @@ class GameState:
         self.game_over = False
         self.active_environment = None
         self.pending_ability = None
+        self.excelenciaactive = 0
 
         # --- Inicialización de la Partida ---
         for p in self.players:
@@ -236,16 +237,15 @@ class GameState:
                 
             card = player.hand[card_index]
 
-            # Forzamos que solo busque el descuento de Crisby si la tropa es 4 o menos, si no, deje la carta sin descuento
+            # Descuento de Crisby
             crisby_active = getattr(player, 'crisby_cost_reduction_active', False)
-
             if crisby_active and card.cost <= 4:
                 final_cost = max(1, int(card.cost) - 1)
             else:
                 final_cost = int(card.cost)
 
             if player.current_energy < final_cost:
-                print(f">> [!] Energía insuficiente. Necesitas {card.cost}, tienes {player.current_energy}.")
+                print(f">> [!] Energía insuficiente. Necesitas {final_cost}, tienes {player.current_energy}.")
                 return False
                 
             if card.card_type.lower() == 'unit':
@@ -254,7 +254,12 @@ class GameState:
                     86: (17, 13, "Richi", "Emi"),
                     87: (22, 16, "Rin", "Martina")
                 }
+                evolution = {
+                    88: (7, "Dante")  # 88 evoluciona de 7 (Dante)
+                }
                 card_id_int = int(card.id)
+
+                # --- CASO A: FUSIONES DUALES ---
                 if card_id_int in dual_pairs:
                     id_a, id_b, name_a, name_b = dual_pairs[card_id_int]
                     pos_a = None
@@ -274,6 +279,26 @@ class GameState:
                     if (tx, ty) not in (pos_a, pos_b):
                         print(f">> [!] Debes invocar encima de la ubicación de {name_a} o {name_b}.")
                         return False
+
+                # --- CASO B: EVOLUCIONES ---
+                elif card_id_int in evolution:
+                    precursor_id, precursor_name = evolution[card_id_int]
+                    target_unit = self.board.get_unit_at(tx, ty)
+
+                    # Si la casilla está ocupada, DEBE ser por el precursor aliado
+                    if target_unit:
+                        u_card_id = int(getattr(target_unit, 'card_id', getattr(target_unit, 'id', 0)))
+                        is_owner = int(target_unit.owner_id) == int(action.player_id)
+                        if not (is_owner and u_card_id == precursor_id):
+                            print(f">> [!] Casilla ocupada. Para evolucionar debes seleccionar un {precursor_name} aliado.")
+                            return False
+                    else:
+                        # Si está vacía, debe ser en zona de invocación válida
+                        if not self.validate_summon(action.player_id, tx, ty):
+                            print(f">> [!] Zona de invocación inválida para el jugador {action.player_id}.")
+                            return False
+
+                # --- CASO C: UNIDADES ESTÁNDAR ---
                 else:
                     if self.board.is_occupied(tx, ty):
                         print(f">> [!] La casilla ({tx}, {ty}) ya está ocupada.")
@@ -480,6 +505,8 @@ class GameState:
         return False
     
     def apply_action(self, action: Action) -> bool:
+        evolutioncompleted = False
+        
         if not self.validate_action(action):
             return False
 
@@ -498,6 +525,8 @@ class GameState:
             return result
 
         if action.type.name == "PLAY_CARD":
+            from src.domain.ability_manager import AbilityManager
+
             card_index = action.payload['card_index']
             tx, ty = action.payload.get('to', (-1, -1))
             
@@ -520,7 +549,12 @@ class GameState:
                     86: (17, 13, "Richi", "Emi"),
                     87: (22, 16, "Rin", "Martina")
                 }
+                evolution = {
+                    88: (7, "Dante")  # ID 88 evoluciona sobre ID 7
+                }
                 card_id_int = int(card.id)
+
+                # --- 1. CASO FUSIÓN DUAL ---
                 if card_id_int in dual_pairs:
                     id_a, id_b, name_a, name_b = dual_pairs[card_id_int]
                     pos_a = None
@@ -542,19 +576,35 @@ class GameState:
                     if pos_b:
                         self.board.remove_unit(pos_b[0], pos_b[1])
                         print(f">> [Sacrificio Dual] {name_b} eliminada en {pos_b}")
-                
+
+                # --- 2. CASO EVOLUCIÓN ---
+                elif card_id_int in evolution:
+                    precursor_id, precursor_name = evolution[card_id_int]
+                    target_unit = self.board.get_unit_at(tx, ty)
+
+                    # Si hay una unidad en la casilla de destino y coincide con el precursor aliado:
+                    if target_unit and int(getattr(target_unit, 'card_id', getattr(target_unit, 'id', 0))) == precursor_id:
+                        self.board.remove_unit(tx, ty)
+                        evolutioncompleted = True
+                        
+                        
+                        print(f">> [EVOLUCIÓN] ¡{player.name} evolucionó a {precursor_name} en {card.name}!")
+                        
+
+                # --- 3. INVOCACIÓN EN TABLERO ---
                 card.owner_id = int(player.id)
                 self.board.set_unit_at(tx, ty, card)
                 print(f">> ¡{player.name} invocó a {card.name} en ({tx}, {ty})!")
-                
-                # CORRECCIÓN: Integrar la gestión de habilidades directamente aquí
-                from src.domain.ability_manager import AbilityManager
+
+                # --- 4. DISPARAR HABILIDAD DE ENTRADA (On Enter) ---
+                if evolutioncompleted:
+                    AbilityManager.trigger_on_evolve(card, self)
+                    
                 AbilityManager.trigger_on_enter(card, self)
 
                 if card.rarity == "Excelencia":
-                    from src.domain.audio_manager import AudioManager
-                    AudioManager().play_bgm("bradinsky.ogg")
-                    
+                    self.excelenciaactive += 1
+
                 
                 # Efecto pasivo 52 (Zona de Juegos)
                 if getattr(self, 'active_environment', None) and int(self.active_environment.card.id) == 52:
@@ -649,6 +699,8 @@ class GameState:
                                 pass
                         if murio:
                             print(f">> ¡{enemy_on_path.name} ha sido derrotado por el sobrevuelo de Nico Cóndor!")
+                            if enemy_on_path.rarity == "Excelencia":
+                                self.excelenciaactive -= 1
                             self.board.remove_unit(px, py)
 
             self.board.move_unit(fx, fy, tx, ty)
@@ -713,6 +765,10 @@ class GameState:
                         
                 if murió:
                     print(f">>> ¡{target.name} ha sido derrotado! <<<")
+                    
+                    if target.rarity == "Excelencia":
+                        self.excelenciaactive -= 1
+                        
                     self.board.remove_unit(tx, ty)
                     
                     # Chequeo de buff "draw_on_kill"
@@ -760,8 +816,14 @@ class GameState:
                 print(f" La base de {p.name} ha sido destruida.")
                 print("="*40 + "\n")
                 break
-                
+
+        if self.excelenciaactive > 0: 
+            AudioManager().play_bgm("bradinsky.ogg")
+        else:
+            AudioManager().play_bgm('tetrisjavasong.ogg')
         return True
+
+        
     
     def _start_turn(self):
         current_player = self.get_current_player()

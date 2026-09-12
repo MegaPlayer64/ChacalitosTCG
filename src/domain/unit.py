@@ -30,6 +30,8 @@ class Unit(Card):
         elif str(self.id) == "84" or self.name == 'Stefano (Viejo)':
             self.static_abilities.append({"type": "buff_tag_speed", "tag": "cabezal de tren", "amount": 1})
         self.immobile_turns = 0
+        self.evolution = False
+
         self.ability_used_this_turn = False
         # Buffs temporales (Hechizos y estados por turnos)
         self.temporary_buffs = []

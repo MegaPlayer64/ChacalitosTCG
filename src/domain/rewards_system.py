@@ -1,6 +1,7 @@
 import json
 import os
 import random
+from src.infrastructure.path_manager import PathManager
 
 class RewardsSystem:
     @staticmethod
@@ -8,11 +9,12 @@ class RewardsSystem:
         victoria, 
         dificultad_rival="HUMANO", 
         duracion_segundos=60, 
-        ruta_perfil="src/data/user_profile.json",
+        ruta_perfil=None,
         monedas_base_override=None,
         mult_extra=1.0,
         turn_count=1
     ):
+        ruta_perfil = ruta_perfil or PathManager.get_user_profile_path()
         if not os.path.exists(ruta_perfil):
             print(f"[!] No se encontró el archivo de perfil en {ruta_perfil}")
             return None

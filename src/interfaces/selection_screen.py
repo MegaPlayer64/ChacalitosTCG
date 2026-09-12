@@ -8,13 +8,14 @@ from kivy.uix.label import Label
 from kivy.uix.spinner import Spinner
 from src.domain.grid_background import FondoCuadriculado
 from interfaces.controllers.llm_ai_controller import LLMAIController
+from src.infrastructure.path_manager import PathManager
 
 OPCION_MAZO_RANDOM = "[Aleatorio] Mazo Random"
 
 class PantallaSeleccion(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.ruta_perfil = "src/data/user_profile.json"
+        self.ruta_perfil = PathManager.get_user_profile_path()
         self.mazos = []  # Diccionario interno de mapeo de rutas/orígenes
         
         # Fondo bello
@@ -101,7 +102,10 @@ class PantallaSeleccion(Screen):
         mazos = []
         
         # 1. Escanear los mazos premade de las carpetas de datos
-        base_path = "src/data/premade_decks"
+        base_path = PathManager.get_data_file_path("premade_decks")
+        if not os.path.exists(base_path):
+            base_path = PathManager.get_asset_path("src/data/premade_decks")
+
         if os.path.exists(base_path):
             for root, dirs, files in os.walk(base_path):
                 for file in files:
@@ -133,7 +137,7 @@ class PantallaSeleccion(Screen):
         if not mazos:
             mazos.append({
                 'nombre': '[Premade] Dermapatch', 
-                'ruta': 'src/data/premade_decks/tag_theme/dermapatch_basic_deck.json',
+                'ruta': PathManager.get_data_file_path("premade_decks/tag_theme/dermapatch_basic_deck.json"),
                 'tipo_origen': 'archivo'
             })
             

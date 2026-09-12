@@ -10,6 +10,9 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.spinner import Spinner
 
 from src.infrastructure.loaders.card_loader import CardLoader
+from src.infrastructure.path_manager import PathManager
+from src.domain.card_styles import apply_card_theme, apply_card_background, get_rarity_markup
+
 
 class PantallaDeckBuilder(Screen):
     # Jerarquía para ordenamiento por rareza
@@ -22,7 +25,7 @@ class PantallaDeckBuilder(Screen):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.ruta_perfil = "src/data/user_profile.json"
+        self.ruta_perfil = PathManager.get_user_profile_path()
         
         self.mazo_actual_ids = []
         self.inventario_total = {} # Dict original {card_id_str: cantidad_poseida}
@@ -96,7 +99,7 @@ class PantallaDeckBuilder(Screen):
         scroll_mazo.add_widget(self.lista_mazo_visual)
         col_central.add_widget(scroll_mazo)
 
-# --- Columna Derecha: Panel Informativo ---
+        # Columna Derecha: Panel Informativo
         col_derecha = BoxLayout(orientation='vertical', size_hint_x=0.3, spacing=10)
         col_derecha.add_widget(Label(text="🔍 Detalles de la Carta", size_hint_y=0.06, bold=True))
         
@@ -104,12 +107,11 @@ class PantallaDeckBuilder(Screen):
         scroll_detalles = ScrollView(size_hint_y=0.48)
         self.lbl_detalles_carta = Label(
             text="Selecciona una carta para inspeccionar.", 
-            size_hint_y=None, # La altura la calculará el texto
+            size_hint_y=None,
             halign='left', 
             valign='top',
-            markup=True       # Te permite usar [b]negrita[/b], [color=ff0000]colores[/color], etc.
+            markup=True
         )
-        # La magia de Kivy: ajusta el ancho del wrapping al contenedor y calcula el alto real necesario
         self.lbl_detalles_carta.bind(
             width=lambda instance, value: setattr(instance, 'text_size', (value, None)),
             texture_size=lambda instance, value: setattr(instance, 'height', value[1])
@@ -161,7 +163,6 @@ class PantallaDeckBuilder(Screen):
         self.cargar_datos_del_perfil()
 
     def extraer_tags_validas(self, grupos_data):
-        """Función auxiliar que parsea los grupos y ELIMINA el guion '-' y textos vacíos"""
         if not grupos_data or grupos_data == '-':
             return []
         
@@ -172,7 +173,6 @@ class PantallaDeckBuilder(Screen):
         else:
             return []
 
-        # Filtra descartando vacíos y el guion '-'
         return [t for t in raw_list if t and t != '-']
 
     def cargar_datos_del_perfil(self):
@@ -192,7 +192,6 @@ class PantallaDeckBuilder(Screen):
         inventario_raw = perfil.get("inventory", {})
         self.inventario_total = {k: int(v) for k, v in inventario_raw.items()}
 
-        # Escanear todas las tags disponibles en el inventario para rellenar el Spinner (ignorando '-')
         tags_detectadas = set()
         for cid_str, cant in self.inventario_total.items():
             if cant > 0:
@@ -219,7 +218,7 @@ class PantallaDeckBuilder(Screen):
             if carta_obj and total_poseido > 0:
                 copias_en_mazo = self.mazo_actual_ids.count(card_id)
                 cantidad_libre = total_poseido - copias_en_mazo
-                rareza = getattr(carta_obj, 'rarity', 'Común')
+                rareza = getattr(carta_obj, 'rarity', getattr(carta_obj, 'rareza', 'Común'))
                 tipo = 'unit' if hasattr(carta_obj, 'attack') else getattr(carta_obj, 'card_type', 'unit')
                 grupos_data = getattr(carta_obj, 'groups', getattr(carta_obj, 'grupos', ''))
                 tags = self.extraer_tags_validas(grupos_data)
@@ -261,28 +260,76 @@ class PantallaDeckBuilder(Screen):
         else: # ID
             coleccion_filtrada.sort(key=lambda c: c["id"])
 
-        # --- D) RENDERIZAR GRILLA DE COLECCIÓN ---
+        # --- D) RENDERIZAR GRILLA DE COLECCIÓN CON TEMAS ---
         for c in coleccion_filtrada:
             card_id = c["id"]
             cantidad_libre = c["cantidad_libre"]
             marcada = (card_id == self.carta_marcada_id)
-            color_btn = (0.2, 0.5, 0.7, 1) if marcada else (0.2, 0.2, 0.2, 1)
+            rareza = c["rareza"]
+            tipo = c["tipo"]
             
-            texto_item = f"{c['nombre']}\n({cantidad_libre} libres)"
+            color_tag = get_rarity_markup(rareza)
+            nombre_fmt = f"{color_tag}[b]{c['nombre']}[/b][/color]"
+            
             if cantidad_libre <= 0:
-                texto_item = f"{c['nombre']}\n(En uso)"
-                color_btn = (0.1, 0.1, 0.1, 0.6)
+                texto_item = f"{nombre_fmt}\n[color=888888](En uso)[/color]"
+            else:
+                texto_item = f"{nombre_fmt}\n({cantidad_libre} libres)"
+
+            btn_item = Button(
+                text=texto_item, 
+                markup=True,
+                size_hint_y=None, 
+                height=85, 
+                halign='center',
+                background_color=(0, 0, 0, 0),
+                background_normal=''
+            )
             
-            btn_item = Button(text=texto_item, size_hint_y=None, height=80, halign='center', background_color=color_btn)
+            # Aplicar tema según estado (marcada, en uso o normal)
+            if marcada:
+                apply_card_background(
+                    widget=btn_item,
+                    bg_color=(0.35, 0.28, 0.08, 0.95),
+                    border_color=(0.96, 0.78, 0.22, 1.0),
+                    border_width=2.5
+                )
+            elif cantidad_libre <= 0:
+                apply_card_background(
+                    widget=btn_item,
+                    bg_color=(0.1, 0.1, 0.1, 0.6),
+                    border_color=(0.3, 0.3, 0.3, 0.5),
+                    border_width=1.0
+                )
+            else:
+                apply_card_theme(widget=btn_item, rarity=rareza, card_type=tipo)
+
             btn_item.card_id = card_id
             btn_item.bind(on_release=self.marcar_o_añadir_carta)
             self.grilla_coleccion.add_widget(btn_item)
 
-        # 2. Renderizar Lista del Mazo
+        # --- E) RENDERIZAR LISTA DEL MAZO CON TEMAS ---
         for card_id in sorted(self.mazo_actual_ids):
             carta_obj = CardLoader.get_card_stats_by_id(card_id)
             if carta_obj:
-                btn_mazo = Button(text=f"{carta_obj.name} | Coste: {carta_obj.cost}E", size_hint_y=None, height=40, background_color=(0.1, 0.4, 0.5, 1))
+                rareza = getattr(carta_obj, 'rarity', getattr(carta_obj, 'rareza', 'Común'))
+                tipo = 'unit' if hasattr(carta_obj, 'attack') else getattr(carta_obj, 'card_type', 'unit')
+                color_tag = get_rarity_markup(rareza)
+                
+                texto_mazo = f"{color_tag}[b]{carta_obj.name}[/b][/color] | Coste: {carta_obj.cost}E"
+                
+                btn_mazo = Button(
+                    text=texto_mazo, 
+                    markup=True,
+                    size_hint_y=None, 
+                    height=42, 
+                    background_color=(0, 0, 0, 0),
+                    background_normal='',
+                    halign='left',
+                    padding=(10, 0)
+                )
+                apply_card_theme(widget=btn_mazo, rarity=rareza, card_type=tipo)
+                
                 btn_mazo.card_id = card_id
                 btn_mazo.bind(on_release=self.quitar_carta_del_mazo)
                 self.lista_mazo_visual.add_widget(btn_mazo)
@@ -323,18 +370,23 @@ class PantallaDeckBuilder(Screen):
         carta = CardLoader.get_card_stats_by_id(card_id)
         if not carta:
             return
-        rareza = getattr(carta, 'rarity', 'Común')
-        habilidad = getattr(carta, 'description', 'Ninguna habilidad especial.')
+        rareza = getattr(carta, 'rarity', getattr(carta, 'rareza', 'Común'))
+        habilidad = getattr(carta, 'description', getattr(carta, 'descripcion', 'Ninguna habilidad especial.'))
         grupos_data = getattr(carta, 'groups', getattr(carta, 'grupos', ''))
         tags_validas = self.extraer_tags_validas(grupos_data)
         tags_str = ", ".join(tags_validas) if tags_validas else "Ninguno"
+
+        color_tag = get_rarity_markup(rareza)
 
         if hasattr(carta, 'attack') and hasattr(carta, 'health'):
             stats_combate = f"❤️ Vida: {carta.health}  |  ⚔️ Ataque: {carta.attack}\n🏃 Velocidad: {carta.speed}"
         else:
             stats_combate = "🔮 Carta de Efecto / Truco / Entorno"
 
-        self.lbl_detalles_carta.text = f"🏷️ [{rareza}] {carta.name.upper()}\n⚡ Coste: {carta.cost}\n{stats_combate}\n👥 Tags: {tags_str}\n\n📜 EFECTO:\n{habilidad}"
+        self.lbl_detalles_carta.text = (
+            f"🏷️ {color_tag}[b][{rareza.upper()}] {carta.name.upper()}[/b][/color]\n"
+            f"⚡ Coste: {carta.cost}\n{stats_combate}\n👥 Tags: {tags_str}\n\n📜 EFECTO:\n{habilidad}"
+        )
 
     def calcular_sinergias_de_tags(self):
         if not self.mazo_actual_ids:
@@ -346,7 +398,6 @@ class PantallaDeckBuilder(Screen):
             carta = CardLoader.get_card_stats_by_id(cid)
             if carta:
                 grupos_data = getattr(carta, 'groups', getattr(carta, 'grupos', ''))
-                # Utiliza la función limpiadora para ignorar completamente '-'
                 lista_tags = self.extraer_tags_validas(grupos_data)
 
                 for tag in lista_tags:

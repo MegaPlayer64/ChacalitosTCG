@@ -107,7 +107,7 @@ class LLMAIController(AIController):
         for (x, y), unit in game_state.board.grid.items():
             dueno = "Aliada" if unit.owner_id == self.player_id else "Enemiga"
             unidades_tablero.append(
-                f"- ({x},{y}) [{dueno}] {unit.name} | ATK:{unit.attack} HP:{unit.health}/{unit.max_health}"
+                f"- ({x},{y}) [{dueno}] {unit.name} (ID:{getattr(unit, 'id', '?')}) | ATK:{unit.attack} HP:{unit.health}/{unit.max_health}"
             )
         tablero_str = "\n".join(unidades_tablero) if unidades_tablero else "Tablero sin unidades."
 
@@ -120,15 +120,27 @@ class LLMAIController(AIController):
             mano_txt.append(f"[{i}] {c.name} ({tipo} - {costo}E) | Efecto: {desc}")
         mano_str = "\n".join(mano_txt) if mano_txt else "Mano vacía."
 
-        # 3. OPCIONES CON ORIENTACIÓN Y SINTAXIS CONCISA
+        # IDs conocidos de cartas de Fusión Dual
+        FUSION_CARD_IDS = {'69', '86', '87'}  # Naty&Ami, Emi&Richi, Martina&Rin
+
+        # 3. OPCIONES CON ORIENTACIÓN Y DETECCIÓN DE FUSIONES
         opciones_txt = []
+        hay_opcion_fusion = False
+
         for i, act in enumerate(legal_actions):
             desc = f"[{i}] {act.type.name}"
             if act.type in (ActionType.PLAY_CARD, ActionType.PLAY_SPELL):
                 c_idx = act.payload.get('card_index', 0)
                 if c_idx < len(player.hand):
                     carta = player.hand[c_idx]
-                    desc += f" -> Jugar '{carta.name}' en {act.payload.get('to', act.payload.get('target'))}"
+                    c_id = str(getattr(carta, 'id', ''))
+
+                    # Detección especial si es una carta de Fusión Dual
+                    if c_id in FUSION_CARD_IDS or "&" in carta.name:
+                        hay_opcion_fusion = True
+                        desc += f" -> ¡FUSIÓN DUAL DE ÉLITE! Sacrificar componentes en tablero e invocar a '{carta.name}' en {act.payload.get('to', act.payload.get('target'))}"
+                    else:
+                        desc += f" -> Jugar '{carta.name}' en {act.payload.get('to', act.payload.get('target'))}"
             
             elif act.type == ActionType.ATTACK:
                 target = act.payload.get('target')
@@ -146,6 +158,9 @@ class LLMAIController(AIController):
             
             opciones_txt.append(desc)
 
+        # Regla condicional si hay fusión disponible
+        instruccion_fusion = "- ¡SI TIENES LA OPCIÓN DE 'FUSIÓN DUAL DE ÉLITE', PRIORÍZALA! Invoca la unidad jefe inmediatamente.\n" if hay_opcion_fusion else ""
+
         prompt = f"""Eres una IA jugando un TCG táctico.
 Tu objetivo principal es AVANZAR tus tropas hacia las columnas del rival y ATACAR.
 
@@ -162,6 +177,7 @@ OPCIONES LEGALES (ELIGE LA MEJOR):
 {chr(10).join(opciones_txt)}
 
 INSTRUCCIONES:
+{instruccion_fusion}- Si no hay fusiones ni ataques directos a base, avanza o ataca unidades enemigas.
 - Responde ÚNICAMENTE con un JSON: {{"choice": <numero_de_opcion>}}
 """
 
@@ -171,12 +187,11 @@ INSTRUCCIONES:
             "stream": False,
             "format": "json",
             "options": {
-                "num_predict": 25,     # Límite estricto de generación (ultra rápido)
-                "temperature": 0.1    # Respuestas deterministas y directas
+                "num_predict": 25,
+                "temperature": 0.1
             }
         }
 
-        # Aumentamos el timeout a 20 segundos para que no vuelva a expirar
         response = requests.post(self.api_url, json=payload, timeout=20)
         if response.status_code == 200:
             res_json = json.loads(response.json().get("response", "{}"))

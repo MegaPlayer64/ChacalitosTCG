@@ -7,14 +7,15 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.spinner import Spinner
 from src.domain.grid_background import FondoCuadriculado
+from src.infrastructure.path_manager import PathManager
 
 OPCION_MAZO_RANDOM = "[Aleatorio] Mazo Random (Bono 1.5x 🪙)"
 
 class PantallaArcade(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.ruta_perfil = "src/data/user_profile.json"
-        self.ruta_mapa = "src/data/arcade_map.json"
+        self.ruta_perfil = PathManager.get_user_profile_path()
+        self.ruta_mapa = PathManager.get_data_file_path("arcade_map.json")
         self.stages_catalogo = self._cargar_mapa()
         
         # Mapa generado para la run actual

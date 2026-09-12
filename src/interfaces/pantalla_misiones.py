@@ -11,6 +11,7 @@ from kivy.graphics import Color, RoundedRectangle
 from src.domain.mission_manager import MissionManager
 from src.domain.grid_background import FondoCuadriculado
 from src.domain.audio_manager import AudioManager
+from src.infrastructure.path_manager import PathManager
 
 
 class TarjetaMision(BoxLayout):
@@ -143,7 +144,7 @@ class PantallaMisiones(Screen):
     """Pantalla principal de Misiones Diarias unificada."""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.ruta_perfil = "src/data/user_profile.json"
+        self.ruta_perfil = PathManager.get_user_profile_path()
 
         # 1. Fondo cuadriculado interactivo
         fondo_grilla = FondoCuadriculado(size=self.size)

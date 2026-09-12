@@ -1,9 +1,11 @@
 import json
 import os
+from src.infrastructure.path_manager import PathManager
 
 class CraftSystem:
     @staticmethod
-    def reciclar_excesos(ruta_perfil="src/data/user_profile.json"):
+    def reciclar_excesos(ruta_perfil=None):
+        ruta_perfil = ruta_perfil or PathManager.get_user_profile_path()
         # Importación local para evitar dependencias cíclicas con Kivy
         from src.infrastructure.loaders.card_loader import CardLoader
 

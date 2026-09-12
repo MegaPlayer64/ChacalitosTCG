@@ -1,11 +1,12 @@
 import json
 import os
 from datetime import datetime
+from src.infrastructure.path_manager import PathManager
 
 class BattlePassManager:
-    def __init__(self, profile_path="src/data/user_profile.json", season_config_path="src/data/battle_pass_season.json"):
-        self.profile_path = profile_path
-        self.season_config_path = season_config_path
+    def __init__(self, profile_path=None, season_config_path=None):
+        self.profile_path = profile_path or PathManager.get_user_profile_path()
+        self.season_config_path = season_config_path or PathManager.get_data_file_path("battle_pass_season.json")
         self.profile_data = self._load_json(self.profile_path)
         self.season_config = self._load_json(self.season_config_path)
         

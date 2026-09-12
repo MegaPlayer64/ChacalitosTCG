@@ -9,6 +9,7 @@ from src.interfaces.controllers.online_controller import OnlineController
 from src.domain.grid_background import FondoCuadriculado
 import json
 import os
+from src.infrastructure.path_manager import PathManager
 
 class OnlineLobbyScreen(Screen):
     def __init__(self, **kwargs):
@@ -110,7 +111,7 @@ class OnlineLobbyScreen(Screen):
             self.spn_deck.text = "Sin mazos guardados"
 
     def cargar_mazos(self):
-        ruta = "src/data/user_profile.json"
+        ruta = PathManager.get_user_profile_path()
         if os.path.exists(ruta):
             try:
                 with open(ruta, "r", encoding="utf-8") as f:

@@ -7,9 +7,9 @@ class AbilityManager:
     @staticmethod
     def trigger_on_enter(unit, game_state):
         uid = int(unit.id)
-        if uid == 31:
-            AbilityManager._martina_nueva_on_enter(unit, game_state)
-        elif uid == 28:
+        # if uid == 31:
+            # AbilityManager._martina_nueva_on_enter(unit, game_state)
+        if uid == 28:
             AbilityManager._cristobal_on_enter(unit, game_state)
         elif uid == 24:
             AbilityManager._josefa_g_on_enter(unit, game_state)
@@ -23,6 +23,8 @@ class AbilityManager:
             unit.turns_alive = 0
         elif uid == 58:
             AbilityManager._dante_economista_main_ability(unit, game_state)
+        elif uid == 88:
+            AbilityManager._dante_olimpiadas_on_enter(unit, game_state)
 
     @staticmethod
     def trigger_on_activate(unit, game_state):
@@ -62,8 +64,8 @@ class AbilityManager:
             AbilityManager._iara_on_damage_received(unit, damage, game_state)
         elif int(unit.id) == 79:
             AbilityManager._axel_on_damage_receaved(unit, game_state)
-        elif int(unit.id) == 31:
-            AbilityManager._martina_nueva_on_damage_received(unit, damage, game_state)
+        # elif int(unit.id) == 31:
+            # AbilityManager._martina_nueva_on_damage_received(unit, damage, game_state)
   
     @staticmethod
     def trigger_on_turn_start(unit, game_state):
@@ -85,6 +87,11 @@ class AbilityManager:
     def trigger_on_death(unit, game_state):
         if int(unit.id) == 65:
             AbilityManager._gandan_on_death(unit, game_state)
+
+    @staticmethod
+    def trigger_on_evolve(unit, game_state):
+        if int(unit.id) == 88:
+            AbilityManager._dante_on_evolve(unit, game_state)
 
     @staticmethod
     def resolve_pending_ability(game_state, payload):
@@ -1095,7 +1102,7 @@ class AbilityManager:
     @staticmethod
     def _nico_on_activate(unit, game_state):
         if unit.immobile_turns == 0:
-            unit.immobile_turns = 2
+            unit.immobile_turns = 3
             unit.attack += 3
             print(f">> [Habilidad Nico]: {unit.name} no puede moverse por 2 turnos y ha ganado +3 de daño.")
         else:
@@ -1121,7 +1128,7 @@ class AbilityManager:
         for nx, ny in game_state.board.get_neighbors(fx, fy):
             target = game_state.board.get_unit_at(nx, ny)
             if target and target.owner_id != unit.owner_id:
-                target.immobile_turns = 1 
+                target.immobile_turns = 2 
                 print(f">> [Habilidad Crisby Airsoft]: {target.name} no puede moverse por 1 turno.")
                 break
 
@@ -1256,7 +1263,7 @@ class AbilityManager:
 
     @staticmethod
     def _rafa_on_attack(unit, game_state):
-        unit.immobile_turns = 2
+        unit.immobile_turns = 3
         print(f">> [Rafa] Debe recargar, estará inmovilizado por 1 turno.")
 
     @staticmethod
@@ -1307,4 +1314,35 @@ class AbilityManager:
         unit.attack += 1
         print(f">> [Habilidad Axel]: {unit.name} ha ganado +1 de daño (recibió daño).")
 
+    @staticmethod
+    def _spell_82_effect(card, target, game_state):
+        # Da más 6 de vida máxima a una unidad. (Curando esa cantidad)
+        if not isinstance(target, tuple): return False
+        tx, ty = target
+        target_unit = game_state.board.get_unit_at(tx, ty)
+        if not target_unit: return False
+        
+        target_unit.max_health += 6
+        target_unit.health = min(target_unit.max_health, target_unit.health + 6)
+        print(f">> [Gorro Soviético] {target_unit.name} ha ganado +6 de vida máxima.")
+        return True
 
+    @staticmethod
+    def _dante_olimpiadas_on_enter(unit, game_state):
+        # Robar carta. Y obtiene el 50% de energia del costo de la carta
+        player = game_state.players[unit.owner_id]
+        if player.deck:
+            drawn_card = player.deck.pop(0)
+            player.hand.append(drawn_card)
+            print(f">> [Habilidad Dante Olimpiadas]: Robaste {drawn_card.name}")
+            player.current_energy += (drawn_card.cost // 2)
+            print(f">> [Habilidad Dante Olimpiadas]: Obtuvo {drawn_card.cost // 2} de energia.")
+        else:
+            print(">> [Habilidad Dante Olimpiadas]: Mazo vacío, no se puede robar.")
+
+    @staticmethod
+    def _dante_on_evolve(unit, game_state):
+        # Gana +1 de velocidad y devuelve 2 de energia.
+        unit.speed += 1
+        game_state.players[unit.owner_id].current_energy += 2
+        print(f">> [Habilidad Dante]: {unit.name} ha ganado +1 de velocidad y devuelve 2 de energia.")

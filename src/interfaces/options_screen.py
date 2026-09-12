@@ -62,32 +62,15 @@ class PantallaOpciones(Screen):
         # ----------------------------------------
         account_layout = BoxLayout(orientation='vertical', padding=[0, 20, 0, 20], spacing=10)
         
-        acc_title = Label(text="CUENTA DEL JUGADOR", font_size='20sp', halign='left', valign='middle')
-        acc_title.bind(size=acc_title.setter('text_size'))
-        
-        # Etiqueta del Nombre (Color Verde)
-        self.user_label = Label(text=self.username_text, font_size='18sp', color=[0.2, 0.8, 0.2, 1], halign='left', valign='middle')
-        self.user_label.bind(size=self.user_label.setter('text_size'))
-        
-        # Etiqueta del Nivel
-        self.level_label = Label(text=self.user_level, halign='left', valign='middle')
-        self.level_label.bind(size=self.level_label.setter('text_size'))
         
         # Etiqueta de la RAM
         self.ram_label = Label(text=self.ram_text, halign='left', valign='middle')
         self.ram_label.bind(size=self.ram_label.setter('text_size'))
         
-        # Botón de Cerrar Sesión
-        logout_btn = Button(text="Cerrar Sesión / Cambiar Cuenta", size_hint_y=None, height=45)
-        logout_btn.bind(on_release=self.cerrar_sesion)
-
         # Agregamos los widgets de cuenta a su layout
-        account_layout.add_widget(acc_title)
-        account_layout.add_widget(self.user_label)
-        account_layout.add_widget(self.level_label)
+
         account_layout.add_widget(self.ram_label)
-        account_layout.add_widget(logout_btn)
-        
+
         main_layout.add_widget(account_layout)
 
         # ----------------------------------------
@@ -101,8 +84,6 @@ class PantallaOpciones(Screen):
         self.add_widget(main_layout)
 
         # Vincular las StringProperties a las etiquetas para que se actualicen solas
-        self.bind(username_text=self.user_label.setter('text'))
-        self.bind(user_level=self.level_label.setter('text'))
         self.bind(ram_text=self.ram_label.setter('text'))
 
     # ==========================================

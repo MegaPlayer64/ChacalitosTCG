@@ -13,6 +13,8 @@ from src.domain.action import Action, ActionType
 from src.domain.player import Player
 from kivy.uix.modalview import ModalView
 
+from src.domain.card_styles import apply_card_theme, apply_card_background, get_rarity_markup
+
 # =========================================================
 # BOTÓN TÁCTIL CON DETECCIÓN DE MANTENER PRESIONADO (MOBILE)
 # =========================================================
@@ -370,26 +372,45 @@ class PantallaJuego(Screen):
             return
 
         for i, carta in enumerate(mano_jugador):
+            rareza = carta.get('rareza', 'Común')
+            tipo = carta.get('tipo', 'unit')
+            
+            # 1. Obtener la etiqueta de color Kivy según la rareza de la carta
+            color_tag = get_rarity_markup(rareza)
+            nombre_formateado = f"{color_tag}[b]{carta['nombre']}[/b][/color]"
+
+            # 2. Formatear costo con descuento o normal
             if carta.get('descuento', False):
                 texto_carta = (
-                    f"{carta['nombre']}\n"
+                    f"{nombre_formateado}\n"
                     f"Coste: [color=00ff88][b]{carta['coste']}E[/b][/color] "
                     f"[color=888888]({carta['coste_original']}E)[/color]"
                 )
             else:
-                texto_carta = f"{carta['nombre']}\nCoste: {carta['coste']}E"
+                texto_carta = f"{nombre_formateado}\nCoste: {carta['coste']}E"
             
+            # 3. Crear el botón con fondo transparente para dejar ver el canvas de apply_card_theme
             btn_carta = BotonLargo(
                 text=texto_carta,
                 markup=True,
                 font_size='14sp',
-                background_color=(0.1, 0.1, 0.3, 1) if carta['tipo'] == 'spell' else (0.3, 0.3, 0.3, 1),
+                background_color=(0, 0, 0, 0),
+                background_normal='',
                 halign='center'
             )
+            
+            # 4. Aplicar el estilo visual por rareza y tipo de carta
+            apply_card_theme(
+                widget=btn_carta,
+                rarity=rareza,
+                card_type=tipo
+            )
+
             btn_carta.indice_mano = i 
             btn_carta.bind(on_release=self.seleccionar_carta)
-            btn_carta.callback_largo = self.inspeccionar_carta_mano  # <-- NUEVO
+            btn_carta.callback_largo = self.inspeccionar_carta_mano
             self.layout_mano.add_widget(btn_carta)
+
 
     def seleccionar_carta(self, instance):
         if not self.is_my_turn():
@@ -400,19 +421,27 @@ class PantallaJuego(Screen):
         jugador = self.game_state.get_current_player()
         ya_seleccionada = (self.carta_seleccionada_index == instance.indice_mano)
 
+        # 1. Restaurar el tema original de todas las cartas en la mano
         for btn in self.layout_mano.children:
             if hasattr(btn, 'indice_mano') and btn.indice_mano < len(jugador.hand):
                 carta = jugador.hand[btn.indice_mano]
-                es_spell = getattr(carta, 'card_type', 'unit').lower() == 'spell'
-                btn.background_color = (0.1, 0.1, 0.3, 1) if es_spell else (0.3, 0.3, 0.3, 1)
-            else:
-                btn.background_color = (0.3, 0.3, 0.3, 1)
+                rareza = getattr(carta, 'rarity', getattr(carta, 'rareza', 'Común'))
+                tipo = getattr(carta, 'card_type', 'unit')
+                apply_card_theme(widget=btn, rarity=rareza, card_type=tipo)
 
+        # 2. Manejar estado de selección
         if ya_seleccionada:
             self.carta_seleccionada_index = None
         else:
-            instance.background_color = (0.8, 0.6, 0.1, 1)
+            # Aplicar borde/resplandor dorado de selección
+            apply_card_theme(
+                widget=instance, 
+                bg_color=(0.35, 0.28, 0.08, 0.95), 
+                border_color=(0.96, 0.78, 0.22, 1.0),
+                border_width=2.5
+            )
             self.carta_seleccionada_index = instance.indice_mano
+
 
     def actualizar_interfaz_completa(self):
         if not self.game_state:
@@ -456,7 +485,7 @@ class PantallaJuego(Screen):
             spd_eff = stats_efectivas["speed"]
             rng_eff = stats_efectivas["range_atk"]
 
-            # 2. Formatear Ataque (Verde si subió, Rojo si bajó)
+            # 2. Formatear Ataque
             if atk_eff > unit.attack:
                 txt_atk = f"[color=00ff88][b]{atk_eff}[/b][/color]"
             elif atk_eff < unit.attack:
@@ -482,13 +511,10 @@ class PantallaJuego(Screen):
 
             # 5. Renderizar el texto final en la celda
             if unit.immobile_turns > 0:
-                # Texto en Cian brillante para resaltar sobre fondos oscuros o rojos
                 lbl_inmovil = f" | [color=00e5ff][b]Inmovil ({unit.immobile_turns})[/b][/color]"
-                # Color de fondo congelado / apagado para indicar que la unidad está bloqueada
                 boton.background_color = (0.1, 0.3, 0.5, 1) if unit.owner_id == 0 else (0.5, 0.2, 0.3, 1)
             else:
                 lbl_inmovil = ""
-                # Colores normales de equipo (Azul J1 / Rojo J2)
                 boton.background_color = (0.2, 0.5, 0.8, 1) if unit.owner_id == 0 else (0.8, 0.3, 0.3, 1)
 
             boton.text = (
@@ -530,7 +556,8 @@ class PantallaJuego(Screen):
                     "coste": "?", 
                     "coste_original": "?", 
                     "descuento": False, 
-                    "tipo": "hidden"
+                    "tipo": "hidden",
+                    "rareza": "Común"
                 } 
                 for c in jugador_actual.hand
             ]
@@ -543,7 +570,8 @@ class PantallaJuego(Screen):
                     "coste": costo_efectivo,
                     "coste_original": c.cost,
                     "descuento": tiene_desc,
-                    "tipo": getattr(c, 'card_type', 'unit')
+                    "tipo": getattr(c, 'card_type', 'unit'),
+                    "rareza": getattr(c, 'rarity', getattr(c, 'rareza', 'Común'))
                 })
 
         self.dibujar_mano(mano_formateada)

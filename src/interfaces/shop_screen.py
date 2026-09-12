@@ -7,6 +7,7 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from src.domain.shop_system import ShopSystem
 from src.domain.grid_background import FondoCuadriculado
+from src.infrastructure.path_manager import PathManager
 
 class TarjetaOferta(BoxLayout):
     """Componente visual para cada una de las 3 ofertas del día"""
@@ -41,7 +42,7 @@ class TarjetaOferta(BoxLayout):
 class PantallaTienda(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.ruta_perfil = "src/data/user_profile.json"
+        self.ruta_perfil = PathManager.get_user_profile_path()
 
         #Fondo bello
         fondo_grilla = FondoCuadriculado(size=self.size)

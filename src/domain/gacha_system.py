@@ -1,12 +1,14 @@
 import random
 import json
 import os
+from src.infrastructure.path_manager import PathManager
 
 class GachaSystem:
     @staticmethod
-    def abrir_sobre_avanzado(tipo_banner="GENERAL", cantidad_cartas=3, costo=100, pago_con_ticket=False, ruta_perfil="src/data/user_profile.json"):
+    def abrir_sobre_avanzado(tipo_banner="GENERAL", cantidad_cartas=3, costo=100, pago_con_ticket=False, ruta_perfil=None):
         from src.infrastructure.loaders.card_loader import CardLoader
 
+        ruta_perfil = ruta_perfil or PathManager.get_user_profile_path()
         if not os.path.exists(ruta_perfil):
             return {"exito": False, "mensaje": "Perfil no encontrado"}
 
@@ -22,7 +24,7 @@ class GachaSystem:
                 return {"exito": False, "mensaje": "¡Monedas insuficientes! 🪙"}
 
         # 1. CARGAR TODAS LAS CARTAS DEL CSV
-        todas_las_cartas = CardLoader.load_units("src/data/cards.csv")
+        todas_las_cartas = CardLoader.load_units(PathManager.get_data_file_path("cards.csv"))
         
         # --- CONFIGURACIÓN DEL BANNER ACTUAL ---
         pool_banner = todas_las_cartas
@@ -32,7 +34,7 @@ class GachaSystem:
         # 2. FILTRAR EL POOL SEGÚN EL BANNER ELEGIDO
         if tipo_banner == "SIMCE1":
             # int(c.id) para comparar números. range(1, 62) incluye del 1 al 61.
-            pool_banner = [c for c in todas_las_cartas if int(c.id) in range(1, 62) or int(c.id) == 81]
+            pool_banner = [c for c in todas_las_cartas if int(c.id) in range(1, 62) or int(c.id) == 81 or int(c.id) == 88]
             ids_destacadas = ["60", "61"]
             
         elif tipo_banner == "MISHEXPANSIONPACK1":
@@ -56,7 +58,7 @@ class GachaSystem:
             ids_destacadas = ["68", "69", "70", "71", "72", "73"]
         
         elif tipo_banner == "TICKETPACK1":
-            pool_banner = [c for c in todas_las_cartas if int(c.id) in range(1, 59) or int(c.id) in range(62, 67) or int(c.id) in range(74, 81) or int(c.id) == 81] 
+            pool_banner = [c for c in todas_las_cartas if int(c.id) in range(1, 59) or int(c.id) in range(62, 67) or int(c.id) in range(74, 82)] 
             ids_destacadas = ["74","75","76","77","78","79","80"]
 
         else:

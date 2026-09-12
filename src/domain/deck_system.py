@@ -1,9 +1,11 @@
 import json
 import os
+from src.infrastructure.path_manager import PathManager
 
 class DeckSystem:
     @staticmethod
-    def guardar_mazo(nombre_mazo, lista_ids, ruta_perfil="src/data/user_profile.json"):
+    def guardar_mazo(nombre_mazo, lista_ids, ruta_perfil=None):
+        ruta_perfil = ruta_perfil or PathManager.get_user_profile_path()
         if not os.path.exists(ruta_perfil):
             return False
             

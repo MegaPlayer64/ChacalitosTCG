@@ -10,7 +10,9 @@ from kivy.uix.spinner import Spinner
 from kivy.uix.modalview import ModalView  # <-- CAPA FLOTANTE / MODAL
 
 from src.infrastructure.loaders.card_loader import CardLoader
+from src.infrastructure.path_manager import PathManager
 
+from src.domain.card_styles import apply_card_theme, get_rarity_markup
 
 # ==========================================
 # 1. CAPA / MODAL DE INSPECCIÓN DE CARTA
@@ -26,6 +28,7 @@ class ModalDetalleCarta(ModalView):
         desc = getattr(obj, 'description', getattr(obj, 'descripcion', 'Sin descripción disponible.'))
 
         # Color de fondo según tipo
+        
         if tipo == 'spell':
             color_header = "[color=bb88ff]"
             bg_card = (0.2, 0.1, 0.3, 1)
@@ -107,31 +110,55 @@ class ModalDetalleCarta(ModalView):
 # ==========================================
 class TarjetaAlbum(BoxLayout):
     def __init__(self, datos_carta, **kwargs):
-        super().__init__(orientation='vertical', size_hint_y=None, height=180, **kwargs)
-        
-        nombre = datos_carta["nombre"]
-        coste = datos_carta["coste"]
-        rareza = datos_carta["rareza"]
-        tipo = datos_carta["tipo"]
-        cantidad = datos_carta["cantidad"]
-
-        if tipo == 'spell':
-            color_fondo = (0.5, 0.2, 0.6, 1) # Morado
-        elif tipo == 'building':
-            color_fondo = (0.2, 0.5, 0.3, 1) # Verde
-        else:
-            color_fondo = (0.1, 0.4, 0.6, 1) # Azul Unidades
-
-        btn_visual = Button(
-            text=f"{nombre}\nCoste: {coste}E\n[{rareza}]", 
-            background_color=color_fondo,
-            halign='center'
+        super().__init__(
+            orientation='vertical', 
+            size_hint_y=None, 
+            height=180, 
+            padding=8, 
+            spacing=5, 
+            **kwargs
         )
         
-        # Al presionar el botón de la carta, abrimos la capa Modal
+        # 1. Extraer los datos del diccionario de forma segura
+        nombre = datos_carta.get("nombre", "Sin Nombre")
+        coste = datos_carta.get("coste", 0)
+        rareza = datos_carta.get("rareza", "Común")
+        tipo = datos_carta.get("tipo", "unit")
+        cantidad = datos_carta.get("cantidad", 0)
+
+        # 2. Aplicar el estilo al propio BoxLayout (self)
+        apply_card_theme(
+            widget=self, 
+            rarity=rareza, 
+            card_type=tipo
+        )
+
+        # 3. Formatear el texto con la etiqueta de color Kivy
+        color_tag = get_rarity_markup(rareza)
+        texto_carta = f"{color_tag}[b]{nombre}[/b][/color]\n[{rareza}]"
+
+        # 4. Botón transparente (background_color=(0,0,0,0)) para dejar ver el canvas del tema
+        btn_visual = Button(
+            text=texto_carta, 
+            markup=True,
+            background_color=(0, 0, 0, 0),
+            background_normal='',
+            halign='center',
+            valign='middle',
+            size_hint_y=0.8
+        )
+        btn_visual.bind(size=btn_visual.setter('text_size'))
+        
+        # Evento para abrir el modal de detalle
         btn_visual.bind(on_release=lambda instance: ModalDetalleCarta(datos_carta).open())
 
-        lbl_cant = Label(text=f"Poseídas: x{cantidad}", size_hint_y=0.2, color=(1, 1, 1, 1))
+        # 5. Indicador de cantidad
+        lbl_cant = Label(
+            text=f"Poseídas: x{cantidad}", 
+            size_hint_y=0.2, 
+            font_size='12sp',
+            color=(0.9, 0.9, 0.9, 1)
+        )
         
         self.add_widget(btn_visual)
         self.add_widget(lbl_cant)
@@ -150,7 +177,7 @@ class PantallaInventario(Screen):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.ruta_perfil = "src/data/user_profile.json"
+        self.ruta_perfil = PathManager.get_user_profile_path()
         self.coleccion_datos = []
         
         layout_principal = BoxLayout(orientation='vertical', padding=10, spacing=10)

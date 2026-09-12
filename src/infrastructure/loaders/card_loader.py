@@ -1,14 +1,15 @@
-file_path = "src/data/cards.csv"
 import csv
-from src.domain.unit import Unit
 import os
 import json
+import copy
+from src.domain.unit import Unit
+from src.infrastructure.path_manager import PathManager
 
-# from domain.skills.registry import SkillRegistry
 
 class CardLoader:
     @staticmethod
-    def load_units(file_path):
+    def load_units(file_path=None):
+        file_path = file_path or PathManager.get_data_file_path("cards.csv")
         units = []
         try:
             with open(file_path, mode='r', encoding='utf-8') as f:
@@ -56,13 +57,12 @@ class CardLoader:
                         units.append(new_card)
             return units
         except Exception as e:
-            print(f"Error al leer el CSV: {e}")
+            print(f"Error al leer el CSV ({file_path}): {e}")
             return []
 
     @staticmethod
-    def load_deck_old(deck_recipe_path, csv_path="src/data/cards.csv"):
-        import json
-        import copy
+    def load_deck_old(deck_recipe_path, csv_path=None):
+        csv_path = csv_path or PathManager.get_data_file_path("cards.csv")
         try:
             with open(deck_recipe_path, 'r', encoding='utf-8') as f:
                 card_ids = json.load(f)
@@ -82,8 +82,9 @@ class CardLoader:
             return []
     
     @staticmethod
-    def get_card_stats_by_id(card_id, csv_path="src/data/cards.csv"):
+    def get_card_stats_by_id(card_id, csv_path=None):
         """Busca una carta específica por su ID en el CSV y devuelve su objeto listo."""
+        csv_path = csv_path or PathManager.get_data_file_path("cards.csv")
         all_cards = CardLoader.load_units(csv_path)
         for card in all_cards:
             if card.id == card_id:
@@ -91,18 +92,19 @@ class CardLoader:
         return None
 
     @staticmethod
-    def load_card_by_id(card_id, csv_path="src/data/cards.csv"):
+    def load_card_by_id(card_id, csv_path=None):
         """Alias para get_card_stats_by_id."""
         return CardLoader.get_card_stats_by_id(card_id, csv_path)
 
     @staticmethod
-    def load_deck(deck_recipe_path, csv_path="src/data/cards.csv", ruta_perfil="src/data/user_profile.json"):
+    def load_deck(deck_recipe_path, csv_path=None, ruta_perfil=None):
         """
         Detecta si la referencia es un mazo predefinido (.json), un mazo personal 
         almacenado dentro del perfil del usuario, o una lista directa de IDs.
         Retorna una lista de OBJETOS instanciados.
         """
-        import copy
+        csv_path = csv_path or PathManager.get_data_file_path("cards.csv")
+        ruta_perfil = ruta_perfil or PathManager.get_user_profile_path()
         card_ids = []
 
         if isinstance(deck_recipe_path, list):
@@ -122,16 +124,17 @@ class CardLoader:
             
             # Si no se encontraron IDs, aplicamos fallback a mazo básico premade
             if not card_ids:
-                deck_recipe_path = "src/data/premade_decks/tag_theme/dermapatch_basic_deck.json"
+                deck_recipe_path = PathManager.get_data_file_path("premade_decks/tag_theme/dermapatch_basic_deck.json")
 
         # Caso B: Archivo físico .json tradicional (Modo Historia / Premade)
         if str(deck_recipe_path).endswith('.json'):
+            resolved_path = deck_recipe_path if os.path.isabs(deck_recipe_path) else PathManager.get_data_file_path(deck_recipe_path)
             try:
-                with open(deck_recipe_path, "r", encoding="utf-8") as f:
+                with open(resolved_path, "r", encoding="utf-8") as f:
                     datos = json.load(f)
                 card_ids = datos if isinstance(datos, list) else datos.get("cards", [])
             except Exception as e:
-                print(f"[!] Error crítico al abrir mazo físico {deck_recipe_path}: {e}")
+                print(f"[!] Error crítico al abrir mazo físico {resolved_path}: {e}")
                 return []
 
         # === 2. INFLAR LAS IDs CON LOS OBJETOS REALES DEL CSV ===

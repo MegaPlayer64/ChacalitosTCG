@@ -2,13 +2,15 @@ import json
 import os
 import random
 from datetime import datetime
+from src.infrastructure.path_manager import PathManager
 
 class ShopSystem:
     @staticmethod
-    def obtener_rotacion_diaria(csv_path="src/data/cards.csv"):
+    def obtener_rotacion_diaria(csv_path=None):
         """Genera 3 cartas fijas para el día de hoy usando la fecha como semilla."""
         from src.infrastructure.loaders.card_loader import CardLoader
 
+        csv_path = csv_path or PathManager.get_data_file_path("cards.csv")
         todas_las_cartas = CardLoader.load_units(csv_path)
         if not todas_las_cartas:
             return []
@@ -47,8 +49,9 @@ class ShopSystem:
         return ofertas
 
     @staticmethod
-    def comprar_carta_tienda(card_id, precio_esencia, ruta_perfil="src/data/user_profile.json"):
+    def comprar_carta_tienda(card_id, precio_esencia, ruta_perfil=None):
         """Procesa la compra deduciendo la esencia artesanal y añadiendo la ID al inventario."""
+        ruta_perfil = ruta_perfil or PathManager.get_user_profile_path()
         if not os.path.exists(ruta_perfil):
             return {"exito": False, "mensaje": "Perfil no encontrado"}
 

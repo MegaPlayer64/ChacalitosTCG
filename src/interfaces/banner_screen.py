@@ -11,6 +11,7 @@ from kivy.graphics import Color, Rectangle
 
 from src.domain.gacha_system import GachaSystem
 from src.domain.audio_manager import AudioManager
+from src.infrastructure.path_manager import PathManager
 
 class TarjetaRevelada(BoxLayout):
     """Mini-componente visual para representar cada carta obtenida en el sobre"""
@@ -38,14 +39,14 @@ class TarjetaRevelada(BoxLayout):
 class PantallaBanner(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.ruta_perfil = "src/data/user_profile.json"
+        self.ruta_perfil = PathManager.get_user_profile_path()
         
         # --- CONFIGURACIÓN DE BANNERS DISPONIBLES ---
         self.lista_banners = [
             {
                 "id": "SIMCE1", 
                 "nombre": "Sobre SIMCE 1", 
-                "desc": "¡El Chino (Quemadas) y Melsizis (DT) se unen al combate!",
+                "desc": "La evaluación estandarizada nacional esta por empezar \n ¡El Chino (Quemadas), Dante (Olimpiadas) y Melsizis (DT) se unen al combate!",
                 "coste_1": 100,
                 "coste_5": 500,
                 "pago_con_ticket": False,
