@@ -12,6 +12,22 @@ from kivy.uix.spinner import Spinner
 from src.infrastructure.loaders.card_loader import CardLoader
 from src.infrastructure.path_manager import PathManager
 from src.domain.card_styles import apply_card_theme, apply_card_background, get_rarity_markup
+from kivy.uix.behaviors import ButtonBehavior
+from src.interfaces.widgets.card_art_widget import CardArtWidget
+
+
+# =========================================================
+# WIDGET DE CARTA EN GRILLA DE COLECCIÓN
+# =========================================================
+class ItemColeccionWidget(ButtonBehavior, BoxLayout):
+    def __init__(self, **kwargs):
+        kwargs.setdefault('orientation', 'horizontal')
+        kwargs.setdefault('size_hint_y', None)
+        kwargs.setdefault('height', 85)
+        kwargs.setdefault('padding', [4, 4, 4, 4])
+        kwargs.setdefault('spacing', 6)
+        super().__init__(**kwargs)
+        self.card_id = None
 
 
 class PantallaDeckBuilder(Screen):
@@ -100,11 +116,15 @@ class PantallaDeckBuilder(Screen):
         col_central.add_widget(scroll_mazo)
 
         # Columna Derecha: Panel Informativo
-        col_derecha = BoxLayout(orientation='vertical', size_hint_x=0.3, spacing=10)
+        col_derecha = BoxLayout(orientation='vertical', size_hint_x=0.3, spacing=8)
         col_derecha.add_widget(Label(text="🔍 Detalles de la Carta", size_hint_y=0.06, bold=True))
         
+        # Arte Grande de la Carta Seleccionada (Vista de Detalle Completa)
+        self.preview_art_detalle = CardArtWidget(size_hint_y=0.34, is_detail=True)
+        col_derecha.add_widget(self.preview_art_detalle)
+
         # 1. ScrollView para los detalles de la carta
-        scroll_detalles = ScrollView(size_hint_y=0.48)
+        scroll_detalles = ScrollView(size_hint_y=0.32)
         self.lbl_detalles_carta = Label(
             text="Selecciona una carta para inspeccionar.", 
             size_hint_y=None,
@@ -122,7 +142,7 @@ class PantallaDeckBuilder(Screen):
         col_derecha.add_widget(Label(text="📊 Sinergias del Mazo", size_hint_y=0.06, bold=True))
         
         # 2. ScrollView para las sinergias
-        scroll_sinergias = ScrollView(size_hint_y=0.4)
+        scroll_sinergias = ScrollView(size_hint_y=0.24)
         self.lbl_sinergias = Label(
             text="No hay tags.", 
             size_hint_y=None, 
@@ -260,7 +280,7 @@ class PantallaDeckBuilder(Screen):
         else: # ID
             coleccion_filtrada.sort(key=lambda c: c["id"])
 
-        # --- D) RENDERIZAR GRILLA DE COLECCIÓN CON TEMAS ---
+        # --- D) RENDERIZAR GRILLA DE COLECCIÓN CON TEMAS Y MINIATURAS ---
         for c in coleccion_filtrada:
             card_id = c["id"]
             cantidad_libre = c["cantidad_libre"]
@@ -272,19 +292,27 @@ class PantallaDeckBuilder(Screen):
             nombre_fmt = f"{color_tag}[b]{c['nombre']}[/b][/color]"
             
             if cantidad_libre <= 0:
-                texto_item = f"{nombre_fmt}\n[color=888888](En uso)[/color]"
+                texto_item = f"{nombre_fmt}\n[size=11sp][color=888888](En uso)[/color][/size]"
             else:
-                texto_item = f"{nombre_fmt}\n({cantidad_libre} libres)"
+                texto_item = f"{nombre_fmt}\n[size=11sp]({cantidad_libre} libres)[/size]"
 
-            btn_item = Button(
-                text=texto_item, 
+            btn_item = ItemColeccionWidget()
+            
+            # Miniatura de arte con encuadre
+            thumb_art = CardArtWidget(card_id=card_id, size_hint=(None, 1), width=55)
+            btn_item.add_widget(thumb_art)
+
+            # Etiqueta de texto de la carta
+            lbl_info = Label(
+                text=texto_item,
                 markup=True,
-                size_hint_y=None, 
-                height=85, 
-                halign='center',
-                background_color=(0, 0, 0, 0),
-                background_normal=''
+                font_size='12sp',
+                halign='left',
+                valign='middle',
+                size_hint_x=1
             )
+            lbl_info.bind(size=lbl_info.setter('text_size'))
+            btn_item.add_widget(lbl_info)
             
             # Aplicar tema según estado (marcada, en uso o normal)
             if marcada:
@@ -370,6 +398,7 @@ class PantallaDeckBuilder(Screen):
         carta = CardLoader.get_card_stats_by_id(card_id)
         if not carta:
             return
+        self.preview_art_detalle.set_card_id(card_id)
         rareza = getattr(carta, 'rarity', getattr(carta, 'rareza', 'Común'))
         habilidad = getattr(carta, 'description', getattr(carta, 'descripcion', 'Ninguna habilidad especial.'))
         grupos_data = getattr(carta, 'groups', getattr(carta, 'grupos', ''))

@@ -9,6 +9,9 @@ from kivy.uix.label import Label
 from kivy.uix.spinner import Spinner
 from kivy.uix.modalview import ModalView  # <-- CAPA FLOTANTE / MODAL
 
+from kivy.uix.behaviors import ButtonBehavior
+from src.interfaces.widgets.card_art_widget import CardArtWidget
+
 from src.infrastructure.loaders.card_loader import CardLoader
 from src.infrastructure.path_manager import PathManager
 
@@ -19,7 +22,7 @@ from src.domain.card_styles import apply_card_theme, get_rarity_markup
 # ==========================================
 class ModalDetalleCarta(ModalView):
     def __init__(self, datos_carta, **kwargs):
-        super().__init__(size_hint=(0.75, 0.8), auto_dismiss=True, **kwargs)
+        super().__init__(size_hint=(0.75, 0.85), auto_dismiss=True, **kwargs)
         
         obj = datos_carta["objeto"]
         tipo = datos_carta["tipo"]
@@ -28,28 +31,36 @@ class ModalDetalleCarta(ModalView):
         desc = getattr(obj, 'description', getattr(obj, 'descripcion', 'Sin descripción disponible.'))
 
         # Color de fondo según tipo
-        
         if tipo == 'spell':
             color_header = "[color=bb88ff]"
-            bg_card = (0.2, 0.1, 0.3, 1)
         elif tipo == 'building':
             color_header = "[color=88ffbb]"
-            bg_card = (0.1, 0.25, 0.15, 1)
         else:
             color_header = "[color=88ccff]"
-            bg_card = (0.1, 0.2, 0.35, 1)
 
-        layout_contenido = BoxLayout(orientation='vertical', padding=15, spacing=10)
+        layout_contenido = BoxLayout(orientation='vertical', padding=15, spacing=8)
 
         # Encabezado: Nombre y Coste
         lbl_titulo = Label(
             text=f"{color_header}[b]{obj.name.upper()}[/b][/color]\n[size=14sp]Coste: {obj.cost}E | Rareza: {rareza}[/size]",
             markup=True,
             font_size='20sp',
-            size_hint_y=0.18,
+            size_hint_y=0.12,
             halign='center'
         )
         layout_contenido.add_widget(lbl_titulo)
+
+        # Arte Grande de la Carta (Vista de Detalle Completa)
+        card_id = datos_carta.get("id")
+        if card_id is not None:
+            art_widget = CardArtWidget(
+                card_id=card_id, 
+                is_detail=True, 
+                size_hint=(None, None), 
+                size=(180, 160), 
+                pos_hint={'center_x': 0.5}
+            )
+            layout_contenido.add_widget(art_widget)
 
         # Si es UNIDAD, mostramos sus estadísticas de combate
         if tipo == 'unit':
@@ -63,7 +74,7 @@ class ModalDetalleCarta(ModalView):
                      f"[color=55ffffff][b]⚡ Vel: {spd}[/b][/color]  |  [color=ffff55][b]🎯 Rango: {rng}[/b][/color]",
                 markup=True,
                 font_size='15sp',
-                size_hint_y=0.15,
+                size_hint_y=0.13,
                 halign='center'
             )
             layout_contenido.add_widget(lbl_stats)
@@ -73,13 +84,13 @@ class ModalDetalleCarta(ModalView):
             text=f"[color=aaaaaa][i]Grupos / Tags:[/i] {grupos_str}[/color]",
             markup=True,
             font_size='13sp',
-            size_hint_y=0.1,
+            size_hint_y=0.08,
             halign='center'
         )
         layout_contenido.add_widget(lbl_tags)
 
         # Descripción / Lore / Efecto Especial
-        scroll_desc = ScrollView(size_hint_y=0.45)
+        scroll_desc = ScrollView(size_hint_y=0.35)
         lbl_desc = Label(
             text=f"[i]{desc}[/i]",
             markup=True,
@@ -96,7 +107,7 @@ class ModalDetalleCarta(ModalView):
         # Botón para cerrar
         btn_cerrar = Button(
             text="CERRAR",
-            size_hint_y=0.12,
+            size_hint_y=0.10,
             background_color=(0.8, 0.2, 0.2, 1)
         )
         btn_cerrar.bind(on_release=self.dismiss)
@@ -108,60 +119,63 @@ class ModalDetalleCarta(ModalView):
 # ==========================================
 # 2. TARJETA DEL ÁLBUM
 # ==========================================
-class TarjetaAlbum(BoxLayout):
+class TarjetaAlbum(ButtonBehavior, BoxLayout):
     def __init__(self, datos_carta, **kwargs):
         super().__init__(
             orientation='vertical', 
             size_hint_y=None, 
-            height=180, 
-            padding=8, 
-            spacing=5, 
+            height=200, 
+            padding=6, 
+            spacing=3, 
             **kwargs
         )
+        self.datos_carta = datos_carta
         
         # 1. Extraer los datos del diccionario de forma segura
+        card_id = datos_carta.get("id")
         nombre = datos_carta.get("nombre", "Sin Nombre")
         coste = datos_carta.get("coste", 0)
         rareza = datos_carta.get("rareza", "Común")
         tipo = datos_carta.get("tipo", "unit")
         cantidad = datos_carta.get("cantidad", 0)
 
-        # 2. Aplicar el estilo al propio BoxLayout (self)
+        # 2. Miniatura de Ilustración de la carta
+        if card_id is not None:
+            thumb_art = CardArtWidget(card_id=card_id, size_hint_y=0.55)
+            self.add_widget(thumb_art)
+
+        # 3. Formatear el texto con la etiqueta de color Kivy
+        color_tag = get_rarity_markup(rareza)
+        texto_carta = f"{color_tag}[b]{nombre}[/b][/color]\n[size=10sp][{rareza} | {coste}E][/size]"
+
+        lbl_nombre = Label(
+            text=texto_carta, 
+            markup=True,
+            halign='center',
+            valign='middle',
+            size_hint_y=0.28
+        )
+        lbl_nombre.bind(size=lbl_nombre.setter('text_size'))
+        self.add_widget(lbl_nombre)
+
+        # 4. Indicador de cantidad
+        lbl_cant = Label(
+            text=f"x{cantidad} poseídas", 
+            size_hint_y=0.17, 
+            font_size='11sp',
+            color=(0.9, 0.9, 0.9, 1)
+        )
+        self.add_widget(lbl_cant)
+
+        # 5. Aplicar el estilo al propio BoxLayout (self)
         apply_card_theme(
             widget=self, 
             rarity=rareza, 
             card_type=tipo
         )
-
-        # 3. Formatear el texto con la etiqueta de color Kivy
-        color_tag = get_rarity_markup(rareza)
-        texto_carta = f"{color_tag}[b]{nombre}[/b][/color]\n[{rareza}]"
-
-        # 4. Botón transparente (background_color=(0,0,0,0)) para dejar ver el canvas del tema
-        btn_visual = Button(
-            text=texto_carta, 
-            markup=True,
-            background_color=(0, 0, 0, 0),
-            background_normal='',
-            halign='center',
-            valign='middle',
-            size_hint_y=0.8
-        )
-        btn_visual.bind(size=btn_visual.setter('text_size'))
         
-        # Evento para abrir el modal de detalle
-        btn_visual.bind(on_release=lambda instance: ModalDetalleCarta(datos_carta).open())
-
-        # 5. Indicador de cantidad
-        lbl_cant = Label(
-            text=f"Poseídas: x{cantidad}", 
-            size_hint_y=0.2, 
-            font_size='12sp',
-            color=(0.9, 0.9, 0.9, 1)
-        )
-        
-        self.add_widget(btn_visual)
-        self.add_widget(lbl_cant)
+        # Evento para abrir el modal de detalle al tocar la tarjeta
+        self.bind(on_release=lambda instance: ModalDetalleCarta(self.datos_carta).open())
 
 
 # ==========================================

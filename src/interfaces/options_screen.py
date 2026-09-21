@@ -66,10 +66,18 @@ class PantallaOpciones(Screen):
         # Etiqueta de la RAM
         self.ram_label = Label(text=self.ram_text, halign='left', valign='middle')
         self.ram_label.bind(size=self.ram_label.setter('text_size'))
-        
-        # Agregamos los widgets de cuenta a su layout
-
         account_layout.add_widget(self.ram_label)
+
+        # Botón para la herramienta de desarrollo de arte y encuadre
+        btn_art_dev = Button(
+            text="🎨 Ajustar Arte de Cartas (Dev)", 
+            size_hint_y=None, 
+            height=48,
+            background_color=(0.25, 0.60, 0.85, 1),
+            bold=True
+        )
+        btn_art_dev.bind(on_release=self.abrir_ajustador_arte)
+        account_layout.add_widget(btn_art_dev)
 
         main_layout.add_widget(account_layout)
 
@@ -136,3 +144,8 @@ class PantallaOpciones(Screen):
         """Regresa a la pantalla principal."""
         if self.manager:
             self.manager.current = 'menu_screen'
+
+    def abrir_ajustador_arte(self, instance):
+        """Abre el modal de ajuste de arte y encuadre para desarrolladores."""
+        from src.interfaces.dev_art_tool import DevArtAdjusterModal
+        DevArtAdjusterModal().open()

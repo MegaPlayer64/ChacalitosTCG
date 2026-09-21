@@ -3,8 +3,8 @@ ID,Nombre,CardType,Rareza,Coste,Vida,Ataque,Velocidad,Rango_ataque,Grupos,Descri
 2,Chino,unit,Común,5,18,14,2,1,"Cabezal de Tren, Futboleros",,Cartas iniciales CT
 3,Kapsi,unit,Común,3,14,9,1,1,"Cabezal de Tren, Futboleros",Mover 1 casilla extra después de atacar,Cartas iniciales CT
 4,Melsizis,unit,Común,1,9,4,1,1,"Fuerzas Especiales Valenzuela, Deportistas",,Cartas iniciales FEV
-5,Joel,unit,Común,4,20,12,2,1,"Fuerzas Especiales Valenzuela, Deportistas, Futboleros, Tecnológico",,Cartas iniciales FEV
-6,Vicente,unit,Común,6,38,9,1,2,"Fuerzas Especiales Valenzuela, Deportistas",,Cartas iniciales FEV
+5,Joel,unit,Común,4,20,12,2,1,"Fuerzas Especiales Valenzuela, Deportistas,  Tecnológico",,Cartas iniciales FEV
+6,Vicente,unit,Común,6,38,9,1,2,"Fuerzas Especiales Valenzuela, Futboleros, Deportistas",,Cartas iniciales FEV
 7,Dante,unit,Común,2,8,7,2,1,"Fuerzas Especiales Valenzuela, Mish-B, Artista, Músico, Tecnológico",,Cartas iniciales FEV
 8,Naty,unit,Común,1,6,3,2,1,"3_NAI, Danza",,Cartas Iniciales 3_NAI
 9,Ami,unit,Común,3,13,11,2,1,"3_NAI, Danza",,Cartas Iniciales 3_NAI
@@ -61,7 +61,7 @@ Si no es Tecnológico, pierde 4 daño este turno",Cartas Truco
 59,Crisby (Airsoft),unit,Épica,4,19,9,1,2,"Mish-B, Nuevo, Tecnológico"," Si tiene adyacente un enemigo, lo inmoviliza por un turno. Esta habilidad no se puede activar si esta unidad ha sido movida este turno",Cartas Miscelanias
 60,Melsizis (DT),unit,Épica,5,24,14,1,1,"Fuerzas Especiales Valenzuela, Deportistas","Mientras este activo: Todas las cartas de grupo Fuerzas Especiales Valenzuela ganan +1 de ataque. Si hay al menos una carta de los Cabezal de Tren en el tablero, también ganan +1 de velocidad.",SIMCE
 61,Chino (Quemadas),unit,Excelencia,9,21,15,3,2,"Cabezal de Tren, Futboleros","La primera vez que esta unidad sea atacada en cada turno rival, se mueve automáticamente a una casilla adyacente vacía (tú eliges cuál) y anula el daño.",SIMCE
-62,Diego S.,unit,Común,2,10,6,1,1,"Mish-A, Futboleros","Freddy gana +1 de Ataque por cada otra unidad ""Mish-A"" o ""Mish"" activa en el tablero",Cartas Iniciales Mish
+62,Diego S.,unit,Común,2,10,6,1,1,"Mish-A, Futboleros","Diego S. gana +1 de Ataque por cada otra unidad ""Mish-A"" o ""Mish"" activa en el tablero",Cartas Iniciales Mish
 63,D. Cutiño,unit,Común,4,14,6,1,2,"Mish-A, Mish-B, Tecnológico, Deportistas",Invoca Gandan pagando 3 de energia,Cartas Iniciales Mish
 64,Zander,unit,Común,3,13,9,1,1,"Mish-A, Artista, Literatura ",Puede mover aliado 1 casilla una vez por turno,Cartas Iniciales Mish
 65,Gandan,unit,Ficha,3,9,5,0,2,"Mish-A, Mish-B, Tecnológico","Al morir, hace 3 de daño en area",Cartas Iniciales Mish
@@ -85,7 +85,7 @@ Es requerido para invocar esta carta que en el tablero haya una Naty y una Ami a
 79,Axel,unit,Especial,6,28,10,2,1,Mish-A,"Al recibir daño, adquiere +1 de daño",Cartas Iniciales Mish-A
 80,Biblioteca Escolar,building,Épica,5,N/A,N/A,N/A,N/A,Literatura,Las unidades con la tag Literatura ganan +1 de Rango de ataque.,Cartas Entorno
 81,Jose (Enmascarado),unit,Especial,3,13,16,1,2,"Cabezal de Tren, Futboleros","Cada vez que ataca, pierde la mitad de su daño (Hasta 1). Además, su primer ataque tiene 2 de rango",Cartas Miscelanias
-82,Gorro Soviético,spell,Común,3,N/A,N/A,N/A,N/A,-,"Da más 6 de vida máxima a una unidad. (Curando esa cantidad)",Cartas Miscelanias
+82,Gorro Soviético ,spell,Común ,3,,,,,,Da más 6 de vida máxima a una unidad. (Curando esa cantidad),Cartas Miscelanias
 83,Jose (Oso),unit,Épica,5,20,16,2,1,"Cabezal de Tren, Futboleros",Puede +4 daño perdiendo 4 vida (Una vez por turno),La Tirana
 84,Stefano (Viejo),unit,Épica,7,40,15,1,1,"Derma-patch, Cabezal de Tren, Futboleros",Mientras este activo: Todos los Cabezal de Tren adquieren +1 de velocidad,La Tirana
 85,Nico (Condor),unit,Evento,7,27,16,2,1,"Mish-A, Deportistas","Es capaz de pasar entre unidades en el campo, aumentando su rango de movimiento, infringiendo 6 de daño al pasar por ellas.",La Tirana
@@ -100,3 +100,43 @@ Es requerido para invocar esta carta que en el tablero haya un Rin y una Martina
 "
 88,Dante (Olimpiadas),unit,Excelencia,4,14,12,1,1,"Fuerzas Especiales Valenzuela, Mish-B, Artista, Músico, Tecnológico","Robas una carta, ganas el 50% del costo de la carta.
 EVOLUCIÓN DE DANTE: Ganas +2 de energia y 1 de velocidad",SIMCE
+89,Ariana & Camila (Club de Pelea),unit,Excelencia,5,25,9,2,1,"Tralaleros, Literatura, Artista, Músico","Es capaz de devolver como contra-ataque la mitad del daño recibido.
+
+Es requerido para invocar esta carta que en el tablero haya una Camila y una Ariana activos para invocar, pudiendo colocarlo en cualquier de las ubicaciones que se encuentran.",Halloween
+90,Dante (Slasher),unit,Evento,5,20,18,1,1,"Fuerzas Especiales Valenzuela, Mish-B, Artista, Músico, Tecnológico","Al eliminar un enemigo, si el daño infrigido fue mayor a la vida restante del oponente, recibe el daño extra a la base rival.",Halloween
+91,Margarita (Vampira),unit,Épica,5,22,12,2,1,"Tralaleros, Artista","Al hacer daño esta carta o tus aliados, cura la mitad el daño infringido.",Halloween
+92,Helen (Payasa Monocromatica),unit,Épica,4,20,11,2,2,"Tralaleros, Mish-B, Artista, Literatura, Músico","Si daña un enemigo, este enemigo no puede curarse por 2 turnos.",Halloween
+93,Naty (Gallinita Ciega),unit,Evento,3,15,8,2,1,"3_NAI, Danza","No puede declarar ataques. Cuando una unidad aliada adyacente ataque a un enemigo que también esté adyacente a esta carta, inflige automáticamente su daño a dicho enemigo.",
+94,Crisby (Dinosaurio),unit,Excelencia,8,22,16,2,1,"Nuevo, Tecnológico","Cada vez que robes una carta, esta unidad adquiere +2 de daño,",Dinosaurios
+95,Dante (Dinosaurio),unit,Épica,5,20,10,2,1,"Fuerzas Especiales Valenzuela, Mish-B, Artista, Músico, Tecnológico","Por cada carta robada, esta carta se cura 2 de vida",Dinosaurios
+96,Iara (Metralleta de Agua),unit,Evento,4,17,8,1,2,"Tralaleros, Músico, Tecnológico","Ganas 2 de daño cada turno, al atacar pierdes 4 de daño",Dinosaurios
+97,Huevos de Dinosaurio,spell,Común,2,N/A,N/A,N/A,N/A,Tralaleros,"Selecciona una carta, si es Tralaleros, obtienes un escudo que reduce la mitad de daño recibido en el siguiente ataque.",Dinosaurios
+98,Reciclaje,spell,Especial,3,N/A,N/A,N/A,N/A,,"Selecciona una carta, regresa a tu mano y recuperas la energía invertida en el.",Dinosaurios
+99,Richi (Discurso),unit,Excelencia,8,30,13,1,1,Derma-patch,"Al morir, invoca a Dante (Discurso).",Formalidad
+100,Dante (Discurso),unit,Ficha,5,15,15,2,1,"Fuerzas Especiales Valenzuela, Mish-B, Artista, Músico, Tecnológico",,Formalidad
+101,Joel (Hombre Aracnido),unit,Excelencia,5,30,8,1,1,"Fuerzas Especiales Valenzuela, Deportistas,  Tecnológico","Joel puede ""anclarse"" en una casilla. Mientras esté anclado, su velocidad es 0, pero las unidades enemigas no pueden saltar sobre él ni ocupar las casillas superiores o inferiores a él.",Disfraces
+102,Ricardo (Wonka),unit,Evento,6,32,10,1,1,Derma-Patch,Coste 1: Cura 3 de vida a esta unidad,Día del Libro
+103,Helen (Cientifica),unit,Épica,5,22,10,1,2,"Tralaleros, Mish-B, Artista, Literatura, Músico","Una vez por partida, es capaz de revivir una unidad de la categoría Músico (esta habilidad solo puede ser activada si el objetivo murió posterior a la invocación de esta carta).",Día del Libro
+104,Margaret (Circe),unit,Épica,5,24,11,1,1,"Artista, Literatura","Costo 3: Selecciona una unidad rival adyacente, esta se convierte en Cerdo hasta ser destruida.",Día del Libro
+105,Cerdo,unit,Ficha,1,4,4,1,1,,"Esta unidad una vez destruida, transforma a su carta anterior",Día del Libro
+106,Rin (Rey),unit,Excelencia,6,26,8,2,1,,Todas las unidades adyacentes adquieren +2 de Daño. Evolución de Rin: Adquiere los efectos de entorno sin importar su etiqueta.,Alianzas 2026
+107,Ami (Reina),unit,Excelencia,7,28,14,2,2,"3_NAI, Danza","Los aliados adyacentes recuperan 2 PV al atacar. 
+Evolución de Amira (Presidenta):
+Después de atacar, todos los aliados ganan +2 Daño este turno.  ",Alianzas 2026
+108,Ale (Alianza Azulada),unit,Épica,5,20,11,1,1,"3_NAI, Danza","Evolución de Ale: Unidades de Danza adyacentes no pueden ser objetivo de ataques a distancia. Además, transforma la etiqueta de sus aliados adyacentes a ""Alianza Azulada"", dándoles +2 de Vida Máxima.",Alianzas 2026
+109,Dante (Fuerza Estelar),unit,Épica,5,18,12,1,2,"Fuerzas Especiales Valenzuela, Mish-B, Artista, Músico, Tecnológico",El primer movimiento que ejecute en la partida tiene +1 de Velocidad. Evolución de Dante (Yukata): Puede utilizar su Miku Peluche como un segundo ataque que hace 6 de daño y tiene 1 de rango extra.,Alianzas 2026
+110,Margarita & Helen (Lienzos),unit,Épica,6,26,13,1,1,"Tralaleros, Artista, Literatura, Músico","Fusión: Requiere a Margarita y Helen en tablero. Al atacar, cura 3 PV a todos los aliados con la tag Artista o Literatura.",Alianzas 2026
+111,Joel & Bichots (Rubias),unit,Épica,6,30,14,2,1,"Fuerzas Especiales Valenzuela, Cabezal de Tren, 3_NAI, Futboleros, Tecnológico","Fusión: Requiere a Joel y Bichots. Por cada etiqueta diferente entre los aliados en el tablero, esta carta gana +1 de Ataque (Máx +5).",Alianzas 2026
+112,José (Pelea de un pie),unit,Especial,4,18,12,1,2,"Cabezal de Tren, Futboleros","Si el ataque es ejecutado a rango 2 o superior, atrae al objetivo 1 casilla hacia José y lo inmoviliza por 1 turno.",Alianzas 2026
+113,Armadura Esponja,spell,Especial,3,N/A,N/A,N/A,N/A,,Otorga +6 de Vida permanente a una unidad y adquiere un escudo que reduce a la mitad el daño. (Un uso),Alianzas 2026
+114,Armadura Plancton,spell,Especial,2,N/A,N/A,N/A,N/A,,Otorga +1 de Velocidad permanente a una unidad.,Alianzas 2026
+115,Misión Imposible,spell,Especial,6,N/A,N/A,N/A,N/A,-,"Selecciona una unidad aliada. Mueve a esta unidad hasta 3 casillas. Al detenerse, todas las unidades aliadas adyacentes a su nueva posición recuperan 4 PV.",Alianzas 2026
+116,Ariana (Rapera),unit,Evento,4,16,10,1,2,"Tralaleros, Músico, Artista",Reduce el ataque enemigo en -3 al golpear.,Alianzas 2026
+117,Cristóbal & Josefa A (Caporal),unit,Excelencia,6,30,12,2,1,"Nuevo, Danza","Una vez por turno, puede Separarse en una casilla adyacente vacía, creando a Cristóbal (15 PV/6 ATK) y Josefa A (15 PV/6 ATK) con la mitad de su Vida actual redondeada hacia abajo. Si ambas unidades están adyacentes, pueden ""Reunirse"" para volver a formar esta carta, sumando sus Vidas actuales +4 de Curación a la Base fusionada.",Fiestas Patrias
+118,Cristóbal (Caporal),unit,Ficha,3,15,6,1,1,"Nuevo, Danza",,Fiestas Patrias
+119,Josefa (Caporal),unit,Ficha,3,15,6,1,1,"Nuevo, Danza",,Fiestas Patrias
+120,Joel & Melsizis (Ping Pong),unit,Excelencia,7,30,9,1,2,"Fuerzas Especiales Valenzuela, Deportistas,  Tecnológico","Puede atacar 2 veces por turno
+
+Es requerido para invocar esta carta que en el tablero haya un Joel y un Javier activos para invocar, pudiendo colocarlo en cualquier de las ubicaciones que se encuentran.",
+121,Sesión de Manicure,spell,Especial,3,N/A,N/A,N/A,N/A,"Fuerzas Especiales Valenzuela, Tecnológico",Obtienes 4 de vida. Si es Fuerzas Especiales Valenzuela o Tecnologíco tambien obtienes 4 de daño,Cartas Truco
+122,El Nuevo Testamento Mini,spell,Común,1,N/A,N/A,N/A,N/A,Literatura,"Haces 4 de daño, si tienes 2 o más literatura haces 1 de daño extra durante 5 turnos",Cartas Truco

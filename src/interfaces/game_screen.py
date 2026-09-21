@@ -15,6 +15,9 @@ from kivy.uix.modalview import ModalView
 
 from src.domain.card_styles import apply_card_theme, apply_card_background, get_rarity_markup
 
+from kivy.uix.behaviors import ButtonBehavior
+from src.interfaces.widgets.card_art_widget import CardArtWidget
+
 # =========================================================
 # BOTÓN TÁCTIL CON DETECCIÓN DE MANTENER PRESIONADO (MOBILE)
 # =========================================================
@@ -48,11 +51,45 @@ class BotonLargo(Button):
 
 
 # =========================================================
+# BOTÓN DE CARTA EN MANO CON ARTE Y PRESIÓN LARGA
+# =========================================================
+class BotonCartaMano(ButtonBehavior, BoxLayout):
+    def __init__(self, **kwargs):
+        kwargs.setdefault('orientation', 'vertical')
+        kwargs.setdefault('padding', [4, 4, 4, 4])
+        kwargs.setdefault('spacing', 3)
+        super().__init__(**kwargs)
+        self._timer_largo = None
+        self.fue_presion_larga = False
+        self.callback_largo = None
+        self.indice_mano = 0
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            self.fue_presion_larga = False
+            self._timer_largo = Clock.schedule_once(self._ejecutar_presion_larga, 0.4)
+        return super().on_touch_down(touch)
+
+    def on_touch_up(self, touch):
+        if self._timer_largo:
+            Clock.unschedule(self._timer_largo)
+            self._timer_largo = None
+        if self.fue_presion_larga:
+            return True
+        return super().on_touch_up(touch)
+
+    def _ejecutar_presion_larga(self, dt):
+        self.fue_presion_larga = True
+        if self.callback_largo:
+            self.callback_largo(self)
+
+
+# =========================================================
 # CAPA MODAL FLOTANTE DE INSPECCIÓN DURANTE EL COMBATE
 # =========================================================
 class ModalDetalleCartaJuego(ModalView):
     def __init__(self, objeto_carta_o_unidad, game_state=None, es_unidad_tablero=False, **kwargs):
-        super().__init__(size_hint=(0.8, 0.75), auto_dismiss=True, **kwargs)
+        super().__init__(size_hint=(0.8, 0.82), auto_dismiss=True, **kwargs)
         
         obj = objeto_carta_o_unidad
         layout = BoxLayout(orientation='vertical', padding=15, spacing=8)
@@ -68,9 +105,21 @@ class ModalDetalleCartaJuego(ModalView):
         # Header
         lbl_titulo = Label(
             text=f"{color_tipo}[b]{obj.name.upper()}[/b][/color]\n[size=12sp]Coste: {coste}E | Rareza: {rareza}[/size]",
-            markup=True, font_size='18sp', size_hint_y=0.2, halign='center'
+            markup=True, font_size='18sp', size_hint_y=0.14, halign='center'
         )
         layout.add_widget(lbl_titulo)
+
+        # Arte de la carta si tiene ID o card_id (Vista de Detalle Completa)
+        cid = getattr(obj, 'id', getattr(obj, 'card_id', None))
+        if cid is not None:
+            art_view = CardArtWidget(
+                card_id=cid, 
+                is_detail=True, 
+                size_hint=(None, None), 
+                size=(150, 130), 
+                pos_hint={'center_x': 0.5}
+            )
+            layout.add_widget(art_view)
 
         # 2. ESTADÍSTICAS (Si es Unidad)
         if is_unit:
@@ -374,6 +423,7 @@ class PantallaJuego(Screen):
         for i, carta in enumerate(mano_jugador):
             rareza = carta.get('rareza', 'Común')
             tipo = carta.get('tipo', 'unit')
+            card_id = carta.get('id', None)
             
             # 1. Obtener la etiqueta de color Kivy según la rareza de la carta
             color_tag = get_rarity_markup(rareza)
@@ -389,15 +439,34 @@ class PantallaJuego(Screen):
             else:
                 texto_carta = f"{nombre_formateado}\nCoste: {carta['coste']}E"
             
-            # 3. Crear el botón con fondo transparente para dejar ver el canvas de apply_card_theme
-            btn_carta = BotonLargo(
-                text=texto_carta,
-                markup=True,
-                font_size='14sp',
-                background_color=(0, 0, 0, 0),
-                background_normal='',
-                halign='center'
-            )
+            # 3. Crear el botón táctil con arte integrado
+            btn_carta = BotonCartaMano()
+            
+            if card_id is not None and tipo != 'hidden':
+                art_view = CardArtWidget(card_id=card_id, size_hint_y=0.58)
+                btn_carta.add_widget(art_view)
+                
+                lbl_texto = Label(
+                    text=texto_carta,
+                    markup=True,
+                    font_size='11sp',
+                    size_hint_y=0.42,
+                    halign='center',
+                    valign='middle'
+                )
+                lbl_texto.bind(size=lbl_texto.setter('text_size'))
+                btn_carta.add_widget(lbl_texto)
+            else:
+                lbl_texto = Label(
+                    text=texto_carta,
+                    markup=True,
+                    font_size='13sp',
+                    size_hint_y=1,
+                    halign='center',
+                    valign='middle'
+                )
+                lbl_texto.bind(size=lbl_texto.setter('text_size'))
+                btn_carta.add_widget(lbl_texto)
             
             # 4. Aplicar el estilo visual por rareza y tipo de carta
             apply_card_theme(
@@ -552,6 +621,7 @@ class PantallaJuego(Screen):
         if is_online and jugador_actual.id != my_role:
             mano_formateada = [
                 {
+                    "id": None,
                     "nombre": "Dorso", 
                     "coste": "?", 
                     "coste_original": "?", 
@@ -566,6 +636,7 @@ class PantallaJuego(Screen):
             for c in jugador_actual.hand:
                 costo_efectivo, tiene_desc = jugador_actual.calcular_costo_efectivo(c)
                 mano_formateada.append({
+                    "id": getattr(c, 'id', None),
                     "nombre": c.name,
                     "coste": costo_efectivo,
                     "coste_original": c.cost,

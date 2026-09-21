@@ -25,6 +25,13 @@ class AbilityManager:
             AbilityManager._dante_economista_main_ability(unit, game_state)
         elif uid == 88:
             AbilityManager._dante_olimpiadas_on_enter(unit, game_state)
+        elif uid == 103:
+            unit.revive_available = True
+            unit.dead_musicians_after_entry = []
+        elif uid == 108:
+            AbilityManager._ale_alianza_on_evolve(unit, game_state)
+        elif uid == 109:
+            unit.has_first_move_buff = True
 
     @staticmethod
     def trigger_on_activate(unit, game_state):
@@ -42,6 +49,18 @@ class AbilityManager:
             AbilityManager._dante_yukata_on_activate(unit, game_state)
         elif int(unit.id) == 83:
             AbilityManager._jose_oso_on_activate(unit, game_state)
+        elif int(unit.id) == 101:
+            AbilityManager._joel_aracnido_on_activate(unit, game_state)
+        elif int(unit.id) == 102:
+            AbilityManager._ricardo_wonka_on_activate(unit, game_state)
+        elif int(unit.id) == 103:
+            AbilityManager._helen_cientifica_on_activate(unit, game_state)
+        elif int(unit.id) == 104:
+            AbilityManager._margaret_circe_on_activate(unit, game_state)
+        elif int(unit.id) == 109 and getattr(unit, 'evolution', False):
+            AbilityManager._dante_yukata_on_activate(unit, game_state)
+        elif int(unit.id) in (117, 118, 119):
+            AbilityManager._caporal_on_activate(unit, game_state)
 
     @staticmethod
     def trigger_on_attack(unit, game_state):
@@ -55,6 +74,12 @@ class AbilityManager:
             AbilityManager._jose_enmascarado_on_attack(unit, game_state)
         elif int(unit.id) == 75:
             AbilityManager._rafa_on_attack(unit, game_state)
+        elif int(unit.id) == 96:
+            AbilityManager._iara_metralleta_on_attack(unit, game_state)
+        elif int(unit.id) == 107:
+            AbilityManager._ami_reina_on_attack(unit, game_state)
+        elif int(unit.id) == 110:
+            AbilityManager._margarita_helen_lienzos_on_attack(unit, game_state)
 
     @staticmethod
     def trigger_on_damage_received(unit, damage, game_state):
@@ -64,6 +89,8 @@ class AbilityManager:
             AbilityManager._iara_on_damage_received(unit, damage, game_state)
         elif int(unit.id) == 79:
             AbilityManager._axel_on_damage_receaved(unit, game_state)
+        elif int(unit.id) == 89:
+            AbilityManager._ariana_camila_counter(unit, damage, game_state)
         # elif int(unit.id) == 31:
             # AbilityManager._martina_nueva_on_damage_received(unit, damage, game_state)
   
@@ -82,16 +109,55 @@ class AbilityManager:
             AbilityManager._dante_economista_main_ability(unit, game_state)
         elif int(unit.id) == 70:
             AbilityManager._dragon_menor_on_turn_start(unit, game_state)
+        elif int(unit.id) == 96:
+            AbilityManager._iara_metralleta_on_turn_start(unit, game_state)
 
     @staticmethod
     def trigger_on_death(unit, game_state):
         if int(unit.id) == 65:
             AbilityManager._gandan_on_death(unit, game_state)
+        elif int(unit.id) == 99:
+            AbilityManager._richi_discurso_on_death(unit, game_state)
+        elif int(unit.id) == 105:
+            AbilityManager._cerdo_on_death(unit, game_state)
+        
+        # Track dead musicians for Helen Científica (103)
+        tags = str(getattr(unit, 'groups', '')).lower()
+        if 'músico' in tags or 'musico' in tags:
+            for y in range(game_state.board.height):
+                for x in range(game_state.board.width):
+                    h = game_state.board.get_unit_at(x, y)
+                    if h and int(h.id) == 103 and h.owner_id == unit.owner_id:
+                        if getattr(h, 'dead_musicians_after_entry', None) is not None:
+                            h.dead_musicians_after_entry.append({
+                                'id': unit.id,
+                                'name': unit.name,
+                                'pos': (unit.pos_x, unit.pos_y)
+                            })
 
     @staticmethod
     def trigger_on_evolve(unit, game_state):
         if int(unit.id) == 88:
             AbilityManager._dante_on_evolve(unit, game_state)
+        elif int(unit.id) == 106:
+            AbilityManager._rin_rey_on_evolve(unit, game_state)
+        elif int(unit.id) == 107:
+            AbilityManager._ami_reina_on_evolve(unit, game_state)
+        elif int(unit.id) == 108:
+            AbilityManager._ale_alianza_on_evolve(unit, game_state)
+        elif int(unit.id) == 109:
+            AbilityManager._dante_fuerza_estelar_on_evolve(unit, game_state)
+
+    @staticmethod
+    def trigger_on_draw_card(unit, drawn_card, game_state):
+        uid = int(unit.id)
+        if uid == 94:
+            unit.attack += 2
+            print(f">> [Crisby Dinosaurio] ¡{unit.name} gana +2 de daño permanente al robar una carta! (ATK: {unit.attack})")
+        elif uid == 95:
+            healed = unit.heal(2, game_state)
+            if healed > 0:
+                print(f">> [Dante Dinosaurio] ¡{unit.name} se cura {healed} PV al robar una carta! (Vida: {unit.health}/{unit.max_health})")
 
     @staticmethod
     def resolve_pending_ability(game_state, payload):
@@ -254,7 +320,127 @@ class AbilityManager:
             else:
                 print(">> [!] Casilla de escape inválida.")
             return False
-        
+        elif pending['ability'] == 'mision_imposible_1':
+            ally = game_state.board.get_unit_at(tx, ty)
+            if ally and ally.owner_id == game_state.current_player_id:
+                game_state.pending_ability = {
+                    'ability': 'mision_imposible_2',
+                    'unit_coords': (tx, ty),
+                    'moves_left': 3
+                }
+                print(f">> [Misión Imposible] Ahora selecciona la casilla destino para {ally.name} (hasta 3 casillas).")
+                return True
+            print(">> [Misión Imposible] Selecciona un aliado válido.")
+            return False
+
+        elif pending['ability'] == 'mision_imposible_2':
+            fx, fy = pending['unit_coords']
+            ally = game_state.board.get_unit_at(fx, fy)
+            if not ally: return False
+            dist = abs(fx - tx) + abs(fy - ty)
+            if dist <= 3 and game_state.board.is_within_bounds(tx, ty) and not game_state.board.is_occupied(tx, ty):
+                game_state.board.move_unit(fx, fy, tx, ty)
+                print(f">> [Misión Imposible] ¡{ally.name} se movió a ({tx}, {ty})!")
+                for nx, ny in game_state.board.get_neighbors(tx, ty):
+                    adj = game_state.board.get_unit_at(nx, ny)
+                    if adj and adj.owner_id == ally.owner_id and adj.health < adj.max_health:
+                        adj.health = min(adj.max_health, adj.health + 4)
+                        print(f">> [Misión Imposible] ¡{adj.name} recupera 4 PV! (Vida: {adj.health})")
+                return True
+            print(">> [Misión Imposible] Destino inválido o fuera de rango (máx 3).")
+            return False
+
+        elif pending['ability'] == 'margaret_circe':
+            target_unit = game_state.board.get_unit_at(tx, ty)
+            sx, sy = pending['source_coords']
+            source = game_state.board.get_unit_at(sx, sy)
+            if not source: return False
+            if target_unit and target_unit.owner_id != source.owner_id and (abs(sx - tx) + abs(sy - ty)) <= 1:
+                player = game_state.players[source.owner_id]
+                if player.current_energy < 3:
+                    print(">> [Margaret Circe] Energía insuficiente (necesitas 3).")
+                    return False
+                player.current_energy -= 3
+                target_unit._original_card_data = {
+                    'id': target_unit.id, 'name': target_unit.name,
+                    'attack': target_unit.attack, 'health': target_unit.health,
+                    'max_health': target_unit.max_health, 'speed': target_unit.speed,
+                    'range_atk': target_unit.range_atk, 'groups': target_unit.groups,
+                    'rarity': target_unit.rarity, 'cost': target_unit.cost
+                }
+                target_unit.id = '105'
+                target_unit.name = 'Cerdo'
+                target_unit.attack = 4
+                target_unit.max_health = 4
+                target_unit.health = 4
+                target_unit.speed = 1
+                target_unit.range_atk = 1
+                target_unit.rarity = 'Ficha'
+                target_unit.cost = 1
+                target_unit.groups = ''
+                target_unit.static_abilities = []
+                target_unit.temporary_buffs = []
+                print(f">> [Margaret Circe] ¡Enemigo transformado en Cerdo!")
+                source.ability_used_this_turn = True
+                return True
+            print(">> [Margaret Circe] Selecciona un enemigo adyacente válido.")
+            return False
+
+        elif pending['ability'] == 'helen_cientifica':
+            sx, sy = pending['source_coords']
+            source = game_state.board.get_unit_at(sx, sy)
+            if not source: return False
+            if game_state.board.is_within_bounds(tx, ty) and not game_state.board.is_occupied(tx, ty):
+                dead_list = getattr(source, 'dead_musicians_after_entry', [])
+                if dead_list:
+                    revived_data = dead_list.pop(0)
+                    from src.infrastructure.loaders.card_loader import CardLoader
+                    revived = CardLoader.get_card_stats_by_id(int(revived_data['id']))
+                    revived.owner_id = source.owner_id
+                    game_state.board.set_unit_at(tx, ty, revived)
+                    source.revive_available = False
+                    source.ability_used_this_turn = True
+                    print(f">> [Helen Científica] ¡{revived.name} ha sido revivido en ({tx}, {ty})!")
+                    return True
+            print(">> [Helen Científica] Selecciona una casilla vacía válida.")
+            return False
+
+        elif pending['ability'] == 'caporal_split':
+            sx, sy = pending['source_coords']
+            source = game_state.board.get_unit_at(sx, sy)
+            if not source: return False
+            if game_state.board.is_within_bounds(tx, ty) and not game_state.board.is_occupied(tx, ty) and (abs(sx - tx) + abs(sy - ty)) <= 1:
+                half_hp = max(1, source.health // 2)
+                from src.infrastructure.loaders.card_loader import CardLoader
+                cris = CardLoader.get_card_stats_by_id(118)
+                cris.owner_id = source.owner_id
+                cris.health = half_hp
+                cris.max_health = 15
+                josefa = CardLoader.get_card_stats_by_id(119)
+                josefa.owner_id = source.owner_id
+                josefa.health = half_hp
+                josefa.max_health = 15
+                game_state.board.remove_unit(sx, sy)
+                game_state.board.set_unit_at(sx, sy, cris)
+                game_state.board.set_unit_at(tx, ty, josefa)
+                print(f">> [Caporal] ¡Se separaron! Cristóbal en ({sx},{sy}) y Josefa en ({tx},{ty}) con {half_hp} PV cada uno.")
+                return True
+            print(">> [Caporal] Selecciona una casilla adyacente vacía.")
+            return False
+
+        elif pending['ability'] == 'reciclaje':
+            target_unit = game_state.board.get_unit_at(tx, ty)
+            if target_unit and target_unit.owner_id == game_state.current_player_id:
+                player = game_state.players[game_state.current_player_id]
+                cost_refund = int(target_unit.cost)
+                player.current_energy += cost_refund
+                player.hand.append(target_unit)
+                game_state.board.remove_unit(tx, ty)
+                print(f">> [Reciclaje] ¡{target_unit.name} volvió a tu mano! Recuperaste {cost_refund} de energía.")
+                return True
+            print(">> [Reciclaje] Selecciona una unidad aliada en el tablero.")
+            return False
+
         return False
         
         return False
@@ -297,6 +483,14 @@ class AbilityManager:
             72: AbilityManager._spell_72_effect,
             76: AbilityManager._spell_76_effect,
             77: AbilityManager._spell_77_effect,
+            82: AbilityManager._spell_82_effect,
+            97: AbilityManager._spell_97_effect,
+            98: AbilityManager._spell_98_effect,
+            113: AbilityManager._spell_113_effect,
+            114: AbilityManager._spell_114_effect,
+            115: AbilityManager._spell_115_effect,
+            121: AbilityManager._spell_121_effect,
+            122: AbilityManager._spell_122_effect,
         }
         
         method = effect_methods.get(int(card.id))
@@ -1346,3 +1540,316 @@ class AbilityManager:
         unit.speed += 1
         game_state.players[unit.owner_id].current_energy += 2
         print(f">> [Habilidad Dante]: {unit.name} ha ganado +1 de velocidad y devuelve 2 de energia.")
+
+    # =============================================
+    # NUEVAS HABILIDADES: CARTAS 89-122
+    # =============================================
+
+    # --- CONTRAATAQUE: Ariana & Camila (89) ---
+    @staticmethod
+    def _ariana_camila_counter(unit, damage, game_state):
+        counter_dmg = max(1, damage // 2)
+        attacker = getattr(game_state, 'current_attacker', None)
+        if attacker and attacker.owner_id != unit.owner_id and attacker.health > 0:
+            print(f">> [Ariana & Camila] ¡Contraataque! Devuelve {counter_dmg} de daño a {attacker.name}!")
+            if attacker.take_damage(counter_dmg, game_state):
+                print(f">> ¡{attacker.name} ha sido derrotado por el contraataque!")
+                game_state.board.remove_unit(attacker.pos_x, attacker.pos_y)
+            return
+        # Fallback si no está registrado current_attacker
+        for y in range(game_state.board.height):
+            for x in range(game_state.board.width):
+                att = game_state.board.get_unit_at(x, y)
+                if att and att.owner_id != unit.owner_id and getattr(att, 'has_attacked', False):
+                    print(f">> [Ariana & Camila] ¡Contraataque! Devuelve {counter_dmg} de daño a {att.name}!")
+                    if att.take_damage(counter_dmg, game_state):
+                        print(f">> ¡{att.name} ha sido derrotado por el contraataque!")
+                        game_state.board.remove_unit(x, y)
+                    return
+
+    # --- IARA METRALLETA (96) ---
+    @staticmethod
+    def _iara_metralleta_on_turn_start(unit, game_state):
+        unit.temporary_buffs.append({"type": "attack", "amount": 2, "duration": 1})
+        print(f">> [Iara Metralleta] ¡{unit.name} gana +2 de daño este turno!")
+
+    @staticmethod
+    def _iara_metralleta_on_attack(unit, game_state):
+        unit.attack = max(0, unit.attack - 4)
+        print(f">> [Iara Metralleta] ¡{unit.name} pierde 4 de daño tras atacar! (ATK: {unit.attack})")
+
+    # --- HECHIZO 97: Huevos de Dinosaurio ---
+    @staticmethod
+    def _spell_97_effect(card, target, game_state):
+        if not isinstance(target, tuple): return False
+        target_unit = game_state.board.get_unit_at(*target)
+        if not target_unit: return False
+        tags = str(getattr(target_unit, 'groups', '')).lower()
+        if 'tralaleros' in tags:
+            target_unit.has_shield = True
+            print(f">> [Huevos de Dinosaurio] ¡{target_unit.name} recibió un Escudo (reduce mitad de daño en próximo ataque)!")
+        else:
+            print(f">> [Huevos de Dinosaurio] {target_unit.name} no es Tralaleros. Sin efecto de escudo.")
+        return True
+
+    # --- HECHIZO 98: Reciclaje ---
+    @staticmethod
+    def _spell_98_effect(card, target, game_state):
+        game_state.pending_ability = {
+            'ability': 'reciclaje'
+        }
+        print(">> [Reciclaje] Selecciona una unidad aliada para devolverla a tu mano.")
+        return True
+
+    # --- RICHI DISCURSO (99) ---
+    @staticmethod
+    def _richi_discurso_on_death(unit, game_state):
+        from src.infrastructure.loaders.card_loader import CardLoader
+        dante_discurso = CardLoader.get_card_stats_by_id(100)
+        dante_discurso.owner_id = unit.owner_id
+        pos_x, pos_y = unit.pos_x, unit.pos_y
+        # Se invoca en la misma posición donde murió Richi
+        # (trigger_on_death se llama antes de remove_unit en unit.take_damage, pero
+        # la unidad ya se va a quitar, así que programamos la invocación post-muerte)
+        game_state._pending_summon_on_death = {
+            'card': dante_discurso,
+            'pos': (pos_x, pos_y)
+        }
+        print(f">> [Richi Discurso] Al morir, invocará a Dante (Discurso) en ({pos_x}, {pos_y})!")
+
+    # --- CERDO (105) ---
+    @staticmethod
+    def _cerdo_on_death(unit, game_state):
+        original = getattr(unit, '_original_card_data', None)
+        if original:
+            from src.infrastructure.loaders.card_loader import CardLoader
+            restored = CardLoader.get_card_stats_by_id(int(original['id']))
+            restored.owner_id = unit.owner_id
+            game_state._pending_summon_on_death = {
+                'card': restored,
+                'pos': (unit.pos_x, unit.pos_y)
+            }
+            print(f">> [Cerdo] Al destruirse, {original['name']} volverá a la vida!")
+
+    # --- JOEL HOMBRE ARÁCNIDO (101) ---
+    @staticmethod
+    def _joel_aracnido_on_activate(unit, game_state):
+        if getattr(unit, 'is_anchored', False):
+            unit.is_anchored = False
+            print(f">> [Joel Arácnido] ¡{unit.name} se ha desanclado! Puede moverse normalmente.")
+        else:
+            unit.is_anchored = True
+            unit.temporary_buffs.append({"type": "speed_set", "value": 0, "duration": 99})
+            print(f">> [Joel Arácnido] ¡{unit.name} se ha anclado! Velocidad = 0. Bloquea movimiento enemigo.")
+        unit.ability_used_this_turn = True
+
+    # --- RICARDO WONKA (102) ---
+    @staticmethod
+    def _ricardo_wonka_on_activate(unit, game_state):
+        player = game_state.players[unit.owner_id]
+        if player.current_energy < 1:
+            print(">> [Ricardo Wonka] Energía insuficiente (necesitas 1).")
+            return
+        player.current_energy -= 1
+        if getattr(player, 'cant_heal_turns', 0) == 0:
+            unit.health = min(unit.max_health, unit.health + 3)
+            print(f">> [Ricardo Wonka] ¡Se curó 3 PV! (Vida: {unit.health}/{unit.max_health})")
+        else:
+            print(">> [Ricardo Wonka] No puede curarse (efecto anti-curación activo).")
+        unit.ability_used_this_turn = True
+
+    # --- HELEN CIENTÍFICA (103) ---
+    @staticmethod
+    def _helen_cientifica_on_activate(unit, game_state):
+        if not getattr(unit, 'revive_available', False):
+            print(">> [Helen Científica] Ya usó su habilidad de revivir en esta partida.")
+            return
+        dead_list = getattr(unit, 'dead_musicians_after_entry', [])
+        if not dead_list:
+            print(">> [Helen Científica] No hay Músicos muertos que revivir (deben haber muerto después de su invocación).")
+            return
+        game_state.pending_ability = {
+            'ability': 'helen_cientifica',
+            'source_coords': (unit.pos_x, unit.pos_y)
+        }
+        names = ', '.join([d['name'] for d in dead_list])
+        print(f">> [Helen Científica] Músicos disponibles para revivir: {names}. Selecciona una casilla vacía.")
+
+    # --- MARGARET CIRCE (104) ---
+    @staticmethod
+    def _margaret_circe_on_activate(unit, game_state):
+        player = game_state.players[unit.owner_id]
+        if player.current_energy < 3:
+            print(">> [Margaret Circe] Energía insuficiente (necesitas 3).")
+            return
+        game_state.pending_ability = {
+            'ability': 'margaret_circe',
+            'source_coords': (unit.pos_x, unit.pos_y)
+        }
+        print(">> [Margaret Circe] Selecciona un enemigo adyacente para convertirlo en Cerdo.")
+
+    # --- EVOLUCIONES ---
+    @staticmethod
+    def _rin_rey_on_evolve(unit, game_state):
+        # Rin (22) base ability: effects of environment regardless of tag
+        # Rin Rey evolves that: keeps it and adds +2 adj damage aura
+        unit.static_abilities.append({"type": "buff_adj_attack", "amount": 2})
+        print(f">> [Evolución Rin Rey] ¡{unit.name} gana aura +2 Daño a adyacentes!")
+
+    @staticmethod
+    def _ami_reina_on_evolve(unit, game_state):
+        # Evolución de Amira Presidenta: Después de atacar, +2 daño a todos (en lugar de +1)
+        print(f">> [Evolución Ami Reina] ¡Su ataque ahora otorga +2 Daño a todos los aliados!")
+
+    @staticmethod
+    def _ale_alianza_on_evolve(unit, game_state):
+        for nx, ny in game_state.board.get_neighbors(unit.pos_x, unit.pos_y):
+            adj = game_state.board.get_unit_at(nx, ny)
+            if adj and adj.owner_id == unit.owner_id:
+                if 'alianza azulada' not in str(getattr(adj, 'groups', '')).lower():
+                    adj.groups = (str(adj.groups) + ", Alianza Azulada").strip(", ")
+                adj.max_health += 2
+                adj.heal(2, game_state)
+                print(f">> [Evolución Ale Alianza] ¡{adj.name} transformó su etiqueta a 'Alianza Azulada' y ganó +2 Vida Máxima!")
+
+    @staticmethod
+    def _dante_fuerza_estelar_on_evolve(unit, game_state):
+        unit.has_first_move_buff = True
+        print(f">> [Evolución Dante Fuerza Estelar] ¡+1 de Velocidad en su primer movimiento!")
+
+    # --- AMI REINA (107) ON ATTACK ---
+    @staticmethod
+    def _ami_reina_on_attack(unit, game_state):
+        for nx, ny in game_state.board.get_neighbors(unit.pos_x, unit.pos_y):
+            adj = game_state.board.get_unit_at(nx, ny)
+            if adj and adj.owner_id == unit.owner_id and adj.health < adj.max_health:
+                adj.health = min(adj.max_health, adj.health + 2)
+                print(f">> [Ami Reina] ¡{adj.name} recuperó 2 PV al atacar! (Vida: {adj.health})")
+        # If evolved, +2 damage to all allies
+        if getattr(unit, 'evolution', False):
+            for u in game_state.board.get_all_units(unit.owner_id):
+                u.temporary_buffs.append({"type": "attack", "amount": 2, "duration": 1})
+            print(f">> [Ami Reina Evolucionada] ¡Todos los aliados ganan +2 Daño este turno!")
+
+    # --- MARGARITA & HELEN LIENZOS (110) ON ATTACK ---
+    @staticmethod
+    def _margarita_helen_lienzos_on_attack(unit, game_state):
+        for u in game_state.board.get_all_units(unit.owner_id):
+            tags = str(getattr(u, 'groups', '')).lower()
+            if ('artista' in tags or 'literatura' in tags) and u.health < u.max_health:
+                u.health = min(u.max_health, u.health + 3)
+                print(f">> [Margarita & Helen Lienzos] ¡{u.name} recuperó 3 PV!")
+
+    # --- HECHIZO 113: Armadura Esponja ---
+    @staticmethod
+    def _spell_113_effect(card, target, game_state):
+        if not isinstance(target, tuple): return False
+        target_unit = game_state.board.get_unit_at(*target)
+        if not target_unit: return False
+        target_unit.max_health += 6
+        target_unit.health += 6
+        target_unit.has_shield = True
+        print(f">> [Armadura Esponja] ¡{target_unit.name} ganó +6 de Vida y un Escudo!")
+        return True
+
+    # --- HECHIZO 114: Armadura Plancton ---
+    @staticmethod
+    def _spell_114_effect(card, target, game_state):
+        if not isinstance(target, tuple): return False
+        target_unit = game_state.board.get_unit_at(*target)
+        if not target_unit: return False
+        target_unit.speed += 1
+        print(f">> [Armadura Plancton] ¡{target_unit.name} ganó +1 de Velocidad permanente! (Velocidad: {target_unit.speed})")
+        return True
+
+    # --- HECHIZO 115: Misión Imposible ---
+    @staticmethod
+    def _spell_115_effect(card, target, game_state):
+        game_state.pending_ability = {
+            'ability': 'mision_imposible_1'
+        }
+        print(">> [Misión Imposible] Selecciona una unidad aliada para moverla (hasta 3 casillas).")
+        return True
+
+    # --- CAPORAL (117) ---
+    @staticmethod
+    def _caporal_on_activate(unit, game_state):
+        uid = int(unit.id)
+        if uid == 117:
+            # Separarse
+            game_state.pending_ability = {
+                'ability': 'caporal_split',
+                'source_coords': (unit.pos_x, unit.pos_y)
+            }
+            print(">> [Caporal] Selecciona una casilla adyacente vacía para separarse.")
+        elif uid in (118, 119):
+            # Reunirse: Buscar si el otro Caporal está adyacente
+            other_id = 119 if uid == 118 else 118
+            for nx, ny in game_state.board.get_neighbors(unit.pos_x, unit.pos_y):
+                other = game_state.board.get_unit_at(nx, ny)
+                if other and int(other.id) == other_id and other.owner_id == unit.owner_id:
+                    combined_hp = unit.health + other.health
+                    from src.infrastructure.loaders.card_loader import CardLoader
+                    caporal = CardLoader.get_card_stats_by_id(117)
+                    caporal.owner_id = unit.owner_id
+                    caporal.health = min(caporal.max_health, combined_hp)
+                    game_state.board.remove_unit(nx, ny)
+                    game_state.board.remove_unit(unit.pos_x, unit.pos_y)
+                    game_state.board.set_unit_at(unit.pos_x, unit.pos_y, caporal)
+                    # Curación de base
+                    player = game_state.players[unit.owner_id]
+                    player.health = min(80, player.health + 4)
+                    print(f">> [Caporal] ¡Reunidos! Vida combinada: {caporal.health}. Base curada +4 PV.")
+                    return
+            print(">> [Caporal] No hay otra mitad adyacente para reunirse.")
+
+    # --- HECHIZO 121: Sesión de Manicure ---
+    @staticmethod
+    def _spell_121_effect(card, target, game_state):
+        if not isinstance(target, tuple): return False
+        target_unit = game_state.board.get_unit_at(*target)
+        if not target_unit or target_unit.owner_id != game_state.current_player_id:
+            return False
+        player = game_state.players[target_unit.owner_id]
+        if getattr(player, 'cant_heal_turns', 0) == 0:
+            target_unit.health = min(target_unit.max_health, target_unit.health + 4)
+            print(f">> [Sesión de Manicure] ¡{target_unit.name} recuperó 4 PV! (Vida: {target_unit.health})")
+        else:
+            print(f">> [Sesión de Manicure] No se puede curar (efecto anti-curación activo).")
+        tags = str(getattr(target_unit, 'groups', '')).lower()
+        if 'fuerzas especiales valenzuela' in tags or 'tecnológico' in tags or 'tecnologico' in tags:
+            target_unit.temporary_buffs.append({"type": "attack", "amount": 4, "duration": 1})
+            print(f">> [Sesión de Manicure] ¡{target_unit.name} también gana +4 de Daño este turno!")
+        return True
+
+    # --- HECHIZO 122: El Nuevo Testamento Mini ---
+    @staticmethod
+    def _spell_122_effect(card, target, game_state):
+        player = game_state.players[game_state.current_player_id]
+        if target == 'B':
+            enemy_id = 1 - game_state.current_player_id
+            enemy_player = game_state.players[enemy_id]
+            enemy_player.health -= 4
+            print(f">> [Nuevo Testamento Mini] ¡Inflige 4 de daño a la Base enemiga! (Vida Base: {enemy_player.health}/80)")
+        elif isinstance(target, tuple):
+            target_unit = game_state.board.get_unit_at(*target)
+            if not target_unit or target_unit.owner_id == game_state.current_player_id:
+                return False
+            murio = target_unit.take_damage(4, game_state)
+            print(f">> [Nuevo Testamento Mini] ¡{target_unit.name} recibió 4 de daño!")
+            if murio:
+                game_state.board.remove_unit(*target)
+        else:
+            return False
+
+        # Si tienes 2 o más Literatura, haces 1 de daño extra durante 5 turnos
+        lit_count = 0
+        for u in game_state.board.get_all_units(game_state.current_player_id):
+            tags = str(getattr(u, 'groups', '')).lower()
+            if 'literatura' in tags:
+                lit_count += 1
+        if lit_count >= 2:
+            player.extra_damage_turns = 5
+            player.extra_damage_amount = 1
+            print(f">> [Nuevo Testamento Mini] ¡Tienes {lit_count} cartas de Literatura! Tus unidades infligen +1 de daño extra durante 5 turnos.")
+        return True

@@ -128,6 +128,13 @@ class GameState:
                                       (isinstance(c_tag, list) and any(c in board_ally_tags for c in c_tag))
                             if t_match and c_match:
                                 effective_speed += ability['amount']
+                        elif ability['type'] == 'buff_adj_attack':
+                            # Buff only adjacent allies
+                            if unit is not ally:
+                                ax, ay = getattr(ally, 'pos_x', -99), getattr(ally, 'pos_y', -99)
+                                ux, uy = getattr(unit, 'pos_x', -99), getattr(unit, 'pos_y', -99)
+                                if abs(ax - ux) + abs(ay - uy) <= 1:
+                                    effective_attack += ability['amount']
 
         # Procesar buffs temporales (Hechizos)
         if hasattr(unit, 'temporary_buffs'):
@@ -151,13 +158,13 @@ class GameState:
             if env_id == 53: # Cancha de Futbol
                 if 'futboleros' in unit_tags and not getattr(unit, 'has_attacked', False):
                     effective_speed += 1
-                elif int(unit.id) == 22:
+                elif int(unit.id) in (22, 106):
                     effective_speed += 1
             elif env_id == 54: # La Fundación
-                if 'tralaleros' in unit_tags or int(unit.id) == 22:
+                if 'tralaleros' in unit_tags or int(unit.id) in (22, 106):
                     effective_attack -= 1
             elif env_id == 80: # Biblioteca Escolar
-                if 'literatura' in unit_tags or int(unit.id) == 22:
+                if 'literatura' in unit_tags or int(unit.id) in (22, 106):
                     effective_range += 1
                 
                 # Los enemigos no pueden recibir buffs de ataque
@@ -198,12 +205,54 @@ class GameState:
             # No puede ser afectada por bonificaciones de velocidad
             effective_speed = unit.speed
 
+        # Joel & Bichots Rubias (111): +1 ATK por tag diferente en aliados (máx +5)
+        if int(unit.id) == 111:
+            unique_tags = set()
+            for u in self.board.get_all_units(unit.owner_id):
+                if getattr(u, 'groups', ''):
+                    for g in str(u.groups).split(','):
+                        g = g.strip()
+                        if g:
+                            unique_tags.add(g.lower())
+            bonus = min(5, len(unique_tags))
+            effective_attack += bonus
+
+        # Dante Fuerza Estelar (109): +1 velocidad en el primer movimiento
+        if getattr(unit, 'has_first_move_buff', False):
+            effective_speed += 1
+
+        # El Nuevo Testamento Mini (122): +1 de daño extra durante 5 turnos
+        if getattr(unit, 'owner_id', None) is not None:
+            p_owner = self.players[unit.owner_id]
+            if getattr(p_owner, 'extra_damage_turns', 0) > 0:
+                effective_attack += getattr(p_owner, 'extra_damage_amount', 1)
+
         # Evitar valores negativos
         effective_attack = max(0, effective_attack)
         effective_speed = max(0, effective_speed)
         effective_range = max(1, effective_range)
 
         return {"attack": effective_attack, "speed": effective_speed, "range_atk": effective_range}
+
+    def draw_card(self, player) -> bool:
+        if player.deck and len(player.hand) < 10:
+            drawn_card = player.deck.pop(0)
+            player.hand.append(drawn_card)
+            print(f">> {player.name} ha robado: {drawn_card.name}")
+            
+            # Fire triggers for the drawing player
+            try:
+                from src.domain.ability_manager import AbilityManager
+                for y in range(self.board.height):
+                    for x in range(self.board.width):
+                        unit = self.board.get_unit_at(x, y)
+                        if unit and unit.owner_id == player.id:
+                            if hasattr(AbilityManager, 'trigger_on_draw_card'):
+                                AbilityManager.trigger_on_draw_card(unit, drawn_card, self)
+            except Exception as e:
+                print(f"[!] Error triggering on_draw_card: {e}")
+            return drawn_card
+        return None
 
     def validate_summon(self, player_id, x, y):
         if not self.board.is_within_bounds(x, y):
@@ -252,10 +301,19 @@ class GameState:
                 dual_pairs = {
                     69: (8, 9, "Naty", "Ami"),
                     86: (17, 13, "Richi", "Emi"),
-                    87: (22, 16, "Rin", "Martina")
+                    87: (22, 16, "Rin", "Martina"),
+                    89: (19, 20, "Camila", "Ariana"),
+                    110: (18, 26, "Margarita", "Helen"),
+                    111: (5, 31, "Joel", "Bichots"),
+                    117: (28, 30, "Cristóbal", "Josefa A"),
+                    120: (5, 4, "Joel", "Melsizis")
                 }
                 evolution = {
-                    88: (7, "Dante")  # 88 evoluciona de 7 (Dante)
+                    88: (7, "Dante"),  # 88 evoluciona de 7 (Dante)
+                    106: (22, "Rin"),
+                    107: (57, "Amira (Presidenta)"),
+                    108: (11, "Ale"),
+                    109: (68, "Dante (Yukata)")
                 }
                 card_id_int = int(card.id)
 
@@ -385,6 +443,15 @@ class GameState:
             if getattr(unit, "id") == "78" and self.turn_number % 2 != 0:
                 print(f">> [!] {unit.name} no se puede mover. Es turno impar y es Margaret. (Esta comiendo o durmiendo)")
                 return False 
+
+            # 8. Joel Hombre Arácnido (101) anclado: enemigos no pueden ocupar casillas superiores o inferiores
+            enemy_id = 1 - unit.owner_id
+            for u in self.board.get_all_units(enemy_id):
+                if int(u.id) == 101 and getattr(u, 'is_anchored', False):
+                    if tx == u.pos_x and abs(ty - u.pos_y) == 1:
+                        print(f">> [!] Casilla ({tx}, {ty}) bloqueada por Joel (Hombre Arácnido) anclado en ({u.pos_x}, {u.pos_y}).")
+                        return False
+
             return True
 
         elif action.type.name == "END_TURN":
@@ -416,10 +483,17 @@ class GameState:
                 print(">> [!] No puedes ordenar atacar a una unidad que no es tuya.")
                 return False
 
+            if int(attacker.id) == 93:
+                print(">> [!] Naty (Gallinita Ciega) no puede declarar ataques.")
+                return False
+
             # 3. ¿Ya atacó?
             if getattr(attacker, 'has_attacked', False):
-                print(f">> [!] {attacker.name} ya agotó su ataque este turno.")
-                return False
+                if int(attacker.id) == 120 and getattr(attacker, 'attacks_made', 1) < 2:
+                    pass
+                else:
+                    print(f">> [!] {attacker.name} ya agotó su ataque este turno.")
+                    return False
 
             if getattr(attacker, 'immobile_turns', 0) > 0:
                 print(">> [!] La unidad está inmovilizada y no puede atacar")
@@ -473,11 +547,12 @@ class GameState:
                     print(">> [!] Isidora no puede ser objetivo de ataques.")
                     return False 
 
-            if dist > 1 and "Danza" in target.groups:
-                # Buscar si Ale está adyacente al defensor
+            if dist > 1 and ("Danza" in target.groups or "Alianza Azulada" in target.groups):
+                # Buscar si Ale (11) o Ale Alianza Azulada (108) está adyacente al defensor
                 for nx, ny in self.board.get_neighbors(tx, ty):
                     vecino = self.board.get_unit_at(nx, ny)
-                    if vecino and vecino.id == 11:
+                    if vecino and int(vecino.id) in (11, 108):
+                        print(f">> [!] {target.name} está protegido de ataques a distancia por {vecino.name}.")
                         return False 
             return True
         # --- VALIDACIÓN PARA ACTIVAR HABILIDADES MANUALES ---
@@ -547,10 +622,19 @@ class GameState:
                 dual_pairs = {
                     69: (8, 9, "Naty", "Ami"),
                     86: (17, 13, "Richi", "Emi"),
-                    87: (22, 16, "Rin", "Martina")
+                    87: (22, 16, "Rin", "Martina"),
+                    89: (19, 20, "Camila", "Ariana"),
+                    110: (18, 26, "Margarita", "Helen"),
+                    111: (5, 31, "Joel", "Bichots"),
+                    117: (28, 30, "Cristóbal", "Josefa A"),
+                    120: (5, 4, "Joel", "Melsizis")
                 }
                 evolution = {
-                    88: (7, "Dante")  # ID 88 evoluciona sobre ID 7
+                    88: (7, "Dante"),  # ID 88 evoluciona sobre ID 7
+                    106: (22, "Rin"),
+                    107: (57, "Amira (Presidenta)"),
+                    108: (11, "Ale"),
+                    109: (68, "Dante (Yukata)")
                 }
                 card_id_int = int(card.id)
 
@@ -598,6 +682,7 @@ class GameState:
 
                 # --- 4. DISPARAR HABILIDAD DE ENTRADA (On Enter) ---
                 if evolutioncompleted:
+                    card.evolution = True
                     AbilityManager.trigger_on_evolve(card, self)
                     
                 AbilityManager.trigger_on_enter(card, self)
@@ -707,12 +792,17 @@ class GameState:
             
             # Marcamos la unidad como "ya movida"
             unit.has_moved = True
+            if getattr(unit, 'has_first_move_buff', False):
+                unit.has_first_move_buff = False
             print(f">> {unit.name} se movió a ({tx}, {ty})")
 
         elif action.type.name == "ATTACK":
             fx, fy = action.payload['from']
             attacker = self.board.get_unit_at(fx, fy)
-            attacker.has_attacked = True
+            self.current_attacker = attacker
+            attacker.attacks_made = getattr(attacker, 'attacks_made', 0) + 1
+            if attacker.attacks_made >= (2 if int(attacker.id) == 120 else 1):
+                attacker.has_attacked = True
             
             effective_attack = self.get_effective_stats(attacker)["attack"]
             
@@ -750,8 +840,46 @@ class GameState:
                         print(f"[!] Error en tracking de misiones (Daño Base): {e}")
             else:
                 target = self.board.get_unit_at(tx, ty)
+                
+                # Check for Vampira Lifesteal
+                margaritas = [u for u in self.board.get_all_units(action.player_id) if int(u.id) == 91]
+                
+                health_before = target.health
                 # Aplicar daño
                 murió = target.take_damage(effective_attack, self)
+                
+                if margaritas:
+                    heal = effective_attack // 2
+                    if heal > 0:
+                        attacker.health = min(attacker.max_health, attacker.health + heal)
+                        print(f">> [Margarita Vampira] ¡El ataque de {attacker.name} le cura {heal} PV por robo de vida!")
+                        
+                if int(attacker.id) == 90 and murió:
+                    excess = effective_attack - health_before
+                    if excess > 0:
+                        enemy_id = 1 - action.player_id
+                        self.players[enemy_id].health -= excess
+                        print(f">> [Dante Slasher] ¡Inflige {excess} de daño extra a la base rival por daño excedente!")
+                        
+                if int(attacker.id) == 92 and not murió:
+                    target.temporary_buffs.append({"type": "cant_heal", "duration": 2})
+                    print(f">> [Helen Payasa] ¡{target.name} no podrá curarse por 2 turnos!")
+                    
+                if int(attacker.id) == 116 and not murió:
+                    target.temporary_buffs.append({"type": "attack", "amount": -3, "duration": 1})
+                    print(f">> [Ariana Rapera] ¡Reduce el ataque de {target.name} en 3!")
+                    
+                dist = abs(fx - tx) + abs(fy - ty)
+                if int(attacker.id) == 112 and dist >= 2 and not murió:
+                    step_x = 1 if fx > tx else (-1 if fx < tx else 0)
+                    step_y = 1 if fy > ty else (-1 if fy < ty else 0)
+                    nx, ny = tx + step_x, ty + step_y
+                    if self.board.is_within_bounds(nx, ny) and not self.board.is_occupied(nx, ny):
+                        self.board.move_unit(tx, ty, nx, ny)
+                        tx, ty = nx, ny
+                        target = self.board.get_unit_at(tx, ty)
+                    target.immobile_turns = max(getattr(target, 'immobile_turns', 0), 1)
+                    print(f">> [José Pelea] ¡Atrae a su objetivo y lo inmoviliza!")
                 
                 # --- EVENT TRACKING: DAÑO A UNIDAD Y BAJAS ---
                 if action.player_id == 0:
@@ -775,13 +903,22 @@ class GameState:
                     if hasattr(attacker, 'temporary_buffs'):
                         for buff in attacker.temporary_buffs:
                             if buff.get('type') == 'draw_on_kill':
-                                player = self.players[attacker.owner_id]
-                                if player.deck and len(player.hand) < 10:
-                                    drawn_card = player.deck.pop(0)
-                                    player.hand.append(drawn_card)
-                                    print(f">>> ¡Habilidad activada! Robaste: {drawn_card.name}")
+                                self.draw_card(self.players[attacker.owner_id])
                                 break
             attacker.on_attack(self)
+            
+            # Naty Gallinita Ciega (93) extra attack
+            if tx != 'B':
+                for nx, ny in self.board.get_neighbors(fx, fy):
+                    adj_ally = self.board.get_unit_at(nx, ny)
+                    if adj_ally and int(adj_ally.id) == 93 and not getattr(adj_ally, 'has_attacked', False):
+                        target_now = self.board.get_unit_at(tx, ty)
+                        if target_now and (abs(nx - tx) + abs(ny - ty)) <= 1:
+                            print(f">> [Naty Gallinita Ciega] ¡Ataca automáticamente a {target_now.name}!")
+                            adj_ally.has_attacked = True
+                            if target_now.take_damage(self.get_effective_stats(adj_ally)["attack"], self):
+                                self.board.remove_unit(tx, ty)
+            self.current_attacker = None
         
         elif action.type.name == "ACTIVATE_ABILITY":
             fx, fy = action.payload['from']
@@ -796,16 +933,22 @@ class GameState:
                 from src.domain.ability_manager import AbilityManager
                 AbilityManager.trigger_on_activate(unit, self)
                 # =========================================================
-                
-                # Mantener por si acaso alguna unidad usa la lógica antigua directa
-                if hasattr(unit, 'on_activate'):
-                    unit.on_activate(self)
             else:
                 print(f">> [!] No hay unidad en ({fx}, {fy}) para activar habilidad.")
 
         elif action.type.name == "END_TURN":
             self._end_turn()
-            
+        
+        # Handle pending summons from on-death effects (Richi Discurso 99, Cerdo 105)
+        pending_summon = getattr(self, '_pending_summon_on_death', None)
+        if pending_summon:
+            card = pending_summon['card']
+            px, py = pending_summon['pos']
+            if not self.board.is_occupied(px, py):
+                self.board.set_unit_at(px, py, card)
+                print(f">> [Invocación Post-Muerte] ¡{card.name} apareció en ({px}, {py})!")
+            self._pending_summon_on_death = None
+
         # Check Win Condition after any action
         for p in self.players:
             if p.health <= 0:
@@ -829,10 +972,7 @@ class GameState:
         current_player = self.get_current_player()
         
         # Robar carta al inicio del turno
-        if current_player.deck and len(current_player.hand) < 10:
-            drawn_card = current_player.deck.pop(0)
-            current_player.hand.append(drawn_card)
-            print(f">> {current_player.name} ha robado: {drawn_card.name}")
+        self.draw_card(current_player)
             
         # Llamar trigger_on_turn_start de AbilityManager
         try:
@@ -899,6 +1039,9 @@ class GameState:
         current_p = self.get_current_player()
         if hasattr(current_p, 'cant_heal_turns') and current_p.cant_heal_turns > 0:
             current_p.cant_heal_turns -= 1         
+        
+        if hasattr(current_p, 'extra_damage_turns') and current_p.extra_damage_turns > 0:
+            current_p.extra_damage_turns -= 1
         
         current_p.crisby_cost_reduction_active = False
         current_p.d_economia_cost_reduction_active = False

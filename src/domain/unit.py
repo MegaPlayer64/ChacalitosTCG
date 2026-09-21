@@ -29,8 +29,11 @@ class Unit(Card):
             self.static_abilities.append({"type": "buff_tag_speed_if_tag_present", "target_tag": "fuerzas especiales valenzuela", "condition_tag": "cabezal de tren", "amount": 1})
         elif str(self.id) == "84" or self.name == 'Stefano (Viejo)':
             self.static_abilities.append({"type": "buff_tag_speed", "tag": "cabezal de tren", "amount": 1})
+        elif str(self.id) == "106":
+            self.static_abilities.append({"type": "buff_adj_attack", "amount": 2})
         self.immobile_turns = 0
         self.evolution = False
+        self.has_first_move_buff = False
 
         self.ability_used_this_turn = False
         # Buffs temporales (Hechizos y estados por turnos)
@@ -74,11 +77,29 @@ class Unit(Card):
             return True
         return False
 
+    def heal(self, amount: int, game_state=None) -> int:
+        """Cura vida respetando efectos anti-curación y devuelve la cantidad efectivamente curada."""
+        if hasattr(self, 'temporary_buffs'):
+            for buff in self.temporary_buffs:
+                if buff.get('type') == 'cant_heal' and buff.get('duration', 0) > 0:
+                    print(f">> [!] {self.name} no puede curarse (efecto anti-curación activo).")
+                    return 0
+        if game_state and getattr(self, 'owner_id', None) is not None:
+            player = game_state.players[self.owner_id]
+            if getattr(player, 'cant_heal_turns', 0) > 0:
+                print(f">> [!] {self.name} no puede curarse (efecto anti-curación del jugador).")
+                return 0
+        old_hp = self.health
+        self.health = min(self.max_health, self.health + amount)
+        healed = self.health - old_hp
+        return healed
+
     def reset_turn_state(self):
         # """Limpia las banderas al inicio/fin del turno."""
         self.has_moved = False
         self.has_attacked = False
         self.ability_used_this_turn = False
+        self.attacks_made = 0
         if getattr(self, 'immobile_turns', 0) > 0:
             self.immobile_turns -= 1
 
