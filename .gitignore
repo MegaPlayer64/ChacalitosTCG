@@ -3,3 +3,8 @@
 node_modules/
 package.json
 credentials.json
+venv/
+__pycache__/
+test_cards_generator.py
+src/data/user_profile.json
+src/data/backupprofile.json

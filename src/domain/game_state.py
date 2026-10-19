@@ -161,17 +161,19 @@ class GameState:
                 elif int(unit.id) in (22, 106):
                     effective_speed += 1
             elif env_id == 54: # La Fundación
-                if 'tralaleros' in unit_tags or int(unit.id) in (22, 106):
-                    effective_attack -= 1
+                # El rival no puede recibir bonificaciones ni aumentos de Ataque mientras controles al menos una unidad Tralaleros
+                has_tralaleros = any('tralaleros' in str(getattr(u, 'groups', '')).lower() or int(u.id) in (22, 106)
+                                     for u in self.board.get_all_units(self.active_environment.owner_id))
+                if has_tralaleros and getattr(unit, 'owner_id', None) is not None and unit.owner_id != self.active_environment.owner_id:
+                    if effective_attack > unit.attack:
+                        effective_attack = unit.attack
             elif env_id == 80: # Biblioteca Escolar
                 if 'literatura' in unit_tags or int(unit.id) in (22, 106):
                     effective_range += 1
-                
-                # Los enemigos no pueden recibir buffs de ataque
-                if getattr(unit, 'owner_id', None) is not None and unit.owner_id != self.active_environment.owner_id:
-                    # Limitar el ataque máximo a su ataque base si es mayor
-                    if effective_attack > unit.attack:
-                        effective_attack = unit.attack
+            elif env_id == 134: # Gimnasio
+                if 'deportistas' in unit_tags:
+                    if effective_speed < unit.speed:
+                        effective_speed = unit.speed
             elif env_id == 67: # Casa de Nico
                 if 'mish' in unit_tags:
                     effective_attack += 1
@@ -226,6 +228,13 @@ class GameState:
             p_owner = self.players[unit.owner_id]
             if getattr(p_owner, 'extra_damage_turns', 0) > 0:
                 effective_attack += getattr(p_owner, 'extra_damage_amount', 1)
+
+        # Daniela Dermapatch (129): +3 de Ataque si Base rival tiene más PV que tu Base
+        if int(getattr(unit, 'id', -1)) == 129 and getattr(unit, 'owner_id', None) is not None:
+            friendly_hp = self.players[unit.owner_id].health
+            enemy_hp = self.players[1 - unit.owner_id].health
+            if enemy_hp > friendly_hp:
+                effective_attack += 3
 
         # Evitar valores negativos
         effective_attack = max(0, effective_attack)
@@ -313,7 +322,8 @@ class GameState:
                     106: (22, "Rin"),
                     107: (57, "Amira (Presidenta)"),
                     108: (11, "Ale"),
-                    109: (68, "Dante (Yukata)")
+                    109: (68, "Dante (Yukata)"),
+                    131: (6, "Vicente")
                 }
                 card_id_int = int(card.id)
 
@@ -424,8 +434,18 @@ class GameState:
 
             # 4. ¿La casilla de destino está ocupada?
             if self.board.is_occupied(tx, ty):
-                print(f">> [!] Casilla ({tx}, {ty}) ya está ocupada.")
-                return False
+                can_crisby_push = False
+                if int(getattr(unit, 'id', -1)) == 136:
+                    occupant = self.board.get_unit_at(tx, ty)
+                    if occupant and occupant.owner_id != unit.owner_id:
+                        push_dir = 1 if occupant.owner_id == 1 else -1
+                        push_x = tx + push_dir
+                        push_y = ty
+                        if self.board.is_within_bounds(push_x, push_y) and not self.board.is_occupied(push_x, push_y):
+                            can_crisby_push = True
+                if not can_crisby_push:
+                    print(f">> [!] Casilla ({tx}, {ty}) ya está ocupada.")
+                    return False
 
             # 5. ¿Tiene suficiente velocidad (Manhattan Distance)?
             dist = abs(fx - tx) + abs(fy - ty)
@@ -574,6 +594,11 @@ class GameState:
             if getattr(unit, 'ability_used_this_turn', False):
                 print(f">> [!] {unit.name} ya usó su habilidad activa en este turno.")
                 return False
+
+            # 4. Cooldown de fusión / separación (Caporal 117-119)
+            if getattr(unit, 'fuse_cooldown', 0) > 0 and int(unit.id) in (117, 118, 119):
+                print(f">> [!] {unit.name} tiene un cooldown de {unit.fuse_cooldown} turno(s) para fusionarse/separarse.")
+                return False
                 
             return True
             
@@ -634,7 +659,8 @@ class GameState:
                     106: (22, "Rin"),
                     107: (57, "Amira (Presidenta)"),
                     108: (11, "Ale"),
-                    109: (68, "Dante (Yukata)")
+                    109: (68, "Dante (Yukata)"),
+                    131: (6, "Vicente")
                 }
                 card_id_int = int(card.id)
 
@@ -690,13 +716,26 @@ class GameState:
                 if card.rarity == "Excelencia":
                     self.excelenciaactive += 1
 
-                
-                # Efecto pasivo 52 (Zona de Juegos)
-                if getattr(self, 'active_environment', None) and int(self.active_environment.card.id) == 52:
-                    if 'fuerzas especiales valenzuela' in str(getattr(card, 'groups', '')).lower():
-                        card.max_health += 2
-                        card.health += 2
-                        print(f">> [Zona de Juegos] ¡{card.name} obtiene +2 de Vida Máxima al invocarse! (Vida actual: {card.health})")
+                # Efectos pasivos de Entornos al invocar
+                if getattr(self, 'active_environment', None):
+                    env_id = int(self.active_environment.card.id)
+                    card_tags = str(getattr(card, 'groups', '')).lower()
+                    if env_id == 52: # Zona de Juegos (+4 PV Max Health)
+                        if 'fuerzas especiales valenzuela' in card_tags:
+                            card.max_health += 4
+                            card.health += 4
+                            print(f">> [Zona de Juegos] ¡{card.name} obtiene +4 de Vida Máxima al invocarse! (Vida actual: {card.health})")
+                    elif env_id == 133: # Taller de Artes (+2 ATK y +2 PV)
+                        if 'artista' in card_tags:
+                            card.attack += 2
+                            card.max_health += 2
+                            card.health += 2
+                            print(f">> [Taller de Artes] ¡{card.name} obtiene +2 de Ataque y +2 de Vida al invocarse! (ATK: {card.attack}, Vida: {card.health})")
+                    elif env_id == 134: # Gimnasio (+2 PV Max Health)
+                        if 'deportistas' in card_tags:
+                            card.max_health += 2
+                            card.health += 2
+                            print(f">> [Gimnasio] ¡{card.name} obtiene +2 de Vida Máxima al invocarse! (Vida actual: {card.health})")
                         
             elif card.card_type.lower() in ('environment', 'building'):
                 from domain.environment import Environment
@@ -740,6 +779,14 @@ class GameState:
             
             if success:
                 print(f">> [Hechizo]: Efecto de {card.name} aplicado.")
+                # Entorno 132: Laboratorio de Computación
+                if getattr(self, 'active_environment', None) and int(self.active_environment.card.id) == 132:
+                    if getattr(self.active_environment, 'owner_id', None) == action.player_id:
+                        has_tec = any('tecnológico' in str(getattr(u, 'groups', '')).lower() or 'tecnologico' in str(getattr(u, 'groups', '')).lower()
+                                      or int(u.id) in (22, 106) for u in self.board.get_all_units(action.player_id))
+                        if has_tec:
+                            player.current_energy += 1
+                            print(f">> [Laboratorio de Computación] ¡Recuperas +1 de energía! (Energía actual: {player.current_energy})")
                 return True
             else:
                 print(f">> [!] El hechizo {card.name} falló. Devolviendo energía y carta.")
@@ -753,6 +800,18 @@ class GameState:
             
             # Realizamos el movimiento en el tablero
             unit = self.board.get_unit_at(fx, fy)
+
+            # Mecánica Crisby Caballo (ID 136): Puede moverse sobre casilla ocupada por tropa enemiga, empujándola 1 casilla hacia atrás e inmovilizándola 1 turno
+            if int(getattr(unit, 'id', -1)) == 136 and self.board.is_occupied(tx, ty):
+                occupant = self.board.get_unit_at(tx, ty)
+                if occupant and occupant.owner_id != unit.owner_id:
+                    push_dir = 1 if occupant.owner_id == 1 else -1
+                    push_x = tx + push_dir
+                    push_y = ty
+                    if self.board.is_within_bounds(push_x, push_y) and not self.board.is_occupied(push_x, push_y):
+                        self.board.move_unit(tx, ty, push_x, push_y)
+                        occupant.immobile_turns = max(getattr(occupant, 'immobile_turns', 0), 1)
+                        print(f">> [Crisby Caballo] ¡Empuja a {occupant.name} a ({push_x}, {push_y}) e inmoviliza por 1 turno!")
             
             # Mecánica Nico Cóndor (ID 85): Inflige 6 de daño a los enemigos que sobrevuela
             if int(unit.id) == 85:
@@ -846,14 +905,24 @@ class GameState:
                 
                 health_before = target.health
                 # Aplicar daño
-                murió = target.take_damage(effective_attack, self)
+                murió = target.take_damage(effective_attack, self, source="attack", attacker=attacker)
+                damage_dealt = max(0, health_before - target.health) if not murió else health_before
                 
-                if margaritas:
-                    heal = effective_attack // 2
-                    if heal > 0:
-                        attacker.health = min(attacker.max_health, attacker.health + heal)
-                        print(f">> [Margarita Vampira] ¡El ataque de {attacker.name} le cura {heal} PV por robo de vida!")
+                if margaritas and damage_dealt > 0:
+                    import math
+                    heal = math.ceil(damage_dealt / 2)
+                    friendly_base = self.players[action.player_id]
+                    if friendly_base.health < 80:
+                        old_hp = friendly_base.health
+                        friendly_base.health = min(80, friendly_base.health + heal)
+                        print(f">> [Margarita Vampira] ¡El ataque recupera {friendly_base.health - old_hp} PV a la Base aliada! (Vida Base: {friendly_base.health}/80)")
                         
+                if int(attacker.id) == 126 and murió:
+                    friendly_base = self.players[action.player_id]
+                    old_hp = friendly_base.health
+                    friendly_base.health = min(80, friendly_base.health + 3)
+                    print(f">> [Richi Dermapatch] ¡Al derrotar a un enemigo, restaura {friendly_base.health - old_hp} PV a la Base aliada! (Vida Base: {friendly_base.health}/80)")
+
                 if int(attacker.id) == 90 and murió:
                     excess = effective_attack - health_before
                     if excess > 0:
@@ -981,6 +1050,21 @@ class GameState:
                 AbilityManager.trigger_on_turn_start(unit, self)
         except ImportError:
             pass
+
+        # Entorno ID 135: El Casino
+        if getattr(self, 'active_environment', None) and int(self.active_environment.card.id) == 135:
+            if getattr(self.active_environment, 'owner_id', None) == self.current_player_id:
+                nuevos = [u for u in self.board.get_all_units(self.current_player_id)
+                          if 'nuevo' in str(getattr(u, 'groups', '')).lower() or int(u.id) in (22, 106)]
+                if nuevos:
+                    damaged_nuevos = [u for u in nuevos if u.health < u.max_health]
+                    if damaged_nuevos:
+                        lowest = min(damaged_nuevos, key=lambda u: u.health)
+                        lowest.heal(4, self)
+                        print(f">> [El Casino] Restaura 4 PV a {lowest.name} (Vida: {lowest.health}/{lowest.max_health}).")
+                    else:
+                        print(">> [El Casino] Todos los aliados Nuevos tienen la vida llena. ¡Robas 1 carta!")
+                        self.draw_card(current_player)
         
     def _end_turn(self):
         # 1. Resetear el estado de todas las unidades antes de cambiar de jugador
@@ -988,7 +1072,7 @@ class GameState:
             for x in range(self.board.width):
                 unit = self.board.get_unit_at(x, y)
                 if unit:
-                    unit.reset_turn_state()
+                    unit.reset_turn_state(is_owner=(unit.owner_id == self.current_player_id))
                     
                     # 1.5. Decrementar duración de buffs temporales si la unidad pertenece al jugador que termina su turno
                     if unit.owner_id == self.current_player_id and hasattr(unit, 'temporary_buffs'):

@@ -1,0 +1,10 @@
+#!/bin/sh
+'''exec' "/media/dantemedrano/3A38A1DA38A19583/PC Nuevo - Vitrus HP i5/Proyectos Talleres de Programacion/Python/LBSB Engine v2/venv/bin/python3" "$0" "$@"
+' '''
+# -*- coding: utf-8 -*-
+import re
+import sys
+from docutils.core import rst2html5
+if __name__ == '__main__':
+    sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
+    sys.exit(rst2html5())

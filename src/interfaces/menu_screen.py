@@ -1,3 +1,4 @@
+import os
 import threading
 from kivy.uix.screenmanager import Screen
 from kivy.uix.boxlayout import BoxLayout
@@ -8,18 +9,33 @@ from kivy.clock import Clock
 
 from src.domain.grid_background import FondoCuadriculado
 from src.domain.audio_manager import AudioManager
+from src.infrastructure.path_manager import PathManager
 from server.cloud_sync import CloudSyncManager
+
+
+def resolver_logo_seguro() -> str | None:
+    """Busca el archivo BetaLogo.png en las rutas conocidas de assets."""
+    candidatos = [
+        PathManager.get_asset_path('images/BetaLogo.png'),
+        PathManager.get_asset_path('src/images/BetaLogo.png'),
+        PathManager.get_asset_path('art/BetaLogo.png')
+    ]
+    for ruta in candidatos:
+        if os.path.exists(ruta):
+            return ruta
+    return None
 
 
 class MenuPrincipal(Screen):
     def __init__(self, **kwargs):
+        print("   [MenuPrincipal] -> Inicio __init__")
         super().__init__(**kwargs)
 
         # Layout principal de toda la pantalla (Vertical)
         layout_global = BoxLayout(orientation='vertical', padding=[25, 15, 25, 15], spacing=12)
 
         # Fondo cuadriculado interactivo
-        fondo_grilla = FondoCuadriculado(size=self.size)
+        fondo_grilla = FondoCuadriculado()
         self.add_widget(fondo_grilla, index=0)
 
         # --- 1. BARRA SUPERIOR DE ESTADO CLOUD / CUENTA ---
@@ -62,15 +78,28 @@ class MenuPrincipal(Screen):
         self.layout_auth.add_widget(self.btn_account_manage)
         layout_global.add_widget(self.layout_auth)
 
-        # --- 2. LOGO ---
-        imagen_logo = Image(
-            source='src/images/BetaLogo.png',
-            allow_stretch=True,
-            keep_ratio=True,
-            size_hint_y=0.30,
-            pos_hint={'top': 1}
-        )
-        layout_global.add_widget(imagen_logo)
+        # --- 2. LOGO CON CARGA DEFENSIVA (Previene basura en el framebuffer de OpenGL) ---
+        ruta_logo = resolver_logo_seguro()
+        if ruta_logo:
+            imagen_logo = Image(
+                source=ruta_logo,
+                size_hint_y=0.30,
+                pos_hint={'top': 1},
+                allow_stretch=True,
+                keep_ratio=True
+            )
+            layout_global.add_widget(imagen_logo)
+        else:
+            # Fallback en caso de que la imagen no exista en el disco
+            print("   [MenuPrincipal] Advertencia: 'images/BetaLogo.png' no encontrado. Usando título de texto.")
+            lbl_titulo_fallback = Label(
+                text="[b]CHACALITOS TCG[/b]",
+                markup=True,
+                font_size='32sp',
+                size_hint_y=0.25,
+                color=(0.9, 0.8, 0.2, 1)
+            )
+            layout_global.add_widget(lbl_titulo_fallback)
 
         # --- 3. CONTENEDOR DE BOTONES ---
         layout_botones = BoxLayout(
@@ -117,7 +146,7 @@ class MenuPrincipal(Screen):
         btn_mazos.bind(on_release=lambda x: self.cambiar_pantalla('inventory_screen'))
         btn_gacha.bind(on_release=lambda x: self.cambiar_pantalla('banner_screen'))
         btn_opciones.bind(on_release=lambda x: self.cambiar_pantalla('options_screen'))
-        btn_salir.bind(on_release=lambda x: self.manager.app.stop() if hasattr(self.manager, 'app') else exit())
+        btn_salir.bind(on_release=self.cerrar_aplicacion)
 
         layout_botones2.add_widget(btn_jugar)
         layout_botones2.add_widget(btn_online)
@@ -140,13 +169,26 @@ class MenuPrincipal(Screen):
         layout_global.add_widget(lbl_footer)
 
         self.add_widget(layout_global)
+        print("   [MenuPrincipal] -> Fin __init__ OK")
+
+    def cerrar_aplicacion(self, _instance):
+        from kivy.app import App
+        App.get_running_app().stop()
 
     def cambiar_pantalla(self, nombre_pantalla):
         self.manager.current = nombre_pantalla
 
     def on_enter(self):
-        AudioManager().play_bgm('titanicmonarch.ogg')
+        print("   [MenuPrincipal] -> Entrando a pantalla (on_enter)")
+        # Diferir la carga de música para no bloquear el hilo de renderizado
+        Clock.schedule_once(lambda dt: self._iniciar_bgm_seguro(), 0.1)
         self.actualizar_estado_auth()
+
+    def _iniciar_bgm_seguro(self):
+        try:
+            AudioManager().play_bgm('titanicmonarch.ogg')
+        except Exception as e:
+            print(f"   [Audio Warning] No se pudo reproducir BGM: {e}")
 
     def actualizar_estado_auth(self):
         """Actualiza el indicador visual superior según si hay sesión en la nube o no."""
@@ -171,7 +213,7 @@ class MenuPrincipal(Screen):
             self.sincronizar_perfil_nube()
 
     def sincronizar_perfil_nube(self):
-        """Dispara la sincronización en hilo secundario para evitar congelamiento de la UI."""
+        """Dispara la sincronización en un hilo secundario para no congelar la UI."""
         self.btn_auth_action.disabled = True
         self.btn_auth_action.text = "☁️ Sincronizando..."
         self.lbl_auth_status.text = "[color=ffdd44]Sincronizando con la nube...[/color]"

@@ -1,0 +1,10 @@
+#!/bin/sh
+'''exec' "/media/dantemedrano/3A38A1DA38A19583/PC Nuevo - Vitrus HP i5/Proyectos Talleres de Programacion/Python/LBSB Engine v2/venv/bin/python3" "$0" "$@"
+' '''
+# -*- coding: utf-8 -*-
+import re
+import sys
+from buildozer.scripts.client import main
+if __name__ == '__main__':
+    sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
+    sys.exit(main())

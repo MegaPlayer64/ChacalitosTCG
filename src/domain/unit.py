@@ -31,9 +31,10 @@ class Unit(Card):
             self.static_abilities.append({"type": "buff_tag_speed", "tag": "cabezal de tren", "amount": 1})
         elif str(self.id) == "106":
             self.static_abilities.append({"type": "buff_adj_attack", "amount": 2})
-        self.immobile_turns = 0
+        self._immobile_turns = 0
         self.evolution = False
         self.has_first_move_buff = False
+        self.fuse_cooldown = 0
 
         self.ability_used_this_turn = False
         # Buffs temporales (Hechizos y estados por turnos)
@@ -43,8 +44,29 @@ class Unit(Card):
         self.pos_x = -1
         self.pos_y = -1
 
-    def take_damage(self, amount: int, game_state) -> bool:
+    @property
+    def immobile_turns(self) -> int:
+        return getattr(self, '_immobile_turns', 0)
+
+    @immobile_turns.setter
+    def immobile_turns(self, value: int):
+        if int(getattr(self, 'id', -1)) == 127 and value > 0:
+            print(f">> [Inmunidad Emi Dermapatch] ¡{self.name} es inmune a la inmovilización!")
+            self._immobile_turns = 0
+            return
+        self._immobile_turns = max(0, value)
+
+    def take_damage(self, amount: int, game_state, source: str = "attack", attacker = None, is_redirected: bool = False) -> bool:
         # """Resta vida y devuelve True si la unidad murió."""
+        # Carta 130: Vicente (Portero) - Guardaespaldas
+        if not is_redirected and game_state and getattr(self, 'owner_id', None) is not None and int(getattr(self, 'id', -1)) != 130:
+            vicentes = [u for u in game_state.board.get_all_units(self.owner_id)
+                        if int(u.id) == 130 and u.health > 0 and (abs(u.pos_x - self.pos_x) + abs(u.pos_y - self.pos_y) <= 1)]
+            if vicentes:
+                portero = vicentes[0]
+                print(f">> [Guardaespaldas] ¡{portero.name} intercepta el daño y protege a {self.name}!")
+                return portero.take_damage(amount, game_state, source=source, attacker=attacker, is_redirected=True)
+
         from src.domain.ability_manager import AbilityManager
         AbilityManager.trigger_on_damage_received(self, amount, game_state)
         
@@ -60,6 +82,18 @@ class Unit(Card):
             tags = str(getattr(self, 'groups', '')).lower()
             if 'tralaleros' in tags or int(self.id) == 22:
                 amount = max(0, amount - 1)
+
+        # Carta 126: Richi (Dermapatch) - Reduce en 3 daño de ataques a distancia
+        if int(getattr(self, 'id', -1)) == 126 and attacker is not None:
+            dist = abs(getattr(attacker, 'pos_x', self.pos_x) - self.pos_x) + abs(getattr(attacker, 'pos_y', self.pos_y) - self.pos_y)
+            if getattr(attacker, 'range_atk', 1) >= 2 or dist >= 2:
+                amount = max(0, amount - 3)
+                print(f">> [Pasiva Richi Dermapatch] ¡Reduce el daño a distancia en 3! Daño recibido: {amount}")
+
+        # Carta 127: Emi (Dermapatch) - Reduce en 3 daño de Trucos/Hechizos enemigos
+        if int(getattr(self, 'id', -1)) == 127 and source in ('spell', 'truco'):
+            amount = max(0, amount - 3)
+            print(f">> [Pasiva Emi Dermapatch] ¡Reduce el daño de Truco en 3! Daño recibido: {amount}")
                 
         if self.has_shield:
             damage_taken = amount // 2
@@ -94,7 +128,7 @@ class Unit(Card):
         healed = self.health - old_hp
         return healed
 
-    def reset_turn_state(self):
+    def reset_turn_state(self, is_owner: bool = True):
         # """Limpia las banderas al inicio/fin del turno."""
         self.has_moved = False
         self.has_attacked = False
@@ -102,6 +136,8 @@ class Unit(Card):
         self.attacks_made = 0
         if getattr(self, 'immobile_turns', 0) > 0:
             self.immobile_turns -= 1
+        if is_owner and getattr(self, 'fuse_cooldown', 0) > 0:
+            self.fuse_cooldown -= 1
 
     def on_enter(self, game_state):
         from src.domain.ability_manager import AbilityManager

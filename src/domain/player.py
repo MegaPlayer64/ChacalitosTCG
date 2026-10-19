@@ -20,13 +20,16 @@ class Player:
 
         self.crisby_cost_reduction_active = False
         self.d_economia_cost_reduction_active = False
+        self.bonus_energy_next_turn = 0
 
     def shuffle_deck(self):
         random.shuffle(self.deck)
 
     def refresh_energy(self):
         self.max_energy += 1
-        self.current_energy = self.max_energy
+        bonus = getattr(self, 'bonus_energy_next_turn', 0)
+        self.current_energy = self.max_energy + bonus
+        self.bonus_energy_next_turn = 0
 
     def calcular_costo_efectivo(self, carta) -> tuple[int, bool]:
         """

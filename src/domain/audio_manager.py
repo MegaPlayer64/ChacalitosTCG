@@ -1,8 +1,8 @@
-# Ubicación asumida: src/interfaces/audio_manager.py o similar
 import os
 from kivy.core.audio import SoundLoader
 from kivy.logger import Logger
-from kivy.utils import platform
+from src.infrastructure.path_manager import PathManager
+
 
 class AudioManager:
     _instance = None
@@ -20,70 +20,73 @@ class AudioManager:
         self.music_volume = 0.5
         self.sfx_volume = 0.8
         
-        # 1. Encontrar la carpeta 'src' de forma dinámica
-        # os.path.dirname(__file__) nos da la carpeta actual (ej: interfaces/)
-        # '..' sube un nivel directamente a 'src/'
-        self.src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        # Mapeo de identificadores a nombres de archivos
+        self.sfx_map = {
+            'move': 'walk1.wav',
+            'draw': 'card1.wav',
+            'damage': 'punch1.wav',
+            'dead': 'deadunit.wav',
+            'deploy': 'summonunit.wav',
+            'select1': 'select1.wav',
+            'select2': 'select2.wav',
+            'heal': 'heal.wav',
+            'error1': 'error1.wav',
+            'error2': 'error2.wav',
+            'error3': 'error3.wav',
+            'gundam1': 'gundamappear.wav',
+            'quemadasdodge': 'quemadasdodge.wav',
+            'yukatamiku': 'yukatamiku.ogg',
+        }
+
+    def _resolve_audio_path(self, category: str, filename: str) -> str:
+        """Resuelve rutas relativas de audio mediante PathManager (compatible con PC/Android/Frozen)."""
+        # Prueba 1: assets/audio/{category}/{filename}
+        rel_path = os.path.join('audio', category, filename)
+        full_path = PathManager.get_asset_path(rel_path)
         
-        # 2. Definir las rutas específicas para música y efectos
-        if platform == 'android':
-            # pyrefly: ignore [missing-import]
-            from android.storage import app_storage_path
-            self.music_dir = os.path.join(app_storage_path(), "audio", "music")
-            self.sound_dir = os.path.join(app_storage_path(), "audio", "sound")
-        else:
-            self.music_dir = os.path.join(self.src_dir, 'audio', 'music')
-            self.sound_dir = os.path.join(self.src_dir, 'audio', 'sound')
-        
-        # 3. Precargar efectos de sonido comunes usando la carpeta de 'sound'
-        self.preload_sound('move', 'walk1.wav')
-        self.preload_sound('draw', 'card1.wav')
-        self.preload_sound('damage', 'punch1.wav')
-        self.preload_sound('dead', 'deadunit.wav')
-        self.preload_sound('deploy', 'summonunit.wav')
-        self.preload_sound('select1', 'select1.wav')
-        self.preload_sound('select2', 'select2.wav')
-        self.preload_sound('heal', 'heal.wav')
-        self.preload_sound('error1', 'error1.wav')
-        self.preload_sound('error2', 'error2.wav')
-        self.preload_sound('error3', 'error3.wav')
-        self.preload_sound('gundam1','gundamappear.wav')
-        self.preload_sound('quemadasdodge','quemadasdodge.wav')
-        self.preload_sound('yukatamiku','yukatamiku.ogg')
+        # Fallback: src/audio/{category}/{filename}
+        if not os.path.exists(full_path):
+            fallback_path = PathManager.get_asset_path(os.path.join('src', 'audio', category, filename))
+            if os.path.exists(fallback_path):
+                return fallback_path
 
+        return full_path
 
-
-    def preload_sound(self, name, filename):
-        # Buscamos los SFX específicamente en la subcarpeta 'sound'
-        path = os.path.join(self.sound_dir, filename)
-
-        if not os.path.exists(path):
-            print(f"[AUDIO ERROR] No se encontró el archivo físico en: {path}. Saltando para evitar congelamiento.")
-            return None
-
-        if os.path.exists(path):
-            sound = SoundLoader.load(path)
-            if sound:
-                self.sounds[name] = sound
-                Logger.info(f"Audio: SFX cargado -> {name} desde {path}")
-            else:
-                Logger.warning(f"Audio: Error al parsear el archivo {path}")
-        else:
-            Logger.warning(f"Audio: Archivo SFX no encontrado en {path}")
-
-    def play_sfx(self, name):
-        """Reproduce un efecto de sonido corto."""
+    def get_sound(self, name: str):
+        """Carga perezosa (Lazy Loading): Solo lee el disco la primera vez que se reproduce el efecto."""
         if name in self.sounds:
-            self.sounds[name].volume = self.sfx_volume
-            self.sounds[name].play()
-        else:
-            # Intento de carga dinámica si no se precargó
-            Logger.debug(f"Audio: SFX '{name}' no precargado.")
+            return self.sounds[name]
 
-    def play_bgm(self, filename):
-        """Reproduce música de fondo desde la carpeta src/audio/music/"""
+        if name in self.sfx_map:
+            filename = self.sfx_map[name]
+            path = self._resolve_audio_path('sound', filename)
+
+            if os.path.exists(path):
+                try:
+                    sound = SoundLoader.load(path)
+                    if sound:
+                        self.sounds[name] = sound
+                        Logger.info(f"Audio: SFX cargado bajo demanda -> {name}")
+                        return sound
+                    else:
+                        Logger.warning(f"Audio: Kivy no pudo parsear el archivo {path}")
+                except Exception as e:
+                    Logger.error(f"Audio: Excepción al cargar SFX {path}: {e}")
+            else:
+                Logger.warning(f"Audio: Archivo SFX no encontrado en {path}")
+
+        return None
+
+    def play_sfx(self, name: str):
+        """Reproduce un efecto de sonido corto."""
+        sound = self.get_sound(name)
+        if sound:
+            sound.volume = self.sfx_volume
+            sound.play()
+
+    def play_bgm(self, filename: str):
+        """Reproduce música de fondo desde la carpeta de música usando PathManager."""
         if self.current_bgm and self.current_bgm_name == filename:
-            # Si ya se está reproduciendo este tema, nos aseguramos de que esté sonando y no hacemos nada más
             if self.current_bgm.state != 'play':
                 self.current_bgm.play()
             return
@@ -91,31 +94,34 @@ class AudioManager:
         if self.current_bgm:
             self.current_bgm.stop()
 
-        # Construye la ruta hacia src/audio/music/tu_archivo.ogg
-        path = os.path.join(self.music_dir, filename)
-        
+        path = self._resolve_audio_path('music', filename)
+
         if os.path.exists(path):
-            self.current_bgm = SoundLoader.load(path)
-            if self.current_bgm:
-                self.current_bgm.loop = True
-                self.current_bgm.volume = self.music_volume
-                self.current_bgm.play()
-                self.current_bgm_name = filename
-                Logger.info(f"Audio: Reproduciendo BGM -> {filename}")
-            else:
+            try:
+                sound = SoundLoader.load(path)
+                if sound:
+                    self.current_bgm = sound
+                    self.current_bgm.loop = True
+                    self.current_bgm.volume = self.music_volume
+                    self.current_bgm.play()
+                    self.current_bgm_name = filename
+                    Logger.info(f"Audio: Reproduciendo BGM -> {filename}")
+                else:
+                    self.current_bgm_name = None
+                    Logger.error(f"Audio: No se pudo cargar el archivo BGM {path}")
+            except Exception as e:
                 self.current_bgm_name = None
-                Logger.error(f"Audio: No se pudo cargar el archivo de música {path}")
+                Logger.error(f"Audio: Excepción al reproducir BGM {path}: {e}")
         else:
             self.current_bgm_name = None
-            Logger.error(f"Audio: Archivo de música no encontrado en {path}")
-
+            Logger.error(f"Audio: Archivo de BGM no encontrado en {path}")
 
     def stop_bgm(self):
         if self.current_bgm:
             self.current_bgm.stop()
             self.current_bgm_name = None
 
-    def set_volumes(self, music_vol, sfx_vol):
+    def set_volumes(self, music_vol: float, sfx_vol: float):
         self.music_volume = music_vol
         self.sfx_volume = sfx_vol
         if self.current_bgm:
