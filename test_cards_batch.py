@@ -165,8 +165,10 @@ def test_all():
     act_spell = Action(ActionType.PLAY_SPELL, 0, {'card_index': len(p0.hand)-1, 'target': None})
     gs.current_player_id = 0
     gs.apply_action(act_spell)
-    # Costo 44 es 2. Tenía 5 -> gasta 2 (queda 3) -> recupera 1 por Entorno 132 -> queda 4
-    assert p0.current_energy == 4, f"Esperado energía 4, obtenido {p0.current_energy}"
+    # Costo 44 es 3 (base). Dante colocado con set_unit_at no activa on_enter,
+    # así que d_economia_cost_reduction_active no está activo.
+    # Flujo: 5 - 3 (coste base) + 1 (Laboratorio) = 3.
+    assert p0.current_energy == 3, f"Esperado energía 3, obtenido {p0.current_energy}"
     print(">> Entorno 132 OK.")
 
     print("\n=== TEST 11: Entorno 133 Taller de Artes (+2 ATK, +2 PV al invocar Artista) ===")
@@ -206,6 +208,10 @@ def test_all():
     print("\n=== TEST 13: Entorno 135 El Casino (Cura a Nuevo más herido o roba carta) ===")
     c135 = CardLoader.get_card_stats_by_id(135)
     gs.active_environment = Environment(c135, 0)
+    # Limpiar el tablero para aislar este test de efectos residuales previos
+    for rx in range(gs.board.width):
+        for ry in range(gs.board.height):
+            gs.board.remove_unit(rx, ry)
     nuevo_unit = CardLoader.get_card_stats_by_id(28) # Cristóbal (Nuevo)
     nuevo_unit.owner_id = 0
     nuevo_unit.health = 5
@@ -284,7 +290,10 @@ def test_all():
     print("\n=== TEST 18: Balance Cambios - Sesión de Manicure (121) Cura a la Base ===")
     p0.health = 60
     c121 = CardLoader.get_card_stats_by_id(121)
-    # Selecciona aliado FEV (tec_unit id 58)
+    # Re-colocar tec_unit (Dante Economista) en (2,2) ya que el tablero fue limpiado en Test 13
+    tec_unit.owner_id = 0
+    gs.board.set_unit_at(2, 2, tec_unit)
+    gs.current_player_id = 0
     AbilityManager._spell_121_effect(c121, (2, 2), gs)
     assert p0.health == 64, f"Base debió curarse 4 PV. Actual: {p0.health}"
     assert any(b['type'] == 'attack' and b['amount'] == 4 for b in tec_unit.temporary_buffs)

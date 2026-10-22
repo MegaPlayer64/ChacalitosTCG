@@ -1587,8 +1587,8 @@ class AbilityManager:
     # --- IARA METRALLETA (96) ---
     @staticmethod
     def _iara_metralleta_on_turn_start(unit, game_state):
-        unit.temporary_buffs.append({"type": "attack", "amount": 2, "duration": 1})
-        print(f">> [Iara Metralleta] ¡{unit.name} gana +2 de daño este turno!")
+        unit.attack = max(0, unit.attack + 3)
+        print(f">> [Iara Metralleta] ¡{unit.name} gana +3 de daño este turno!")
 
     @staticmethod
     def _iara_metralleta_on_attack(unit, game_state):

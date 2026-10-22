@@ -104,7 +104,7 @@ ID,Nombre,CardType,Rareza,Coste,Vida,Ataque,Velocidad,Rango_ataque,Grupos,Descri
 93,Naty (Gallinita Ciega),unit,Evento,3,15,8,2,1,"3_NAI, Danza","[Pasiva] No puede declarar ataques directos. Cuando un aliado adyacente ataque a un enemigo adyacente a esta carta, inflige su Ataque automáticamente a dicho enemigo.",Juegos Tradicionales
 94,Crisby (Dinosaurio),unit,Excelencia,8,22,16,2,1,"Nuevo, Tecnológico","[Pasiva] Cada vez que robes 1 carta de tu mazo, gana +2 de Ataque de forma permanente.",Dinosaurios
 95,Dante (Dinosaurio),unit,Épica,5,20,10,2,1,"Fuerzas Especiales Valenzuela, Mish-B, Artista, Músico, Tecnológico","[Pasiva] Cada vez que robes 1 carta de tu mazo, restaura 2 PV a esta unidad.",Dinosaurios
-96,Iara (Metralleta de Agua),unit,Evento,4,17,8,1,2,"Tralaleros, Músico, Tecnológico","[Pasiva] Gana +2 de Ataque al inicio de cada turno. Al declarar un ataque, pierde 4 de Ataque.",Dinosaurios
+96,Iara (Metralleta de Agua),unit,Evento,4,17,8,1,2,"Tralaleros, Músico, Tecnológico","[Pasiva] Gana +3 de Ataque al inicio de cada turno. Al declarar un ataque, pierde 4 de Ataque.",Dinosaurios
 97,Huevos de Dinosaurio,spell,Común,2,,,,,Tralaleros,"[Efecto Instantáneo] Selecciona una unidad aliada. Si es Tralaleros, obtiene un escudo que reduce a la mitad el daño recibido en el siguiente ataque.",Dinosaurios
 98,Reciclaje,spell,Especial,5,,,,,,[Efecto Instantáneo] Selecciona una carta aliada en juego: regresa a tu mano y recuperas toda la energía invertida en su invocación.,Dinosaurios
 99,Richi (Discurso),unit,Excelencia,8,30,13,1,1,Derma-patch,"[Pasiva] Al morir, invoca automáticamente a la ficha Dante (Discurso) en su posición.",Formalidad
