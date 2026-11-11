@@ -323,7 +323,8 @@ class GameState:
                     107: (57, "Amira (Presidenta)"),
                     108: (11, "Ale"),
                     109: (68, "Dante (Yukata)"),
-                    131: (6, "Vicente")
+                    131: (6, "Vicente"),
+                    140: (59, "Crisby (Airsoft)")
                 }
                 card_id_int = int(card.id)
 
@@ -660,7 +661,8 @@ class GameState:
                     107: (57, "Amira (Presidenta)"),
                     108: (11, "Ale"),
                     109: (68, "Dante (Yukata)"),
-                    131: (6, "Vicente")
+                    131: (6, "Vicente"),
+                    140: (59, "Crisby (Airsoft)")
                 }
                 card_id_int = int(card.id)
 
@@ -937,6 +939,28 @@ class GameState:
                 if int(attacker.id) == 116 and not murió:
                     target.temporary_buffs.append({"type": "attack", "amount": -3, "duration": 1})
                     print(f">> [Ariana Rapera] ¡Reduce el ataque de {target.name} en 3!")
+
+                # ID 140: Crisby (Bunker de guerra)
+                # Al declarar un ataque, inflige su Ataque al objetivo principal y 4 de daño en área a todas las unidades enemigas adyacentes al objetivo.
+                if int(attacker.id) == 140 and tx != 'B':
+                    for nx, ny in self.board.get_neighbors(tx, ty):
+                        adj_u = self.board.get_unit_at(nx, ny)
+                        if adj_u and adj_u.owner_id != attacker.owner_id and adj_u is not target:
+                            adj_died = adj_u.take_damage(4, self)
+                            print(f">> [Crisby Bunker de Guerra] ¡Inflige 4 de daño en área a {adj_u.name} en ({nx}, {ny})!")
+                            if action.player_id == 0:
+                                try:
+                                    from src.domain.mission_manager import MissionManager
+                                    MissionManager.track_damage(0, 4, getattr(attacker, 'groups', ''))
+                                    if adj_died:
+                                        MissionManager.track_kill(0, getattr(attacker, 'groups', ''), getattr(adj_u, 'groups', ''))
+                                except Exception:
+                                    pass
+                            if adj_died:
+                                print(f">>> ¡{adj_u.name} ha sido derrotado por el daño en área! <<<")
+                                if adj_u.rarity == "Excelencia":
+                                    self.excelenciaactive -= 1
+                                self.board.remove_unit(nx, ny)
                     
                 dist = abs(fx - tx) + abs(fy - ty)
                 if int(attacker.id) == 112 and dist >= 2 and not murió:

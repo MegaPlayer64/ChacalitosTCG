@@ -12,10 +12,10 @@ from src.domain.action_type import ActionType
 from src.domain.ability_manager import AbilityManager
 
 def test_all():
-    print("=== TEST 1: Verificar Carga de las 138 Cartas ===")
+    print("=== TEST 1: Verificar Carga de las Cartas ===")
     units = CardLoader.load_units()
-    assert len(units) == 138, f"Esperado 138 cartas, obtenido {len(units)}"
-    for cid in range(1, 139):
+    assert len(units) >= 138, f"Esperado al menos 138 cartas, obtenido {len(units)}"
+    for cid in range(1, len(units) + 1):
         card = CardLoader.get_card_stats_by_id(cid)
         assert card is not None, f"Fallo al cargar carta ID {cid}"
     print(f">> Todas las {len(units)} cartas cargaron correctamente.")

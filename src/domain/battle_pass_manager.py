@@ -8,15 +8,29 @@ class BattlePassManager:
         self.profile_path = profile_path or PathManager.get_user_profile_path()
         self.season_config_path = season_config_path or PathManager.get_data_file_path("battle_pass_season.json")
         self.profile_data = self._load_json(self.profile_path)
-        self.season_config = self._load_json(self.season_config_path)
+        self.all_seasons_config = self._load_json(self.season_config_path)
+        
+        # Determinar la configuración de la temporada activa según el mes actual ("01" a "12")
+        current_month = datetime.now().strftime("%m")
+        if isinstance(self.all_seasons_config, dict) and current_month in self.all_seasons_config:
+            self.season_config = self.all_seasons_config[current_month]
+        elif isinstance(self.all_seasons_config, dict) and "season_name" in self.all_seasons_config:
+            self.season_config = self.all_seasons_config
+        elif isinstance(self.all_seasons_config, dict) and len(self.all_seasons_config) > 0:
+            self.season_config = next(iter(self.all_seasons_config.values()))
+        else:
+            self.season_config = {}
         
         # Inicializar monedas y pase si no existen en el perfil
         coins = self.profile_data.setdefault("coins", 0)
         essence = self.profile_data.setdefault("craft_essence", self.profile_data.get("essence", 0))
         tickets = self.profile_data.setdefault("tickets", 0)
         self.profile_data.setdefault("currencies", {"coins": coins, "essence": essence, "tickets": tickets})
+        
+        year_str = datetime.now().strftime("%Y")
+        season_id = self.season_config.get("season_id", current_month)
         self.profile_data.setdefault("battle_pass", {
-            "current_season": datetime.now().strftime("%Y-%m"),
+            "current_season": f"{year_str}-{season_id}",
             "level": 1,
             "exp": 0,
             "claimed_levels": []
@@ -40,13 +54,15 @@ class BattlePassManager:
             print(f">> [!] Error al guardar perfil: {e}")
 
     def check_monthly_reset(self):
-        """Si cambia el mes (ej: de 2026-08 a 2026-09), reinicia el pase de batalla."""
-        current_month_str = datetime.now().strftime("%Y-%m")
+        """Si cambia la temporada (ej: de 01-02 a 03), reinicia el pase de batalla."""
+        year_str = datetime.now().strftime("%Y")
+        season_id = self.season_config.get("season_id", datetime.now().strftime("%m"))
+        expected_season_key = f"{year_str}-{season_id}"
         bp_data = self.profile_data.setdefault("battle_pass", {})
         
-        if bp_data.get("current_season") != current_month_str:
-            print(f">> [Battle Pass]: ¡Nueva temporada detectada ({current_month_str})! Reiniciando pase...")
-            bp_data["current_season"] = current_month_str
+        if bp_data.get("current_season") != expected_season_key:
+            print(f">> [Battle Pass]: ¡Nueva temporada detectada ({expected_season_key})! Reiniciando pase...")
+            bp_data["current_season"] = expected_season_key
             bp_data["level"] = 1
             bp_data["exp"] = 0
             bp_data["claimed_levels"] = []

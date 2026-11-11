@@ -5,6 +5,9 @@ package.json
 credentials.json
 venv/
 __pycache__/
+.kivy/
+test_time_progression.py
+test_cards_136_149.py
 test_cards_generator.py
 src/data/user_profile.json
 src/data/backupprofile.json

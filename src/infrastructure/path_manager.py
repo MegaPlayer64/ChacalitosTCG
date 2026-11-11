@@ -242,6 +242,11 @@ class PathManager:
                     "level": 1,
                     "exp": 0,
                     "claimed_levels": []
+                },
+                "weekly_calendar": {
+                    "current_cycle": 1,
+                    "claimed_days": [],
+                    "last_claim_date": ""
                 }
             }
             try:

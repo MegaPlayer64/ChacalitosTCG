@@ -34,6 +34,17 @@ class AbilityManager:
             unit.has_first_move_buff = True
         elif uid == 138:
             AbilityManager._m_ogrodnik_on_enter(unit, game_state)
+        elif uid == 151:
+            if not hasattr(unit, 'sabch_mode'):
+                unit.sabch_mode = 'soporte'
+            has_aura = any(ab.get('type') == 'buff_tag_attack' and ab.get('tag') == ["sucesores", "fuerzas especiales valenzuela"]
+                           for ab in getattr(unit, 'static_abilities', []))
+            if unit.sabch_mode == 'soporte' and not has_aura:
+                unit.static_abilities.append({
+                    "type": "buff_tag_attack",
+                    "tag": ["sucesores", "fuerzas especiales valenzuela"],
+                    "amount": 1
+                })
 
     @staticmethod
     def trigger_on_activate(unit, game_state):
@@ -65,6 +76,10 @@ class AbilityManager:
             AbilityManager._caporal_on_activate(unit, game_state)
         elif int(unit.id) == 131:
             AbilityManager._vicente_conejo_malo_on_activate(unit, game_state)
+        elif int(unit.id) == 139:
+            AbilityManager._margarita_psiquica_on_activate(unit, game_state)
+        elif int(unit.id) == 151:
+            AbilityManager._sabch_on_activate(unit, game_state)
 
     @staticmethod
     def trigger_on_attack(unit, game_state):
@@ -155,6 +170,8 @@ class AbilityManager:
             AbilityManager._dante_fuerza_estelar_on_evolve(unit, game_state)
         elif int(unit.id) == 131:
             AbilityManager._vicente_conejo_malo_on_evolve(unit, game_state)
+        elif int(unit.id) == 140:
+            AbilityManager._crisby_bunker_on_evolve(unit, game_state)
 
     @staticmethod
     def trigger_on_draw_card(unit, drawn_card, game_state):
@@ -285,6 +302,50 @@ class AbilityManager:
                     return True
             print(">> [Zander] Movimiento inválido.")
             return False
+
+        elif pending['ability'] == 'margarita_psiquica_select':
+            sx, sy = pending['source_coords']
+            unit = game_state.board.get_unit_at(sx, sy)
+            if not unit: return False
+            enemy = game_state.board.get_unit_at(tx, ty)
+            if enemy and enemy.owner_id != unit.owner_id:
+                dist = max(abs(tx - sx), abs(ty - sy))
+                if dist <= 2:
+                    game_state.pending_ability = {
+                        'ability': 'margarita_psiquica_dest',
+                        'source_coords': (sx, sy),
+                        'target_coords': (tx, ty)
+                    }
+                    print(f">> [Margarita Psíquica] Seleccionaste a {enemy.name}. Ahora selecciona una casilla vacía a 1 casilla de distancia para desplazarlo.")
+                    return True
+                else:
+                    print(f">> [Margarita Psíquica] {enemy.name} está fuera de alcance (distancia: {dist}, máx: 2 casillas).")
+                    return False
+            else:
+                print(">> [Margarita Psíquica] Debes seleccionar una unidad enemiga.")
+                return False
+
+        elif pending['ability'] == 'margarita_psiquica_dest':
+            ex, ey = pending['target_coords']
+            enemy = game_state.board.get_unit_at(ex, ey)
+            if not enemy: return False
+            if not game_state.board.is_occupied(tx, ty) and game_state.board.is_within_bounds(tx, ty):
+                dist = max(abs(tx - ex), abs(ty - ey))
+                if dist <= 1:
+                    game_state.board.move_unit(ex, ey, tx, ty)
+                    sx, sy = pending['source_coords']
+                    unit = game_state.board.get_unit_at(sx, sy)
+                    if unit:
+                        unit.ability_used_this_turn = True
+                    game_state.pending_ability = None
+                    print(f">> [Margarita Psíquica] ¡{enemy.name} ha sido desplazado a ({tx}, {ty})!")
+                    return True
+                else:
+                    print(">> [Margarita Psíquica] El destino debe estar a hasta 1 casilla de distancia de la unidad objetivo.")
+                    return False
+            else:
+                print(">> [Margarita Psíquica] La casilla de destino debe estar libre y dentro del tablero.")
+                return False
 
         elif pending['ability'] == 'dante_yukata_attack':
             sx, sy = pending['source_coords']
@@ -530,6 +591,12 @@ class AbilityManager:
             123: AbilityManager._spell_123_effect,
             125: AbilityManager._spell_125_effect,
             137: AbilityManager._spell_137_effect,
+            141: AbilityManager._spell_141_effect,
+            142: AbilityManager._spell_142_effect,
+            146: AbilityManager._spell_146_effect,
+            147: AbilityManager._spell_147_effect,
+            148: AbilityManager._spell_148_effect,
+            149: AbilityManager._spell_149_effect,
         }
         
         method = effect_methods.get(int(card.id))
@@ -1992,11 +2059,281 @@ class AbilityManager:
         player = game_state.players[unit.owner_id]
         has_other_group = False
         for u in game_state.board.get_all_units(unit.owner_id):
-            if u is not unit and getattr(u, 'groups', None):
-                raw_tags = [g.strip().lower() for g in str(u.groups).split(',') if g.strip()]
-                if any(t != 'nuevo' for t in raw_tags):
-                    has_other_group = True
-                    break
+            if u is not unit:
+                groups_val = getattr(u, 'groups', None)
+                if groups_val:
+                    if isinstance(groups_val, list):
+                        raw_tags = [str(g).strip().lower() for g in groups_val if str(g).strip()]
+                    else:
+                        raw_tags = [g.strip().lower() for g in str(groups_val).split(',') if g.strip()]
+                    if any(t != 'nuevo' for t in raw_tags):
+                        has_other_group = True
+                        break
         if has_other_group:
             game_state.draw_card(player)
             print(f">> [M. Ogrodnik] ¡Controlas aliados de otros grupos sociales! Has robado 1 carta.")
+
+    # --- UNIDAD 139: Margarita (Psíquica) ---
+    @staticmethod
+    def _margarita_psiquica_on_activate(unit, game_state):
+        if getattr(unit, 'ability_used_this_turn', False):
+            print(">> [Margarita Psíquica] Ya has usado la habilidad este turno.")
+            return False
+        if getattr(unit, 'immobile_turns', 0) > 0:
+            print(">> [Margarita Psíquica] No puedes usar la habilidad mientras estás inmovilizada.")
+            return False
+        game_state.pending_ability = {
+            'ability': 'margarita_psiquica_select',
+            'source_coords': (unit.pos_x, unit.pos_y)
+        }
+        print(">> [Margarita Psíquica] Selecciona una unidad enemiga ubicada a hasta 2 casillas de distancia.")
+        return True
+
+    # --- UNIDAD 140: Crisby (Bunker de guerra) - Evolución ---
+    @staticmethod
+    def _crisby_bunker_on_evolve(unit, game_state):
+        unit.range_atk += 1
+        unit.attack += 3
+        print(f">> [Crisby Bunker de Guerra - Evolución] ¡Gana +1 de Rango y +3 de Daño! (Rango: {unit.range_atk}, Ataque: {unit.attack})")
+
+    # --- HECHIZO 141: Curis Graciosos ---
+    @staticmethod
+    def _spell_141_effect(card, target, game_state):
+        player = game_state.players[game_state.current_player_id]
+        allies = game_state.board.get_all_units(player.id)
+        healed_count = 0
+        for u in allies:
+            tags = str(getattr(u, 'groups', '')).lower()
+            if 'mish-b' in tags or 'mish' in tags or int(u.id) in (22, 106):
+                healed = u.heal(3, game_state)
+                healed_count += 1
+                print(f">> [Curis Graciosos] Restaura {healed} PV a {u.name} (Vida: {u.health}/{u.max_health}).")
+        if healed_count == 0:
+            print(">> [Curis Graciosos] No controlas unidades Mish-B o Mish en el tablero.")
+        return True
+
+    # --- HECHIZO 142: Carta de Comunismo ---
+    @staticmethod
+    def _spell_142_effect(card, target, game_state):
+        player = game_state.players[game_state.current_player_id]
+        allies = game_state.board.get_all_units(player.id)
+        mish_count = 0
+        for u in allies:
+            tags = str(getattr(u, 'groups', '')).lower()
+            if 'mish-a' in tags or 'mish' in tags or int(u.id) in (22, 106):
+                mish_count += 1
+        
+        cards_to_draw = mish_count // 2
+        print(f">> [Carta de Comunismo] Controlas {mish_count} unidades Mish-A / Mish en el campo.")
+        if cards_to_draw > 0:
+            for _ in range(cards_to_draw):
+                game_state.draw_card(player)
+            print(f">> [Carta de Comunismo] ¡Has robado {cards_to_draw} carta(s)!")
+        else:
+            print(">> [Carta de Comunismo] No controlas suficientes unidades Mish-A / Mish (mínimo 2) para robar cartas.")
+        return True
+
+    # --- HECHIZO 146: Duelo de Katanas ---
+    @staticmethod
+    def _spell_146_effect(card, target, game_state):
+        player_id = game_state.current_player_id
+        allies = game_state.board.get_all_units(player_id)
+        enemy_id = 1 - player_id
+        enemies = game_state.board.get_all_units(enemy_id)
+
+        if not enemies:
+            print(">> [Duelo de Katanas] No hay enemigos en el tablero.")
+            return False
+
+        # Identificar aliados FEV y PlaceHolder distintos
+        def is_fev(u):
+            tags = str(getattr(u, 'groups', '')).lower()
+            return 'fuerzas especiales valenzuela' in tags or int(u.id) in (22, 106)
+
+        def is_placeholder(u):
+            tags = str(getattr(u, 'groups', '')).lower()
+            return 'placeholder' in tags or int(u.id) in (22, 106)
+
+        fev_allies = [u for u in allies if is_fev(u)]
+        ph_allies = [u for u in allies if is_placeholder(u)]
+
+        if not fev_allies or not ph_allies:
+            print(">> [Duelo de Katanas] Necesitas controlar al menos un aliado FEV y un aliado PlaceHolder.")
+            return False
+
+        # Determinar objetivo enemigo
+        target_enemy = None
+        if isinstance(target, tuple) and len(target) == 2:
+            tx, ty = target
+            u_at_target = game_state.board.get_unit_at(tx, ty)
+            if u_at_target and u_at_target.owner_id == enemy_id:
+                target_enemy = u_at_target
+        elif isinstance(target, dict):
+            epos = target.get('enemy')
+            if epos and isinstance(epos, tuple):
+                u_at_target = game_state.board.get_unit_at(*epos)
+                if u_at_target and u_at_target.owner_id == enemy_id:
+                    target_enemy = u_at_target
+
+        # Buscar mejor combinación de (fev, ph, enemy)
+        best_combo = None
+        candidate_enemies = [target_enemy] if target_enemy else enemies
+
+        for e in candidate_enemies:
+            ex, ey = e.pos_x, e.pos_y
+            for fev in fev_allies:
+                range_fev = game_state.get_effective_stats(fev)["range_atk"]
+                dist_fev = abs(fev.pos_x - ex) + abs(fev.pos_y - ey)
+                if dist_fev > range_fev:
+                    continue
+                for ph in ph_allies:
+                    if ph is fev:
+                        continue
+                    range_ph = game_state.get_effective_stats(ph)["range_atk"]
+                    dist_ph = abs(ph.pos_x - ex) + abs(ph.pos_y - ey)
+                    if dist_ph <= range_ph:
+                        atk_total = (game_state.get_effective_stats(fev)["attack"] +
+                                     game_state.get_effective_stats(ph)["attack"])
+                        if best_combo is None or atk_total > best_combo[0]:
+                            best_combo = (atk_total, fev, ph, e)
+
+        if not best_combo:
+            if target_enemy:
+                print(f">> [Duelo de Katanas] {target_enemy.name} no se encuentra dentro del rango simultáneo de un aliado FEV y otro PlaceHolder.")
+            else:
+                print(">> [Duelo de Katanas] No hay ninguna unidad enemiga dentro del rango simultáneo de tus aliados FEV y PlaceHolder.")
+            return False
+
+        total_damage, chosen_fev, chosen_ph, chosen_enemy = best_combo
+        atk_fev = game_state.get_effective_stats(chosen_fev)["attack"]
+        atk_ph = game_state.get_effective_stats(chosen_ph)["attack"]
+
+        print(f">> [Duelo de Katanas] ¡{chosen_fev.name} ({atk_fev} ATK) y {chosen_ph.name} ({atk_ph} ATK) ejecutan un golpe coordinado sobre {chosen_enemy.name}!")
+        murio = chosen_enemy.take_damage(total_damage, game_state)
+        print(f">> [Duelo de Katanas] {chosen_enemy.name} recibió {total_damage} de daño directo.")
+
+        if murio:
+            print(f">>> ¡{chosen_enemy.name} ha sido derrotado! <<<")
+            if chosen_enemy.rarity == "Excelencia":
+                game_state.excelenciaactive -= 1
+            game_state.board.remove_unit(chosen_enemy.pos_x, chosen_enemy.pos_y)
+        return True
+
+    # --- HECHIZO 147: Kiosco Clandestino ---
+    @staticmethod
+    def _spell_147_effect(card, target, game_state):
+        player = game_state.players[game_state.current_player_id]
+        allies = game_state.board.get_all_units(player.id)
+        if not allies:
+            print(">> [Kiosco Clandestino] No tienes unidades aliadas en el tablero.")
+            return True
+        for u in allies:
+            tags = str(getattr(u, 'groups', '')).lower()
+            is_ph = 'placeholder' in tags or int(u.id) in (22, 106)
+            heal_amt = 4 if is_ph else 2
+            healed = u.heal(heal_amt, game_state)
+            tag_info = " (PlaceHolder)" if is_ph else ""
+            print(f">> [Kiosco Clandestino] {u.name}{tag_info} restaura {healed} PV (Vida: {u.health}/{u.max_health}).")
+        return True
+
+    # --- HECHIZO 148: Regreso Inesperado ---
+    @staticmethod
+    def _spell_148_effect(card, target, game_state):
+        player_id = game_state.current_player_id
+        target_unit = None
+        if isinstance(target, tuple) and len(target) == 2:
+            tx, ty = target
+            u = game_state.board.get_unit_at(tx, ty)
+            if u and u.owner_id == player_id:
+                target_unit = u
+            else:
+                print(">> [Regreso Inesperado] Debes seleccionar una unidad aliada válida.")
+                return False
+        else:
+            allies = game_state.board.get_all_units(player_id)
+            if not allies:
+                print(">> [Regreso Inesperado] No hay unidades aliadas en el tablero.")
+                return False
+            # Priorizar aliados Ex-estudiantes
+            ex_allies = [u for u in allies if 'ex-estudiantes' in str(getattr(u, 'groups', '')).lower() or 'ex-estudiante' in str(getattr(u, 'groups', '')).lower()]
+            target_unit = ex_allies[0] if ex_allies else allies[0]
+
+        target_unit.attack += 2
+        print(f">> [Regreso Inesperado] ¡{target_unit.name} gana +2 de Ataque permanentemente! (Ataque actual: {target_unit.attack})")
+        
+        tags = str(getattr(target_unit, 'groups', '')).lower()
+        if 'ex-estudiantes' in tags or 'ex-estudiante' in tags or int(target_unit.id) in (22, 106):
+            target_unit.temporary_buffs.append({"type": "speed", "amount": 1, "duration": 1})
+            print(f">> [Regreso Inesperado] Al ser Ex-estudiante, ¡{target_unit.name} gana además +1 de Velocidad este turno!")
+        return True
+
+    # --- HECHIZO 149: NicoNicoNi ---
+    @staticmethod
+    def _spell_149_effect(card, target, game_state):
+        player_id = game_state.current_player_id
+        target_unit = None
+        if isinstance(target, tuple) and len(target) == 2:
+            tx, ty = target
+            u = game_state.board.get_unit_at(tx, ty)
+            if not u or u.owner_id != player_id:
+                print(">> [NicoNicoNi] Debes seleccionar una unidad aliada.")
+                return False
+            tags = str(getattr(u, 'groups', '')).lower()
+            if not ('mish-a' in tags or 'mish' in tags or int(u.id) in (22, 106)):
+                print(f">> [!] {u.name} no pertenece al grupo Mish-A o Mish.")
+                return False
+            target_unit = u
+        else:
+            allies = game_state.board.get_all_units(player_id)
+            mish_allies = [u for u in allies if 'mish-a' in str(getattr(u, 'groups', '')).lower() or 'mish' in str(getattr(u, 'groups', '')).lower() or int(u.id) in (22, 106)]
+            if not mish_allies:
+                print(">> [NicoNicoNi] No controlas unidades Mish-A o Mish en el tablero.")
+                return False
+            target_unit = mish_allies[0]
+
+        target_unit.temporary_buffs.append({"type": "attack", "amount": 6, "duration": 1})
+        eff_atk = game_state.get_effective_stats(target_unit)["attack"]
+        print(f">> [NicoNicoNi] ¡{target_unit.name} recibe +6 de daño (Ataque) por 1 turno! (Ataque efectivo: {eff_atk})")
+        return True
+
+    # --- UNIDAD 151: Sabch ---
+    @staticmethod
+    def _sabch_on_activate(unit, game_state):
+        if getattr(unit, 'ability_used_this_turn', False):
+            print(">> [Sabch] Ya has usado la habilidad este turno.")
+            return False
+        if getattr(unit, 'immobile_turns', 0) > 0:
+            print(">> [Sabch] No puedes cambiar de modalidad mientras estás inmovilizado.")
+            return False
+
+        current_mode = getattr(unit, 'sabch_mode', 'soporte')
+        if current_mode == 'soporte':
+            # Cambiar a modalidad Ataque: Adquiere +1 de rango y +4 de daño
+            unit.sabch_mode = 'ataque'
+            # Remover aura de soporte
+            unit.static_abilities = [ab for ab in getattr(unit, 'static_abilities', [])
+                                     if not (ab.get('type') == 'buff_tag_attack' and ab.get('tag') == ["sucesores", "fuerzas especiales valenzuela"])]
+            unit.range_atk += 1
+            unit.attack += 4
+            unit.ability_used_this_turn = True
+            eff_stats = game_state.get_effective_stats(unit)
+            print(f">> [Sabch] ¡Cambió a modalidad ATAQUE! (+1 Rango, +4 Daño -> Rango: {eff_stats['range_atk']}, Ataque: {eff_stats['attack']})")
+        else:
+            # Cambiar a modalidad Soporte: Da +1 de daño a todas las unidades Sucesores y Fuerzas Especiales Valenzuela
+            unit.sabch_mode = 'soporte'
+            unit.range_atk = max(1, unit.range_atk - 1)
+            unit.attack = max(1, unit.attack - 4)
+            # Reincorporar aura de soporte si no está
+            has_aura = any(ab.get('type') == 'buff_tag_attack' and ab.get('tag') == ["sucesores", "fuerzas especiales valenzuela"]
+                           for ab in getattr(unit, 'static_abilities', []))
+            if not has_aura:
+                unit.static_abilities.append({
+                    "type": "buff_tag_attack",
+                    "tag": ["sucesores", "fuerzas especiales valenzuela"],
+                    "amount": 1
+                })
+            unit.ability_used_this_turn = True
+            eff_stats = game_state.get_effective_stats(unit)
+            print(f">> [Sabch] ¡Cambió a modalidad SOPORTE! (Otorga +1 de Ataque a unidades Sucesores y Fuerzas Especiales Valenzuela. Rango: {eff_stats['range_atk']}, Ataque: {eff_stats['attack']})")
+
+        return True

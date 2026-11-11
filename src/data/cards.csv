@@ -10,7 +10,7 @@ ID,Nombre,CardType,Rareza,Coste,Vida,Ataque,Velocidad,Rango_ataque,Grupos,Descri
 9,Ami,unit,Común,3,13,11,2,1,"3_NAI, Danza",,Cartas Iniciales 3_NAI
 10,Isacovic,unit,Común,3,14,9,1,2,"3_NAI, Danza",,Cartas Iniciales 3_NAI
 11,Ale,unit,Común,3,16,9,1,1,"3_NAI, Danza",[Pasiva] Las unidades con la etiqueta Danza adyacentes a Ale no pueden ser objetivo de ataques a distancia.,Cartas Iniciales 3_NAI
-12,Stefano,unit,Común,4,15,8,1,1,"Derma-patch, Cabezal de Tren, Ex-estudiante",[Activa — Una vez por turno] Pierde 1 PV para ganar +1 de Ataque permanentemente.,Cartas iniciales Dermapatch
+12,Stefano,unit,Común,4,15,8,1,1,"Derma-patch, Cabezal de Tren, Ex-estudiantes",[Activa — Una vez por turno] Pierde 1 PV para ganar +1 de Ataque permanentemente.,Cartas iniciales Dermapatch
 13,Emi,unit,Común,4,21,10,1,1,"Derma-patch, Danza, Músico",,Cartas Iniciales Dermapatch
 14,Sofi,unit,Común,3,15,7,1,1,"Derma-patch, Músico","[Pasiva] Al inicio de tu turno, restaura 1 PV a una unidad aliada adyacente.",Cartas Iniciales Dermapatch
 15,Daniela,unit,Común,3,15,8,1,1,Derma-patch,[Pasiva] Gana +2 de Ataque si la Base rival tiene más PV que la Base aliada.,Cartas Iniciales Dermapatch
@@ -20,36 +20,36 @@ ID,Nombre,CardType,Rareza,Coste,Vida,Ataque,Velocidad,Rango_ataque,Grupos,Descri
 19,Camila,unit,Común,2,10,7,1,1,"Tralaleros, Literatura, Artista",,Cartas Iniciales Tralalero tralala
 20,Ariana,unit,Común,3,15,9,2,1,"Tralaleros, Músico, Artista",,Cartas Iniciales Tralalero tralala
 21,Iara,unit,Común,4,18,8,1,1,"Tralaleros, Músico, Tecnológico","[Pasiva] Mientras controles al menos 2 unidades Tralaleros en el tablero, incluido Iara, reduce en 2 el daño que recibe.",Cartas Iniciales Tralalero tralala
-22,Rin,unit,Común,3,15,11,1,1,-,"[Pasiva] Adquiere las bonificaciones de cualquier Entorno activo, sin importar las etiquetas del Entorno.",Cartas Iniciales
-23,Tammy,unit,Común,3,12,14,1,1,-,,Cartas Iniciales
-24,Josefa G,unit,Común,3,13,12,2,1,Nuevo,"[Pasiva] Al entrar al tablero, mira las 3 primeras cartas del mazo enemigo, elige 1 y ponla en el fondo del mazo.",Cartas Iniciales Nuevos
+22,Rin,unit,Común,3,15,11,1,1,PlaceHolder,"[Pasiva] Adquiere las bonificaciones de cualquier Entorno activo, sin importar las etiquetas del Entorno.",Cartas Iniciales
+23,Tammy,unit,Común,3,12,14,1,1,PlaceHolder,,Cartas Iniciales
+24,Josefa G,unit,Común,3,13,12,2,1,"Nuevo, PlaceHolder","[Pasiva] Al entrar al tablero, mira las 3 primeras cartas del mazo enemigo, elige 1 y ponla en el fondo del mazo.",Cartas Iniciales Nuevos
 25,Nico,unit,Común,7,34,14,1,1,"Mish-A, Deportistas","[Activa — Un uso por turno] Gana +3 de Ataque permanentemente, pero no puede desplazarse durante sus próximos 2 turnos. (Habilidad no activable si esta inmovil)",Cartas Iniciales Mish
 26,Helen,unit,Común,5,28,12,1,1,"Mish-B, Tralaleros, Artista, Literatura, Músico",,Cartas Iniciales Mish
 27,Dario,unit,Común,1,6,4,2,1,"Mish-B, Artista, Literatura, Músico, Tecnológico",,Cartas Iniciales Mish
-28,Cristobal,unit,Común,2,10,5,1,1,Nuevo,"[Pasiva] Al entrar al tablero, robas 1 carta. Si la carta robada es un Truco, restaura 4 PV a un aliado.",Cartas Iniciales Nuevos
+28,Cristóbal,unit,Común,2,10,5,1,1,Nuevo,"[Pasiva] Al entrar al tablero, robas 1 carta. Si la carta robada es un Truco, restaura 4 PV a un aliado.",Cartas Iniciales Nuevos
 29,Crisby,unit,Común,2,11,6,1,1,"Mish-B, Nuevo, Tecnológico","[Pasiva] Al entrar al tablero, tu próxima carta de coste 4 o menos cuesta 1 menos de energía este turno.",Cartas Iniciales Nuevos
 30,Josefa A,unit,Común,2,10,5,1,1,Nuevo,"[Pasiva] Al entrar al tablero, concede a un aliado un escudo que reduce a la mitad el daño del siguiente ataque recibido.",Cartas Iniciales Nuevos
 31,Bichots,unit,Común,4,16,13,2,1,"Cabezal de Tren, 3_NAI, Futboleros",,Cartas Iniciales 3_NAI
 32,Ida al Casino,spell,Épica,4,,,,,Nuevo,"[Efecto Instantáneo] Selecciona una unidad en el tablero y atráela hasta 2 casillas en línea recta hacia tu unidad más cercana. Si el objetivo es de la etiqueta Nuevo, robas 1 carta.",Cartas Truco
 33,Pan con Mayo,spell,Común,2,,,,,"Fuerzas Especiales Valenzuela, Cabezal de Tren","[Efecto Instantáneo] Restaura 10 PV a una unidad objetivo. Si la unidad objetivo es Fuerzas Especiales Valenzuela o Cabezal de Tren, restaura 12 PV.",Cartas Truco
 34,Globo de eventos,spell,Común,3,,,,,-,[Efecto Instantáneo] Concede +3 de Ataque a una unidad aliada durante 2 turnos.,Cartas Truco
-35,Operación de Olimpiadas,spell,Especial,3,,,,,Tecnológico,"[Efecto Instantáneo] Una unidad enemiga de la etiqueta Tecnológico pierde -2 de Ataque este turno (si no es Tecnológico, pierde -4 de Ataque).",Cartas Truco
-36,Pelota de Futbol,spell,Especial,2,,,,,-,"[Efecto Instantáneo] Otorga +3 de Ataque a una unidad por 1 turno. Si la unidad objetivo es Futbolero y destruye a un enemigo este turno, robas 1 carta.",Cartas Truco
+35,Operación de Olimpiadas,spell,Especial,3,,,,,Tecnológico,"[Efecto Instantáneo] Una unidad enemiga de la etiqueta Tecnológico pierde 2 de Ataque este turno. Si no es Tecnológico, pierde 4 de Ataque.",Cartas Truco
+36,Pelota de Fútbol,spell,Especial,2,,,,,-,"[Efecto Instantáneo] Otorga +3 de Ataque a una unidad por 1 turno. Si la unidad objetivo es Futbolero y destruye a un enemigo este turno, robas 1 carta.",Cartas Truco
 37,Agarre sospechoso,spell,Especial,4,,,,,-,[Efecto Instantáneo] Reduce la Velocidad de una unidad enemiga a 0 durante 1 turno.,Cartas Truco
 38,Farmeo de Aura,spell,Común,3,,,,,"Danza, Músico","[Efecto Instantáneo] Restaura 4 PV a una unidad. Si la unidad es Danza o Músico, permite además desplazarla 1 casilla.",Cartas Truco
 39,Tik-Toks,spell,Especial,3,,,,,"Derma-patch, 3_NAI",[Efecto Instantáneo] Restaura 3 PV a la Base aliada por cada unidad 3_NAI o Derma-patch presente en el tablero.,Cartas Truco
 40,Entrada a la Gala,spell,Especial,2,,,,,-,"[Efecto Instantáneo] Robas 1 carta de tu mazo. Si la carta robada es de tipo unidad, tu Base aliada recupera 4 PV.",Cartas Truco
 41,Derma-patch,spell,Especial,3,,,,,Derma-patch,"[Efecto Instantáneo] Restaura 12 PV a una unidad. Si el objetivo es Derma-patch, gana además +2 de Ataque durante este turno.",Cartas Truco
 42,Reacción Explosiva,spell,Común,4,,,,,-,"[Efecto Instantáneo] Inflige 3 PV de daño a todos los enemigos en el tablero. Si hay 3 o más enemigos, inflige 4 PV de daño a cada uno.",Cartas Truco
-43,Chapulín,spell,Especial,1,,,,,-,"[Efecto Instantáneo] Restaura 6 PV a una unidad, pero reduce su Ataque en -3 durante 1 turno.",Cartas Truco
+43,Chapulín,spell,Especial,1,,,,,-,"[Efecto Instantáneo] Restaura 6 PV a una unidad, pero reduce su Ataque en 3 durante 1 turno.",Cartas Truco
 44,Robo Disimulado,spell,Común,3,,,,,-,"[Efecto instantáneo] Roba 2 cartas de tu mazo. Si tienes 7 o más cartas en mano al jugar este Truco, roba solamente 1.",Cartas Truco
 45,Combo de cartas,spell,Especial,3,,,,,Futboleros,"[Efecto Instantáneo] Robas 2 cartas de tu mazo. Si controlas 2 o más unidades Futboleros en el tablero, robas 1 carta adicional.",Cartas Truco
 46,Expulsión de clase,spell,Común,4,,,,,-,[Efecto Instantáneo] Destruye inmediatamente a una unidad enemiga objetivo que tenga 9 o menos de Ataque.,Cartas Truco
 47,Charla Vocacional,spell,Especial,4,,,,,-,[Efecto Instantáneo] Todas las unidades aliadas en el tablero ganan +2 de Ataque durante este turno.,Cartas Truco
-48,Cafe Frio,spell,Común,1,,,,,Tralaleros,"[Efecto Instantáneo] Otorga +1 de Velocidad a una unidad este turno. Al siguiente turno, si no es de la etiqueta Tralaleros, su Velocidad se reduce en -1.",Cartas Truco
+48,Café Frío,spell,Común,1,,,,,Tralaleros,"[Efecto Instantáneo] Otorga +1 de Velocidad a una unidad este turno. Al siguiente turno, si no es de la etiqueta Tralaleros, su Velocidad se reduce en -1.",Cartas Truco
 49,Almuerzo Pesado,spell,Especial,3,,,,,-,"[Efecto Instantáneo] Durante el próximo turno rival, el oponente no puede curar a sus unidades ni a su Base.",Cartas Truco
 50,Escuadrón Paramédico,spell,Especial,3,,,,,-,"[Efecto Instantáneo] Selecciona una unidad aliada. Si tiene al menos 2 aliados adyacentes (en cruz o diagonal), restaura 15 PV.",Cartas Truco
-51,Daiaodama,spell,Especial,1,,,,,-,[Efecto Instantáneo] Selecciona una unidad aliada para realizar un ataque directo de 3 de Daño a un enemigo ubicado hasta a 3 casillas de distancia.,Cartas Truco
+51,Daiaodama,spell,Especial,1,,,,,-,[Efecto Instantáneo] Selecciona una unidad aliada para realizar un ataque directo de 3 de daño a un enemigo ubicado hasta a 3 casillas de distancia.,Cartas Truco
 52,Zona de Juegos,building,Común,4,,,,,Fuerzas Especiales Valenzuela,[Entorno - Pasiva] Las unidades de Fuerzas Especiales Valenzuela ganan +4 PV de Vida Máxima al ser invocadas.,Cartas Entorno
 53,Cancha de Futbol,building,Especial,4,,,,,Futboleros,[Entorno — Pasiva] Las unidades Futboleros ganan +1 de Velocidad mientras no hayan atacado durante el turno actual.,Cartas Entorno
 54,La Fundación,building,Épica,5,,,,,Tralaleros,[Entorno - Pasiva] El rival no puede recibir bonificaciones ni aumentos de Ataque mientras controles al menos una unidad Tralaleros.,Cartas Entorno
@@ -60,9 +60,9 @@ ID,Nombre,CardType,Rareza,Coste,Vida,Ataque,Velocidad,Rango_ataque,Grupos,Descri
 59,Crisby (Airsoft),unit,Épica,4,19,9,1,2,"Mish-B, Nuevo, Tecnológico","[Activa — Una vez por turno] Si hay una unidad enemiga adyacente, puedes inmovilizarla durante 1 turno. No puedes activar esta habilidad si Crisby se ha desplazado durante el turno actual.",Cartas Miscelanias
 60,Melsizis (DT),unit,Épica,5,24,14,1,1,"Fuerzas Especiales Valenzuela, Deportistas","[Pasiva] Mientras esté en el tablero, los aliados Fuerzas Especiales Valenzuela ganan +1 de Ataque. Si hay al menos un Cabezal de Tren en juego, ganan además +1 de Velocidad.",SIMCE
 61,Chino (Quemadas),unit,Excelencia,9,21,15,3,2,"Cabezal de Tren, Futboleros","[Pasiva] La primera vez que sea atacado en cada turno rival, se desplaza a una casilla adyacente vacía y anula todo el daño recibido.",SIMCE
-62,Diego S.,unit,Común,2,10,6,1,1,"Mish-A, Futboleros",[Pasiva] Gana +1 de Ataque por cada otra unidad Mish activa en el tablero.,Cartas Iniciales Mish
+62,Diego S.,unit,Común,2,10,6,1,1,"Mish-A, Futboleros",[Pasiva] Gana +1 de Ataque por cada otra unidad con la etiqueta Mish-A o Mish activa en el tablero.,Cartas Iniciales Mish
 63,D. Cutiño,unit,Común,4,14,6,1,2,"Mish-A, Mish-B, Tecnológico, Deportistas",[Activa - Coste 3] Invoca una ficha Gandan en una casilla adyacente vacía.,Cartas Iniciales Mish
-64,Zander,unit,Común,3,13,9,1,1,"Mish-A, Artista, Literatura",[Activa - Una vez por turno] Desplaza a una unidad aliada adyacente 1 casilla.,Cartas Iniciales Mish
+64,Javier B.,unit,Común,3,13,9,1,1,"Mish-A, Artista, Literatura",[Activa - Una vez por turno] Desplaza a una unidad aliada adyacente 1 casilla.,Cartas Iniciales Mish
 65,Gandan,unit,Ficha,3,9,5,0,2,"Mish-A, Mish-B, Tecnológico","[Pasiva] Al morir, inflige 3 de daño en área a todas las casillas adyacentes.",Cartas Iniciales Mish
 66,Feña,unit,Especial,2,12,8,1,1,Mish-A,[Pasiva] No puede ser objetivo de Trucos enemigos mientras controles al menos otra unidad aliada en el tablero.,Cartas Iniciales Mish
 67,Casa de Nico,building,Especial,4,,,,,"Mish-A, Mish-B",[Entorno - Pasiva] Une las etiquetas Mish-A y Mish-B en una sola tag llamada 'Mish'. Todos los aliados Mish ganan +1 de Ataque.,Cartas Iniciales Mish
@@ -70,26 +70,26 @@ ID,Nombre,CardType,Rareza,Coste,Vida,Ataque,Velocidad,Rango_ataque,Grupos,Descri
 69,Naty & Ami (Danza),unit,Épica,5,24,14,1,1,"3_NAI, Danza","[Fusión — Requiere controlar a Naty y Ami] Invoca esta carta en la posición de cualquiera de sus componentes.
 
 [Pasiva] Mientras tenga adyacente una unidad Danza o 3_NAI, gana +2 de Ataque y +2 de Velocidad.",Alianzas III (2025)
-70,Dragon Menor de Alianzas,unit,Excelencia,8,38,17,0,1,"Derma-patch, Danza, Músico","[Pasiva] Al inicio del tercer turno tras ser invocado, avanza a la casilla opuesta de su fila, desplazando tropas. Inmune a efectos de Velocidad.",Alianzas III (2025)
+70,Dragón Menor de Alianzas,unit,Excelencia,8,38,17,0,1,"Derma-patch, Danza, Músico","[Pasiva] Al inicio del tercer turno tras ser invocado, avanza a la casilla opuesta de su fila, desplazando tropas. Inmune a efectos de Velocidad.",Alianzas III (2025)
 71,Tren de Personas,spell,Común,3,,,,,3_NAI,"[Efecto Instantáneo] Selecciona una fila del tablero. Todas las unidades aliadas en esa fila restauran 5 PV (si hay al menos un 3_NAI en la fila, restaura 7 PV).",Cartas Truco
-72,Trombon de Entrada,spell,Épica,7,,,,,Músico,[Efecto Instantáneo] Selecciona una unidad aliada: gana +2 de Ataque por cada unidad Músico aliada presente en el tablero.,Alianzas III (2025)
-73,Escenario de Baile,building,Épica,5,,,,,"3_NAI, Músico, Danza","[Entorno - Pasiva] Todas las unidades con las etiquetas 3_NAI, Músico o Danza reciben 1 menos de daño de cualquier fuente.",Cartas Entorno
+72,Trombón de Entrada,spell,Épica,7,,,,,Músico,[Efecto Instantáneo] Selecciona una unidad aliada: gana +2 de Ataque por cada unidad Músico aliada presente en el tablero.,Alianzas III (2025)
+73,Escenario de Baile,building,Épica,5,,,,,"3_NAI, Músico, Danza","[Entorno - Pasiva] Todas las unidades con las etiquetas 3_NAI, Músico o Danza reducen en 1 el daño recibido de cualquier fuente.",Cartas Entorno
 74,Rafa,unit,Común,2,6,6,1,3,"Fuerzas Especiales Valenzuela, Artista, Músico, Tecnológico",,Cartas iniciales FEV
-75,Rafa (Chaman),unit,Épica,6,20,13,1,4,"Fuerzas Especiales Valenzuela, Artista, Músico, Tecnológico","[Pasiva] Después de atacar, debe recargar durante su siguiente turno y no puede declarar ataques durante ese turno.",Día del Libro
+75,Rafa (Chamán),unit,Épica,6,20,13,1,4,"Fuerzas Especiales Valenzuela, Artista, Músico, Tecnológico","[Pasiva] Después de atacar, debe recargar durante su siguiente turno y no puede declarar ataques durante ese turno.",Día del Libro
 76,Lienzo de Arte,spell,Especial,4,,,,,Artista,"[Efecto Instantáneo] Otorga +2 de Ataque a una unidad durante este turno. Si la unidad es Artista, gana además +1 de Rango.",Cartas Truco
 77,Ensayo PAES,spell,Épica,2,,,,,"Literatura, Tecnológico, Nuevo","[Efecto Instantáneo] Restaura 6 PV a una unidad aliada. Si el objetivo es Literatura, Tecnológico o Nuevo, robas además 1 carta de tu mazo.",Cartas Truco
 78,Margaret,unit,Común,4,26,10,1,1,"Artista, Literatura, Deportistas",[Pasiva] Solo puede declararse movimiento en turnos pares.,Cartas Iniciales
 79,Axel,unit,Especial,6,28,10,2,1,Mish-A,"[Pasiva] Cada vez que recibe daño, gana +1 de Ataque permanente.",Cartas Iniciales Mish-A
 80,Biblioteca Escolar,building,Épica,5,,,,,Literatura,[Entorno - Pasiva] Todas las unidades con la etiqueta Literatura ganan +1 de Rango de ataque.,Cartas Entorno
-81,Jose (Enmascarado),unit,Especial,3,13,16,1,2,"Cabezal de Tren, Futboleros","[Pasiva] Su primer ataque tiene Rango 2. En cada ataque ejecutado, su Ataque se reduce a la mitad (mínimo 1).",Cartas Miscelanias
-82,Gorro Soviético,spell,Común,3,,,,,-,[Efecto Instantáneo] Otorga +6 PV de Vida Máxima a una unidad aliada (restaurando esa misma cantidad de vida).,Cartas Miscelanias
+81,Jose (Enmascarado),unit,Especial,3,9,16,1,2,"Cabezal de Tren, Futboleros","[Pasiva] Su primer ataque tiene Rango 2. En cada ataque ejecutado, su Ataque se reduce a la mitad (mínimo 1).",Cartas Miscelanias
+82,Gorro Soviético,spell,Común,3,,,,,-,[Efecto Instantáneo] Otorga +6 PV de Vida Máxima a una unidad aliada y restaura esa misma cantidad de PV.,Cartas Miscelanias
 83,Jose (Oso),unit,Épica,5,20,16,2,1,"Cabezal de Tren, Futboleros",[Activa - Una vez por turno] Pierde 4 PV para ganar +4 de Ataque durante este turno.,La Tirana
-84,Stefano (Viejo),unit,Épica,7,40,15,1,1,"Derma-patch, Cabezal de Tren, Futboleros","[Pasiva] Mientras esté activo en el tablero, todas las unidades Cabezal de Tren ganan +1 de Velocidad.",La Tirana
-85,Nico (Condor),unit,Evento,7,27,16,2,1,"Mish-A, Deportistas",[Pasiva] Puede atravesar unidades al desplazarse. Inflige 6 de daño a cada unidad enemiga que atraviese.,La Tirana
+84,Stefano (Viejo),unit,Épica,7,32,15,1,1,"Derma-patch, Cabezal de Tren, Futboleros, Ex-estudiantes","[Pasiva] Mientras esté activo en el tablero, todas las unidades Cabezal de Tren y Ex-estudiantes ganan +1 de Velocidad.",La Tirana
+85,Nico (Cóndor),unit,Evento,7,27,16,2,1,"Mish-A, Deportistas",[Pasiva] Puede atravesar unidades al desplazarse. Inflige 6 de daño a cada unidad enemiga que atraviese.,La Tirana
 86,Emi & Richi (Demonios),unit,Excelencia,7,45,15,1,1,"Derma-patch, Danza, Músico","[Fusión — Requiere controlar a Emi y Richi] Invoca esta carta en la posición de cualquiera de sus componentes.
 
-[Pasiva] Mientras permanezca en el tablero, reduce en 5 el daño que vaya a recibir tu Base. Cada vez que tu Base reciba daño después de aplicar esta reducción, esta unidad gana +1 de Ataque permanentemente.",La Tirana
-87,Martina & Rin (Ángeles),unit,Excelencia,6,35,10,1,1,"Derma-patch, Cabezal de Tren","[Fusión — Requiere controlar a Martina y Rin] Invoca esta carta en la posición de cualquiera de sus componentes.
+[Pasiva] Mientras permanezca en el tablero, reduce en un 5 el daño que vaya a recibir tu Base. Cada vez que tu Base reciba daño después de aplicar esta reducción, esta unidad gana +1 de Ataque permanentemente.",La Tirana
+87,Martina & Rin (Ángeles),unit,Excelencia,6,35,10,1,1,"Derma-patch, Cabezal de Tren, PlaceHolder","[Fusión — Requiere controlar a Martina y Rin] Invoca esta carta en la posición de cualquiera de sus componentes.
 
 [Pasiva] Al final de tu turno, si tu Base ha recibido daño durante ese turno, restaura 4 PV a tu Base y 2 PV a cada aliado adyacente.",La Tirana
 88,Dante (Olimpiadas),unit,Excelencia,4,14,12,1,1,"Fuerzas Especiales Valenzuela, Mish-B, Artista, Músico, Tecnológico","[Al entrar] Roba 1 carta y recupera energía equivalente al 50 % de su coste.
@@ -100,21 +100,21 @@ ID,Nombre,CardType,Rareza,Coste,Vida,Ataque,Velocidad,Rango_ataque,Grupos,Descri
 [Pasiva] Cuando recibe daño de un ataque, devuelve al atacante el 50 % del daño efectivamente recibido.",Halloween
 90,Dante (Slasher),unit,Evento,5,20,18,1,1,"Fuerzas Especiales Valenzuela, Mish-B, Artista, Músico, Tecnológico","[Pasiva] Al eliminar a una unidad enemiga, todo daño sobrante que supere sus PV restantes se inflige directamente a la Base rival.",Halloween
 91,Margarita (Vampira),unit,Épica,5,22,12,2,1,"Tralaleros, Artista","[Pasiva] Cada vez que esta unidad o un aliado inflige daño a una unidad enemiga, restaura a tu Base PV equivalentes al 50 % de los PV efectivamente perdidos por el objetivo, redondeados hacia arriba. Esta curación no puede superar los PV máximos de tu Base.",Halloween
-92,Helen (Payasa Monocromatica),unit,Épica,4,20,11,2,2,"Tralaleros, Mish-B, Artista, Literatura, Músico","[Pasiva] Cuando inflige daño a una unidad enemiga, esta no puede recuperar PV durante sus próximos 2 turnos.",Halloween
-93,Naty (Gallinita Ciega),unit,Evento,3,15,8,2,1,"3_NAI, Danza","[Pasiva] No puede declarar ataques directos. Cuando un aliado adyacente ataque a un enemigo adyacente a esta carta, inflige su Ataque automáticamente a dicho enemigo.",Juegos Tradicionales
+92,Helen (Monocromática),unit,Épica,4,20,11,2,2,"Tralaleros, Mish-B, Artista, Literatura, Músico","[Pasiva] Cuando inflige daño a una unidad enemiga, esta no puede recuperar PV durante sus próximos 2 turnos.",Halloween
+93,Naty (Gallinita Ciega),unit,Evento,3,15,8,2,1,"3_NAI, Danza","[Pasiva] No puede declarar ataques directos. Cuando un aliado adyacente ataque a un enemigo adyacente a esta carta, Naty inflige su propio Ataque a dicho enemigo.",Juegos Tradicionales
 94,Crisby (Dinosaurio),unit,Excelencia,8,22,16,2,1,"Nuevo, Tecnológico","[Pasiva] Cada vez que robes 1 carta de tu mazo, gana +2 de Ataque de forma permanente.",Dinosaurios
 95,Dante (Dinosaurio),unit,Épica,5,20,10,2,1,"Fuerzas Especiales Valenzuela, Mish-B, Artista, Músico, Tecnológico","[Pasiva] Cada vez que robes 1 carta de tu mazo, restaura 2 PV a esta unidad.",Dinosaurios
-96,Iara (Metralleta de Agua),unit,Evento,4,17,8,1,2,"Tralaleros, Músico, Tecnológico","[Pasiva] Gana +3 de Ataque al inicio de cada turno. Al declarar un ataque, pierde 4 de Ataque.",Dinosaurios
+96,Iara (Metralleta de Agua),unit,Evento,4,17,8,1,2,"Tralaleros, Músico, Tecnológico","[Pasiva] Gana +2 de Ataque al inicio de cada turno. Al declarar un ataque, pierde 4 de Ataque.",Dinosaurios
 97,Huevos de Dinosaurio,spell,Común,2,,,,,Tralaleros,"[Efecto Instantáneo] Selecciona una unidad aliada. Si es Tralaleros, obtiene un escudo que reduce a la mitad el daño recibido en el siguiente ataque.",Dinosaurios
-98,Reciclaje,spell,Especial,5,,,,,,[Efecto Instantáneo] Selecciona una carta aliada en juego: regresa a tu mano y recuperas toda la energía invertida en su invocación.,Dinosaurios
+98,Reciclaje,spell,Especial,5,,,,,,[Efecto Instantáneo] Selecciona una carta aliada en juego: regresa a tu mano.,Dinosaurios
 99,Richi (Discurso),unit,Excelencia,8,30,13,1,1,Derma-patch,"[Pasiva] Al morir, invoca automáticamente a la ficha Dante (Discurso) en su posición.",Formalidad
 100,Dante (Discurso),unit,Ficha,5,15,15,2,1,"Fuerzas Especiales Valenzuela, Mish-B, Artista, Músico, Tecnológico",,Formalidad
-101,Joel (Hombre Aracnido),unit,Excelencia,5,30,8,1,1,"Fuerzas Especiales Valenzuela, Deportistas, Tecnológico","[Activa / Pasiva] Puede anclarse en su casilla. Mientras esté anclado, su Velocidad es 0 y los enemigos no pueden saltar sobre él ni ocupar las casillas superior o inferior.",Día del Libro
-102,Ricardo (Wonka),unit,Evento,6,32,10,1,1,Derma-Patch,[Activa - Coste 1] Restaura 3 PV a esta unidad.,Día del Libro
-103,Helen (Cientifica),unit,Épica,5,22,10,1,2,"Tralaleros, Mish-B, Artista, Literatura, Músico",[Activa — Una vez por partida] Revive en una casilla de despliegue aliada vacía a la última unidad aliada Músico que haya sido destruida después de que Helen entrara al tablero. La unidad revivida recupera sus PV máximos originales.,Día del Libro
+101,Joel (Hombre Arácnido),unit,Excelencia,5,30,8,1,1,"Fuerzas Especiales Valenzuela, Deportistas, Tecnológico","[Activa / Pasiva] Puede anclarse en su casilla. Mientras esté anclado, su Velocidad es 0 y los enemigos no pueden saltar sobre él ni ocupar las casillas superior o inferior.",Día del Libro
+102,Ricardo (Wonka),unit,Evento,6,32,10,1,1,Derma-patch,[Activa - Coste 1] Restaura 3 PV a esta unidad.,Día del Libro
+103,Helen (Científica),unit,Épica,5,22,10,1,2,"Tralaleros, Mish-B, Artista, Literatura, Músico",[Activa — Una vez por partida] Revive en una casilla de despliegue aliada vacía a la última unidad aliada Músico que haya sido destruida después de que Helen entrara al tablero. La unidad revivida recupera sus PV máximos originales.,Día del Libro
 104,Margaret (Circe),unit,Épica,5,24,11,1,1,"Artista, Literatura",[Activa - Coste 3] Convierte a una unidad enemiga adyacente en la ficha Cerdo hasta que sea destruida.,Día del Libro
 105,Cerdo,unit,Ficha,1,4,4,1,1,-,"[Pasiva] Al ser destruida, se transforma nuevamente en la carta que era antes de ser convertida.",Día del Libro
-106,Rin (Rey),unit,Excelencia,6,26,8,2,1,-,"[Pasiva] Unidades adyacentes ganan +2 de Ataque.
+106,Rin (Rey),unit,Excelencia,6,26,8,2,1,PlaceHolder,"[Pasiva] Unidades adyacentes ganan +2 de Ataque.
 [Evolución - Rin]: Adquiere los efectos de cualquier Entorno sin importar su etiqueta.",Alianzas IV (2026)
 107,Ami (Reina),unit,Excelencia,7,28,14,2,2,"3_NAI, Danza","[Pasiva] Aliados adyacentes restauran 2 PV al declarar un ataque.
 [Evolución - Amira]: Tras atacar, todos los aliados ganan +2 de Ataque este turno.",Alianzas IV (2026)
@@ -130,7 +130,7 @@ ID,Nombre,CardType,Rareza,Coste,Vida,Ataque,Velocidad,Rango_ataque,Grupos,Descri
 111,Joel & Bichots (Rubias),unit,Épica,6,30,14,2,1,"Fuerzas Especiales Valenzuela, Cabezal de Tren, 3_NAI, Futboleros, Tecnológico","[Fusión — Requiere controlar a Joel y Bichots] Invoca esta carta en la posición de cualquiera de sus componentes.
 
 [Pasiva] Gana +1 de Ataque por cada etiqueta diferente presente entre las unidades aliadas en el tablero, hasta un máximo de +5.",Alianzas IV (2026)
-112,José (Pelea de un pie),unit,Especial,4,18,12,1,2,"Cabezal de Tren, Futboleros","[Pasiva] Si ataca a Rango 2 o superior, atrae al objetivo 1 casilla hacia José e inmoviliza al enemigo por 1 turno.",Alianzas IV (2026)
+112,Jose (Pelea de un pie),unit,Especial,4,18,12,1,2,"Cabezal de Tren, Futboleros","[Pasiva] Si ataca a Rango 2 o superior, atrae al objetivo 1 casilla hacia José e inmoviliza al enemigo por 1 turno.",Alianzas IV (2026)
 113,Armadura Esponja,spell,Especial,3,,,,,-,[Efecto Instantáneo] Otorga +6 de Vida Máxima permanente a una unidad y le concede un escudo de un solo uso que reduce el daño recibido a la mitad.,Alianzas IV (2026)
 114,Armadura Plancton,spell,Especial,4,,,,,-,[Efecto Instantáneo] Otorga +1 de Velocidad permanente a una unidad aliada.,Alianzas IV (2026)
 115,Misión Imposible,spell,Especial,6,,,,,-,"[Efecto Instantáneo] Mueve a una unidad aliada hasta 3 casillas. Al detenerse, todas las unidades aliadas adyacentes a su nueva posición restauran 4 PV.",Alianzas IV (2026)
@@ -145,7 +145,7 @@ ID,Nombre,CardType,Rareza,Coste,Vida,Ataque,Velocidad,Rango_ataque,Grupos,Descri
 [Pasiva] Puede declarar hasta 2 ataques por turno.",Juegos Tradicionales
 121,Sesión de Manicure,spell,Especial,3,,,,,"Fuerzas Especiales Valenzuela, Tecnológico","[Efecto Instantáneo] Tu Base recupera 4 PV. Si la carta jugada afecta o proviene de FEV o Tecnológico, otorga además +4 de Ataque a una unidad.",Cartas Truco
 122,El Nuevo Testamento Mini,spell,Común,2,,,,,Literatura,"[Efecto Instantáneo] Inflige 4 de daño a un enemigo. Si controlas 2 o más unidades Literatura, inflige 1 de daño extra al inicio de tu turno durante 5 turnos.",Cartas Truco
-123,Escuadrón Conejo,spell,Evento,4,,,,,-,"[Efecto Instantáneo] Generas +2 de Energía en el siguiente turno. Si hay al menos un aliado Rin, Tammy o Josefa en el tablero, robas 1 carta.",Pascua de Resurrección
+123,Escuadrón Conejo,spell,Evento,4,,,,,PlaceHolder,"[Efecto Instantáneo] Generas +2 de Energía en el siguiente turno. Si hay al menos un aliado PlaceHolder en el tablero, robas 1 carta.",Pascua de Resurrección
 124,Chino (Armadura de Parkas),unit,Evento,4,38,0,2,1,"Cabezal de Tren, Futboleros",,Invierno
 125,Competencia Internacional,spell,Excelencia,5,,,,,Derma-patch,"[Efecto Instantáneo] Transforma a una versión común de Richi, Emi, Sofi o Daniela en su versión (Dermapatch), restaurando sus PV y potenciando su pasiva.",Internacional
 126,Richi (Dermapatch),unit,Ficha,8,31,13,1,1,Derma-patch,"[Pasiva] Reduce en 3 el daño recibido de ataques a distancia. Al eliminar a una unidad enemiga, restaura 3 PV a la Base aliada.",Internacional
@@ -155,10 +155,26 @@ ID,Nombre,CardType,Rareza,Coste,Vida,Ataque,Velocidad,Rango_ataque,Grupos,Descri
 130,Vicente (Portero),unit,Especial,7,42,7,1,2,"Fuerzas Especiales Valenzuela, Futboleros, Deportistas","[Pasiva] Siempre que un aliado adyacente vaya a recibir daño de un ataque o proyectil enemigo, Vicente redirige todo el daño hacia sí mismo.",Juegos Tradicionales
 131,Vicente (Conejo Malo),unit,Épica,8,28,12,2,2,"Fuerzas Especiales Valenzuela, Futboleros, Deportistas, Músico, Artista","[Activa / Una vez por turno] Selecciona una unidad: si es FEV, Músico o Danza, gana +3 de Ataque por 1 turno (si no, +1).
 [Evolución - Vicente]: Al entrar, inmoviliza a todas las unidades enemigas por 1 turno.",Día del Profesor
-132,Laboratorio de Computación,building,Épica,5,,,,,Tecnológico,"[Entorno - Pasiva] Cada vez que juegues un Truco, si controlas al menos una unidad Tecnológico, recuperas +1 de energía.",Cartas Entorno
+132,Laboratorio de Computación,building,Épica,5,,,,,Tecnológico,"[Entorno - Pasiva] Cada vez que juegues un Truco, si controlas al menos una unidad con la etiqueta Tecnológico, recuperas +1 de energía.",Cartas Entorno
 133,Taller de Artes,building,Especial,4,,,,,Artista,[Entorno - Pasiva] Cada unidad con la etiqueta Artista gana +2 de Ataque y +2 de PV al ser invocada.,Cartas Entorno
 134,Gimnasio,building,Especial,4,,,,,Deportistas,[Entorno - Pasiva] Las unidades Deportistas ganan +2 de PV Máximos al ser invocadas y son inmunes a reducciones de Velocidad.,Cartas Entorno
 135,El Casino,building,Especial,5,,,,,Nuevo,"[Entorno - Pasiva] Al inicio de tu turno, restaura 4 PV al aliado Nuevo con menos vida. Si todos tienen la vida llena, robas 1 carta.",Cartas Entorno
-136,Crisby (Caballo),unit,Evento,5,13,14,3,1,"Nuevo, Tecnológico, Mish-B","[Pasiva] Puede moverse sobre casillas ocupadas por tropas enemigas, empujando a la carta objetivo 1 casilla hacia atrás e inmovilizándola por 1 turno.",Edición Especial
-137,Prueba del Libro Complementario,spell,Evento,6,,,,,Literatura,"[Efecto Instantáneo] Selecciona 2 cartas aleatorias del rival y las inmoviliza por 1 turno. Si controlas un aliado Literatura, reduce su Ataque en -2.",Día del Libro
-138,M. Ogrodnik,unit,Común,3,15,6,1,1,Nuevo,"[Pasiva — Al entrar] Si controlas al menos una unidad aliada perteneciente a un grupo social distinto de Nuevos, roba 1 carta de tu mazo.",Cartas Iniciales Nuevos																	
+136,Crisby (Caballo),unit,Evento,5,13,14,3,1,"Nuevo, Tecnológico, Mish-B","[Pasiva] Puede moverse sobre casillas ocupadas por tropas enemigas, empujando a la carta objetivo 1 casilla hacia atrás e inmovilizándola por 1 turno.",Juegos Tradicionales
+137,Prueba del Libro Complementario,spell,Evento,6,,,,,Literatura,"[Efecto Instantáneo] Selecciona 2 unidades aleatorias del rival y las inmoviliza por 1 turno. Si controlas un aliado Literatura, reduce su Ataque en 2.",Día del Libro
+138,M. Ogrodnik,unit,Común,3,15,6,1,1,Nuevo,"[Pasiva — Al entrar] Si controlas al menos una unidad aliada perteneciente a un grupo social distinto de Nuevos, roba 1 carta de tu mazo.",Cartas Iniciales Nuevos
+139,Margarita (Psíquica),unit,Especial,5,22,11,1,2,"Tralaleros, Artista, Danza","[Activa — Una vez por turno] Selecciona a una unidad enemiga ubicada a hasta 2 casillas de distancia, la desplaza hasta una casilla en cualquier dirección.",Día del Libro
+140,Crisby (Bunker de guerra),unit,Épica,7,32,15,2,2,"Mish-B, Nuevo, Tecnológico","[Pasiva]: Al declarar un ataque, inflige su Ataque al objetivo principal y 4 de daño en área a todas las unidades enemigas adyacentes al objetivo.
+[Evolución -  Crisby (Airsoft)]: Gana +1 de rango y +3 de daño",Día del Libro
+141,Curis Graciosos,spell,Común,3,,,,,Mish-B,[Efecto Instantáneo] Restaura 3 PV a todas las unidades Mish-B y Mish,Cartas Truco
+142,Carta de Comunismo,spell,Especial,5,,,,,Mish-A,[Efecto Instantáneo] Roba una carta por cada 2 Mish-A o Mish que controles en el campo.,Cartas Truco
+143,Benja,unit,Común,3,16,8,1,1,"Fuerzas Especiales Valenzuela, Ex-estudiantes",,
+144,Lobo,unit,Común,5,15,16,1,1,"Cabezal de Tren, Futboleros, Ex-estudiantes",,
+145,Matias,unit,Común,8,42,14,2,1,"PlaceHolder, Ex-estudiantes",,
+146,Duelo de Katanas,spell,Especial,4,,,,,"Fuerzas Especiales Valenzuela, PlaceHolder","[Efecto Instantáneo] Selecciona dos unidades aliadas distintas: una con la etiqueta Fuerzas Especiales Valenzuela y otra con la etiqueta PlaceHolder. Selecciona una unidad enemiga dentro del rango de ataque de ambas. Inflige a esa unidad un daño igual a la suma del Ataque actual de las dos unidades aliadas seleccionadas. Este daño no cuenta como un ataque y no activa efectos que se disparen al atacar, infligir daño mediante un ataque o recibir daño de un ataque.",
+147,Kiosco Clandestino,spell,Especial,5,,,,,PlaceHolder,[Efecto Instantáneo] Restaura 2 PV a cada unidad aliada. Las unidades aliadas con la etiqueta PlaceHolder restauran 4 PV en su lugar.,
+148,Regreso Inesperado,spell,Común,3,,,,,Ex-estudiantes,"[Efecto Instantáneo] Selecciona una unidad aliada. Esta gana +2 de Ataque permanentemente. Si tiene la etiqueta Ex-estudiantes, gana además +1 de Velocidad durante este turno.",
+149,NicoNicoNi,spell,Especial,3,,,,,Mish-A,"[Efecto Instantáneo] Selecciona una unidad Mish-A o Mish, da +6 de daño por 1 turno",
+150,Pedro,unit,Común,4,20,15,1,1,"Sucesores, Deportistas",																			
+151,Sabch,unit,Común,5,20,8,1,2,"Fuerzas Especiales Valenzuela, Sucesores, Músico, Tecnológico","[Activa] Intercambia entre 2 modalidades.
+Ataque: Adquiere +1 de rango y +4 de daño
+Soporte: Da +1 de daño a todas las unidades Sucesores y Fuerzas Especiales Valenzuela"																		

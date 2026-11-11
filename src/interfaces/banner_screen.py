@@ -53,15 +53,6 @@ class PantallaBanner(Screen):
                 "imagen": "src/art/facciones_png/logo-simce.png"
             },
             {
-                "id": "MISHEXPANSIONPACK1", 
-                "nombre": "Sobre Mish", 
-                "desc": "¡El equipo Mish se unen al combate! \n Cuando los unes causan gran daño a los enemigos cercanos.",
-                "coste_1": 100,
-                "coste_5": 500,
-                "pago_con_ticket": False,
-                "imagen": "src/art/facciones_png/logo-mish.png"
-            },
-            {
                 "id": "ALIANZAS3RO", 
                 "nombre": "Sobre Alianzas 3ro", 
                 "desc": "¡El Dragon Menor de las Alianzas se une al combate! \n Acompañados de multiples cartas basadas en la época de alianzas",

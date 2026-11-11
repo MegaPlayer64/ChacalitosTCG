@@ -1,106 +1,710 @@
 {
-    "09": {
-        "season_id": "09",
-        "season_name": "Temporada Dieciochera",
-        "exp_per_level": 100,
-        "max_level": 30,
-        "featured_card_id": "85",
-        "rewards": {
-            "1": {
-                "type": "coins",
-                "amount": 200,
-                "label": "200 Monedas"
-            },
-            "3": {
-                "type": "essence",
-                "amount": 50,
-                "label": "50 Esencia"
-            },
-            "5": {
-                "type": "card",
-                "card_id": "85",
-                "amount": 1,
-                "label": "Nico [Cóndor]"
-            },
-            "10": {
-                "type": "tickets",
-                "amount": 2,
-                "label": "2 Tickets"
-            },
-            "15": {
-                "type": "essence",
-                "amount": 150,
-                "label": "150 Esencia"
-            },
-            "20": {
-                "type": "card",
-                "card_id": "85",
-                "amount": 1,
-                "label": "Nico [Cóndor] (Copia 2)"
-            },
-            "25": {
-                "type": "coins",
-                "amount": 1000,
-                "label": "1000 Monedas"
-            },
-            "30": {
-                "type": "card",
-                "card_id": "85",
-                "amount": 2,
-                "label": "Nico [Cóndor] (Copias 3 y 4)"
-            }
-        }
-    },
-    "10": {
-        "season_id": "10",
-        "season_name": "Temporada de Noche de Brujas",
-        "exp_per_level": 100,
-        "max_level": 30,
-        "featured_card_id": "90",
-        "rewards": {
-            "1": {
-                "type": "coins",
-                "amount": 200,
-                "label": "200 Monedas"
-            },
-            "3": {
-                "type": "essence",
-                "amount": 50,
-                "label": "50 Esencia"
-            },
-            "5": {
-                "type": "card",
-                "card_id": "90",
-                "amount": 1,
-                "label": "Dante [Slasher]"
-            },
-            "10": {
-                "type": "tickets",
-                "amount": 2,
-                "label": "2 Tickets"
-            },
-            "15": {
-                "type": "essence",
-                "amount": 150,
-                "label": "150 Esencia"
-            },
-            "20": {
-                "type": "card",
-                "card_id": "90",
-                "amount": 1,
-                "label": "Dante [Slasher] (Copia 2)"
-            },
-            "25": {
-                "type": "coins",
-                "amount": 1000,
-                "label": "1000 Monedas"
-            },
-            "30": {
-                "type": "card",
-                "card_id": "90",
-                "amount": 2,
-                "label": "Dante [Slasher] (Copias 3 y 4)"
-            }
-        }
+  "01": {
+    "season_id": "01-02",
+    "season_name": "Temporada de Verano (Enero - Febrero)",
+    "exp_per_level": 100,
+    "max_level": 50,
+    "featured_card_id": "136",
+    "rewards": {
+      "1": {
+        "type": "coins",
+        "amount": 200,
+        "label": "200 Monedas"
+      },
+      "3": {
+        "type": "essence",
+        "amount": 50,
+        "label": "50 Esencia"
+      },
+      "5": {
+        "type": "card",
+        "card_id": "136",
+        "amount": 1,
+        "label": "Crisby [Caballo]"
+      },
+      "10": {
+        "type": "tickets",
+        "amount": 2,
+        "label": "2 Tickets"
+      },
+      "15": {
+        "type": "essence",
+        "amount": 150,
+        "label": "150 Esencia"
+      },
+      "20": {
+        "type": "card",
+        "card_id": "136",
+        "amount": 1,
+        "label": "Crisby [Caballo] (Copia 2)"
+      },
+      "25": {
+        "type": "coins",
+        "amount": 1000,
+        "label": "1000 Monedas"
+      },
+      "30": {
+        "type": "essence",
+        "amount": 250,
+        "label": "250 Esencia"
+      },
+      "35": {
+        "type": "tickets",
+        "amount": 3,
+        "label": "3 Tickets"
+      },
+      "40": {
+        "type": "card",
+        "card_id": "136",
+        "amount": 1,
+        "label": "Crisby [Caballo] (Copia 3)"
+      },
+      "45": {
+        "type": "coins",
+        "amount": 1500,
+        "label": "1500 Monedas"
+      },
+      "50": {
+        "type": "card",
+        "card_id": "136",
+        "amount": 1,
+        "label": "Crisby [Caballo] (Copia 4)"
+      }
     }
+  },
+  "02": {
+    "season_id": "01-02",
+    "season_name": "Temporada de Verano (Enero - Febrero)",
+    "exp_per_level": 100,
+    "max_level": 50,
+    "featured_card_id": "136",
+    "rewards": {
+      "1": {
+        "type": "coins",
+        "amount": 200,
+        "label": "200 Monedas"
+      },
+      "3": {
+        "type": "essence",
+        "amount": 50,
+        "label": "50 Esencia"
+      },
+      "5": {
+        "type": "card",
+        "card_id": "136",
+        "amount": 1,
+        "label": "Crisby [Caballo]"
+      },
+      "10": {
+        "type": "tickets",
+        "amount": 2,
+        "label": "2 Tickets"
+      },
+      "15": {
+        "type": "essence",
+        "amount": 150,
+        "label": "150 Esencia"
+      },
+      "20": {
+        "type": "card",
+        "card_id": "136",
+        "amount": 1,
+        "label": "Crisby [Caballo] (Copia 2)"
+      },
+      "25": {
+        "type": "coins",
+        "amount": 1000,
+        "label": "1000 Monedas"
+      },
+      "30": {
+        "type": "essence",
+        "amount": 250,
+        "label": "250 Esencia"
+      },
+      "35": {
+        "type": "tickets",
+        "amount": 3,
+        "label": "3 Tickets"
+      },
+      "40": {
+        "type": "card",
+        "card_id": "136",
+        "amount": 1,
+        "label": "Crisby [Caballo] (Copia 3)"
+      },
+      "45": {
+        "type": "coins",
+        "amount": 1500,
+        "label": "1500 Monedas"
+      },
+      "50": {
+        "type": "card",
+        "card_id": "136",
+        "amount": 1,
+        "label": "Crisby [Caballo] (Copia 4)"
+      }
+    }
+  },
+  "03": {
+    "season_id": "03",
+    "season_name": "Temporada de Vuelta a Clases",
+    "exp_per_level": 100,
+    "max_level": 30,
+    "featured_card_id": "137",
+    "rewards": {
+      "1": {
+        "type": "coins",
+        "amount": 200,
+        "label": "200 Monedas"
+      },
+      "3": {
+        "type": "essence",
+        "amount": 50,
+        "label": "50 Esencia"
+      },
+      "5": {
+        "type": "card",
+        "card_id": "137",
+        "amount": 1,
+        "label": "Prueba del Libro Complementario"
+      },
+      "10": {
+        "type": "tickets",
+        "amount": 2,
+        "label": "2 Tickets"
+      },
+      "15": {
+        "type": "essence",
+        "amount": 150,
+        "label": "150 Esencia"
+      },
+      "20": {
+        "type": "card",
+        "card_id": "137",
+        "amount": 1,
+        "label": "Prueba del Libro Complementario (Copia 2)"
+      },
+      "25": {
+        "type": "coins",
+        "amount": 1000,
+        "label": "1000 Monedas"
+      },
+      "30": {
+        "type": "card",
+        "card_id": "137",
+        "amount": 2,
+        "label": "Prueba del Libro Complementario (Copias 3 y 4)"
+      }
+    }
+  },
+  "04": {
+    "season_id": "04",
+    "season_name": "Temporada de Pascua de Resurrección",
+    "exp_per_level": 100,
+    "max_level": 30,
+    "featured_card_id": "123",
+    "rewards": {
+      "1": {
+        "type": "coins",
+        "amount": 200,
+        "label": "200 Monedas"
+      },
+      "3": {
+        "type": "essence",
+        "amount": 50,
+        "label": "50 Esencia"
+      },
+      "5": {
+        "type": "card",
+        "card_id": "123",
+        "amount": 1,
+        "label": "Escuadrón Conejo"
+      },
+      "10": {
+        "type": "tickets",
+        "amount": 2,
+        "label": "2 Tickets"
+      },
+      "15": {
+        "type": "essence",
+        "amount": 150,
+        "label": "150 Esencia"
+      },
+      "20": {
+        "type": "card",
+        "card_id": "123",
+        "amount": 1,
+        "label": "Escuadrón Conejo (Copia 2)"
+      },
+      "25": {
+        "type": "coins",
+        "amount": 1000,
+        "label": "1000 Monedas"
+      },
+      "30": {
+        "type": "card",
+        "card_id": "123",
+        "amount": 2,
+        "label": "Escuadrón Conejo (Copias 3 y 4)"
+      }
+    }
+  },
+  "05": {
+    "season_id": "05-06",
+    "season_name": "Temporada Día del Libro y Cuentos (Mayo - Junio)",
+    "exp_per_level": 100,
+    "max_level": 50,
+    "featured_card_id": "102",
+    "rewards": {
+      "1": {
+        "type": "coins",
+        "amount": 200,
+        "label": "200 Monedas"
+      },
+      "3": {
+        "type": "essence",
+        "amount": 50,
+        "label": "50 Esencia"
+      },
+      "5": {
+        "type": "card",
+        "card_id": "102",
+        "amount": 1,
+        "label": "Ricardo [Wonka]"
+      },
+      "10": {
+        "type": "tickets",
+        "amount": 2,
+        "label": "2 Tickets"
+      },
+      "15": {
+        "type": "essence",
+        "amount": 150,
+        "label": "150 Esencia"
+      },
+      "20": {
+        "type": "card",
+        "card_id": "102",
+        "amount": 1,
+        "label": "Ricardo [Wonka] (Copia 2)"
+      },
+      "25": {
+        "type": "coins",
+        "amount": 1000,
+        "label": "1000 Monedas"
+      },
+      "30": {
+        "type": "essence",
+        "amount": 250,
+        "label": "250 Esencia"
+      },
+      "35": {
+        "type": "tickets",
+        "amount": 3,
+        "label": "3 Tickets"
+      },
+      "40": {
+        "type": "card",
+        "card_id": "102",
+        "amount": 1,
+        "label": "Ricardo [Wonka] (Copia 3)"
+      },
+      "45": {
+        "type": "coins",
+        "amount": 1500,
+        "label": "1500 Monedas"
+      },
+      "50": {
+        "type": "card",
+        "card_id": "102",
+        "amount": 1,
+        "label": "Ricardo [Wonka] (Copia 4)"
+      }
+    }
+  },
+  "06": {
+    "season_id": "05-06",
+    "season_name": "Temporada Día del Libro y Cuentos (Mayo - Junio)",
+    "exp_per_level": 100,
+    "max_level": 50,
+    "featured_card_id": "102",
+    "rewards": {
+      "1": {
+        "type": "coins",
+        "amount": 200,
+        "label": "200 Monedas"
+      },
+      "3": {
+        "type": "essence",
+        "amount": 50,
+        "label": "50 Esencia"
+      },
+      "5": {
+        "type": "card",
+        "card_id": "102",
+        "amount": 1,
+        "label": "Ricardo [Wonka]"
+      },
+      "10": {
+        "type": "tickets",
+        "amount": 2,
+        "label": "2 Tickets"
+      },
+      "15": {
+        "type": "essence",
+        "amount": 150,
+        "label": "150 Esencia"
+      },
+      "20": {
+        "type": "card",
+        "card_id": "102",
+        "amount": 1,
+        "label": "Ricardo [Wonka] (Copia 2)"
+      },
+      "25": {
+        "type": "coins",
+        "amount": 1000,
+        "label": "1000 Monedas"
+      },
+      "30": {
+        "type": "essence",
+        "amount": 250,
+        "label": "250 Esencia"
+      },
+      "35": {
+        "type": "tickets",
+        "amount": 3,
+        "label": "3 Tickets"
+      },
+      "40": {
+        "type": "card",
+        "card_id": "102",
+        "amount": 1,
+        "label": "Ricardo [Wonka] (Copia 3)"
+      },
+      "45": {
+        "type": "coins",
+        "amount": 1500,
+        "label": "1500 Monedas"
+      },
+      "50": {
+        "type": "card",
+        "card_id": "102",
+        "amount": 1,
+        "label": "Ricardo [Wonka] (Copia 4)"
+      }
+    }
+  },
+  "07": {
+    "season_id": "07",
+    "season_name": "Temporada de Invierno",
+    "exp_per_level": 100,
+    "max_level": 30,
+    "featured_card_id": "124",
+    "rewards": {
+      "1": {
+        "type": "coins",
+        "amount": 200,
+        "label": "200 Monedas"
+      },
+      "3": {
+        "type": "essence",
+        "amount": 50,
+        "label": "50 Esencia"
+      },
+      "5": {
+        "type": "card",
+        "card_id": "124",
+        "amount": 1,
+        "label": "Chino [Armadura de Parkas]"
+      },
+      "10": {
+        "type": "tickets",
+        "amount": 2,
+        "label": "2 Tickets"
+      },
+      "15": {
+        "type": "essence",
+        "amount": 150,
+        "label": "150 Esencia"
+      },
+      "20": {
+        "type": "card",
+        "card_id": "124",
+        "amount": 1,
+        "label": "Chino [Armadura de Parkas] (Copia 2)"
+      },
+      "25": {
+        "type": "coins",
+        "amount": 1000,
+        "label": "1000 Monedas"
+      },
+      "30": {
+        "type": "card",
+        "card_id": "124",
+        "amount": 2,
+        "label": "Chino [Armadura de Parkas] (Copias 3 y 4)"
+      }
+    }
+  },
+  "08": {
+    "season_id": "08",
+    "season_name": "Temporada de Alianzas",
+    "exp_per_level": 100,
+    "max_level": 30,
+    "featured_card_id": "116",
+    "rewards": {
+      "1": {
+        "type": "coins",
+        "amount": 200,
+        "label": "200 Monedas"
+      },
+      "3": {
+        "type": "essence",
+        "amount": 50,
+        "label": "50 Esencia"
+      },
+      "5": {
+        "type": "card",
+        "card_id": "116",
+        "amount": 1,
+        "label": "Ariana [Rapera]"
+      },
+      "10": {
+        "type": "tickets",
+        "amount": 2,
+        "label": "2 Tickets"
+      },
+      "15": {
+        "type": "essence",
+        "amount": 150,
+        "label": "150 Esencia"
+      },
+      "20": {
+        "type": "card",
+        "card_id": "116",
+        "amount": 1,
+        "label": "Ariana [Rapera] (Copia 2)"
+      },
+      "25": {
+        "type": "coins",
+        "amount": 1000,
+        "label": "1000 Monedas"
+      },
+      "30": {
+        "type": "card",
+        "card_id": "116",
+        "amount": 2,
+        "label": "Ariana [Rapera] (Copias 3 y 4)"
+      }
+    }
+  },
+  "09": {
+    "season_id": "09",
+    "season_name": "Temporada Dieciochera",
+    "exp_per_level": 100,
+    "max_level": 30,
+    "featured_card_id": "85",
+    "rewards": {
+      "1": {
+        "type": "coins",
+        "amount": 200,
+        "label": "200 Monedas"
+      },
+      "3": {
+        "type": "essence",
+        "amount": 50,
+        "label": "50 Esencia"
+      },
+      "5": {
+        "type": "card",
+        "card_id": "85",
+        "amount": 1,
+        "label": "Nico [Cóndor]"
+      },
+      "10": {
+        "type": "tickets",
+        "amount": 2,
+        "label": "2 Tickets"
+      },
+      "15": {
+        "type": "essence",
+        "amount": 150,
+        "label": "150 Esencia"
+      },
+      "20": {
+        "type": "card",
+        "card_id": "85",
+        "amount": 1,
+        "label": "Nico [Cóndor] (Copia 2)"
+      },
+      "25": {
+        "type": "coins",
+        "amount": 1000,
+        "label": "1000 Monedas"
+      },
+      "30": {
+        "type": "card",
+        "card_id": "85",
+        "amount": 2,
+        "label": "Nico [Cóndor] (Copias 3 y 4)"
+      }
+    }
+  },
+  "10": {
+    "season_id": "10",
+    "season_name": "Temporada de Noche de Brujas",
+    "exp_per_level": 100,
+    "max_level": 30,
+    "featured_card_id": "90",
+    "rewards": {
+      "1": {
+        "type": "coins",
+        "amount": 200,
+        "label": "200 Monedas"
+      },
+      "3": {
+        "type": "essence",
+        "amount": 50,
+        "label": "50 Esencia"
+      },
+      "5": {
+        "type": "card",
+        "card_id": "90",
+        "amount": 1,
+        "label": "Dante [Slasher]"
+      },
+      "10": {
+        "type": "tickets",
+        "amount": 2,
+        "label": "2 Tickets"
+      },
+      "15": {
+        "type": "essence",
+        "amount": 150,
+        "label": "150 Esencia"
+      },
+      "20": {
+        "type": "card",
+        "card_id": "90",
+        "amount": 1,
+        "label": "Dante [Slasher] (Copia 2)"
+      },
+      "25": {
+        "type": "coins",
+        "amount": 1000,
+        "label": "1000 Monedas"
+      },
+      "30": {
+        "type": "card",
+        "card_id": "90",
+        "amount": 2,
+        "label": "Dante [Slasher] (Copias 3 y 4)"
+      }
+    }
+  },
+  "11": {
+    "season_id": "11",
+    "season_name": "Temporada de Juegos Tradicionales",
+    "exp_per_level": 100,
+    "max_level": 30,
+    "featured_card_id": "93",
+    "rewards": {
+      "1": {
+        "type": "coins",
+        "amount": 200,
+        "label": "200 Monedas"
+      },
+      "3": {
+        "type": "essence",
+        "amount": 50,
+        "label": "50 Esencia"
+      },
+      "5": {
+        "type": "card",
+        "card_id": "93",
+        "amount": 1,
+        "label": "Naty [Gallinita Ciega]"
+      },
+      "10": {
+        "type": "tickets",
+        "amount": 2,
+        "label": "2 Tickets"
+      },
+      "15": {
+        "type": "essence",
+        "amount": 150,
+        "label": "150 Esencia"
+      },
+      "20": {
+        "type": "card",
+        "card_id": "93",
+        "amount": 1,
+        "label": "Naty [Gallinita Ciega] (Copia 2)"
+      },
+      "25": {
+        "type": "coins",
+        "amount": 1000,
+        "label": "1000 Monedas"
+      },
+      "30": {
+        "type": "card",
+        "card_id": "93",
+        "amount": 2,
+        "label": "Naty [Gallinita Ciega] (Copias 3 y 4)"
+      }
+    }
+  },
+  "12": {
+    "season_id": "12",
+    "season_name": "Temporada de Dinosaurios y Verano",
+    "exp_per_level": 100,
+    "max_level": 30,
+    "featured_card_id": "96",
+    "rewards": {
+      "1": {
+        "type": "coins",
+        "amount": 200,
+        "label": "200 Monedas"
+      },
+      "3": {
+        "type": "essence",
+        "amount": 50,
+        "label": "50 Esencia"
+      },
+      "5": {
+        "type": "card",
+        "card_id": "96",
+        "amount": 1,
+        "label": "Iara [Metralleta de Agua]"
+      },
+      "10": {
+        "type": "tickets",
+        "amount": 2,
+        "label": "2 Tickets"
+      },
+      "15": {
+        "type": "essence",
+        "amount": 150,
+        "label": "150 Esencia"
+      },
+      "20": {
+        "type": "card",
+        "card_id": "96",
+        "amount": 1,
+        "label": "Iara [Metralleta de Agua] (Copia 2)"
+      },
+      "25": {
+        "type": "coins",
+        "amount": 1000,
+        "label": "1000 Monedas"
+      },
+      "30": {
+        "type": "card",
+        "card_id": "96",
+        "amount": 2,
+        "label": "Iara [Metralleta de Agua] (Copias 3 y 4)"
+      }
+    }
+  }
 }

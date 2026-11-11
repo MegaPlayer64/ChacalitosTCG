@@ -37,7 +37,7 @@ from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager
 
 Window.size = (960, 540)
-Window.clearcolor = (0.15, 0.15, 0.2, 1)
+Window.clearcolor = (0, 0, 0, 1)
 
 from src.infrastructure.path_manager import PathManager
 
@@ -93,6 +93,7 @@ class ChacalitosTCG(App):
         from src.interfaces.pantalla_misiones import PantallaMisiones
         from src.interfaces.battle_pass_view import BattlePassView
         from src.interfaces.login_screen import LoginScreen
+        from src.interfaces.pantalla_calendario import PantallaCalendario
 
         sm = ScreenManager()
 
@@ -140,6 +141,9 @@ class ChacalitosTCG(App):
 
         print("15. Cargando LoginScreen...")
         sm.add_widget(LoginScreen(name='login_screen'))
+
+        print("16. Cargando PantallaCalendario...")
+        sm.add_widget(PantallaCalendario(name='calendar_screen'))
 
         print(">> ¡Carga de pantallas completada con éxito!")
 

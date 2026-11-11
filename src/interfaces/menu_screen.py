@@ -130,8 +130,9 @@ class MenuPrincipal(Screen):
         btn_jugar = Button(text="PARTIDA LOCAL", font_size='16sp', size_hint_y=None, height=46)
         btn_online = Button(text="MULTIJUGADOR ONLINE", font_size='16sp', size_hint_y=None, height=46)
         btn_arcade = Button(text="TORRE", font_size='16sp', size_hint_y=None, height=46)
-        btn_misiones = Button(text="MISIONES DIARIAS", font_size='15sp', size_hint_y=None, height=46, background_color=(0.2, 0.6, 0.8, 1))
-        btn_pase = Button(text="PASE DE BATALLA", font_size='15sp', size_hint_y=None, height=46, background_color=(0.85, 0.55, 0.1, 1))
+        btn_misiones = Button(text="MISIONES DIARIAS", font_size='14sp', size_hint_y=None, height=46, background_color=(0.2, 0.6, 0.8, 1))
+        btn_pase = Button(text="PASE DE BATALLA", font_size='14sp', size_hint_y=None, height=46, background_color=(0.85, 0.55, 0.1, 1))
+        self.btn_calendario = Button(text="CALENDARIO SEMANAL", font_size='14sp', size_hint_y=None, height=46, background_color=(0.25, 0.65, 0.35, 1))
         btn_mazos = Button(text="COLECCIÓN Y MAZOS", font_size='16sp', size_hint_y=None, height=46)
         btn_gacha = Button(text="TIENDA / BANNERS", font_size='16sp', size_hint_y=None, height=46)
         btn_opciones = Button(text="OPCIONES", font_size='16sp', size_hint_y=None, height=46)
@@ -143,6 +144,7 @@ class MenuPrincipal(Screen):
         btn_arcade.bind(on_release=lambda x: self.cambiar_pantalla('arcade_screen'))
         btn_misiones.bind(on_release=lambda x: self.cambiar_pantalla('missions_screen'))
         btn_pase.bind(on_release=lambda x: self.cambiar_pantalla('battle_pass'))
+        self.btn_calendario.bind(on_release=lambda x: self.cambiar_pantalla('calendar_screen'))
         btn_mazos.bind(on_release=lambda x: self.cambiar_pantalla('inventory_screen'))
         btn_gacha.bind(on_release=lambda x: self.cambiar_pantalla('banner_screen'))
         btn_opciones.bind(on_release=lambda x: self.cambiar_pantalla('options_screen'))
@@ -155,6 +157,7 @@ class MenuPrincipal(Screen):
 
         layout_misiones_pase.add_widget(btn_misiones)
         layout_misiones_pase.add_widget(btn_pase)
+        layout_misiones_pase.add_widget(self.btn_calendario)
         layout_botones.add_widget(layout_misiones_pase)
 
         layout_botones.add_widget(btn_mazos)
@@ -183,6 +186,23 @@ class MenuPrincipal(Screen):
         # Diferir la carga de música para no bloquear el hilo de renderizado
         Clock.schedule_once(lambda dt: self._iniciar_bgm_seguro(), 0.1)
         self.actualizar_estado_auth()
+        self.actualizar_boton_calendario()
+
+    def actualizar_boton_calendario(self):
+        """Actualiza el texto y color del botón del calendario si hay recompensa diaria pendiente."""
+        try:
+            from src.domain.weekly_calendar_manager import WeeklyCalendarManager
+            wcm = WeeklyCalendarManager()
+            if wcm.can_claim_today():
+                st = wcm.get_status()
+                day = st.get("current_day", 1)
+                self.btn_calendario.text = f"🎁 CALENDARIO [DÍA {day}]"
+                self.btn_calendario.background_color = (0.15, 0.8, 0.35, 1)
+            else:
+                self.btn_calendario.text = "CALENDARIO SEMANAL"
+                self.btn_calendario.background_color = (0.25, 0.55, 0.35, 1)
+        except Exception as e:
+            print(f">> [MenuPrincipal] Advertencia al actualizar botón de calendario: {e}")
 
     def _iniciar_bgm_seguro(self):
         try:

@@ -31,6 +31,13 @@ class Unit(Card):
             self.static_abilities.append({"type": "buff_tag_speed", "tag": "cabezal de tren", "amount": 1})
         elif str(self.id) == "106":
             self.static_abilities.append({"type": "buff_adj_attack", "amount": 2})
+        elif str(self.id) == "151" or self.name == 'Sabch':
+            self.sabch_mode = 'soporte'
+            self.static_abilities.append({
+                "type": "buff_tag_attack",
+                "tag": ["sucesores", "fuerzas especiales valenzuela"],
+                "amount": 1
+            })
         self._immobile_turns = 0
         self.evolution = False
         self.has_first_move_buff = False
