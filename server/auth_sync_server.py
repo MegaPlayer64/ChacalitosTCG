@@ -8,13 +8,19 @@ from fastapi import FastAPI, HTTPException, Depends, Header, status
 from pydantic import BaseModel
 import passlib.hash as _hash
 
+# Importar el router de matchmaking WebSocket
+from Online_server import router as online_router
+
 # --- CONFIGURACIÓN Y CONSTANTES ---
-SECRET_KEY = "[ENCRYPTION_KEY]"
+SECRET_KEY = "CAMBIA_ESTO_POR_UNA_CLAVE_SECRETA_LARGA_Y_ALEATORIA"
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_DAYS = 30
 DB_PATH = "lbsb_server.db"
 
-app = FastAPI(title="ChacalitosTCG - Auth & Sync API")
+app = FastAPI(title="ChacalitosTCG - Auth, Sync & Matchmaking API")
+
+# Registrar rutas de WebSockets (/ws)
+app.include_router(online_router)
 
 # --- INICIALIZACIÓN DE LA BASE DE DATOS ---
 def init_db():
@@ -60,7 +66,6 @@ def get_current_user_id(authorization: Optional[str] = Header(None)) -> int:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido o expirado")
 
 # --- ENDPOINTS ---
-
 @app.post("/api/register")
 def register(user: UserAuth):
     username_clean = user.username.strip().lower()

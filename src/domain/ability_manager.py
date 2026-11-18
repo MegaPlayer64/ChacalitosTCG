@@ -34,7 +34,17 @@ class AbilityManager:
             unit.has_first_move_buff = True
         elif uid == 138:
             AbilityManager._m_ogrodnik_on_enter(unit, game_state)
-        elif uid == 151:
+        elif uid == 152:
+            AbilityManager._ami_pesadillas_on_enter(unit, game_state)
+        elif uid == 154:
+            AbilityManager._helen_sovietica_on_enter(unit, game_state)
+        elif uid == 157:
+            AbilityManager._dante_destacado_on_enter(unit, game_state)
+        elif uid == 165:
+            AbilityManager._alex_on_enter(unit, game_state)
+        elif uid == 167:
+            AbilityManager._yotnier_on_enter(unit, game_state)
+        elif uid == 171:
             if not hasattr(unit, 'sabch_mode'):
                 unit.sabch_mode = 'soporte'
             has_aura = any(ab.get('type') == 'buff_tag_attack' and ab.get('tag') == ["sucesores", "fuerzas especiales valenzuela"]
@@ -45,6 +55,8 @@ class AbilityManager:
                     "tag": ["sucesores", "fuerzas especiales valenzuela"],
                     "amount": 1
                 })
+        elif uid == 173:
+            AbilityManager._isidora_on_enter(unit, game_state)
 
     @staticmethod
     def trigger_on_activate(unit, game_state):
@@ -78,7 +90,11 @@ class AbilityManager:
             AbilityManager._vicente_conejo_malo_on_activate(unit, game_state)
         elif int(unit.id) == 139:
             AbilityManager._margarita_psiquica_on_activate(unit, game_state)
-        elif int(unit.id) == 151:
+        elif int(unit.id) == 153:
+            AbilityManager._isa_vaca_on_activate(unit, game_state)
+        elif int(unit.id) == 161:
+            AbilityManager._crisby_mozo_on_activate(unit, game_state)
+        elif int(unit.id) == 171:
             AbilityManager._sabch_on_activate(unit, game_state)
 
     @staticmethod
@@ -118,12 +134,13 @@ class AbilityManager:
         active_env = getattr(game_state, 'active_environment', None)
         env_id = int(active_env.card.id) if active_env else None
 
+        if env_id == 55:
+            AbilityManager._STEAM_on_turn_start(unit, game_state)
+
         if int(unit.id) == 25:
             AbilityManager._nico_on_turn_start(unit, game_state)
         elif int(unit.id) == 14:
             AbilityManager._sofi_on_turn_start(unit, game_state)
-        elif env_id == 55:
-            AbilityManager._STEAM_on_turn_start(unit, game_state)
         elif int(unit.id) == 58:
             AbilityManager._dante_economista_main_ability(unit, game_state)
         elif int(unit.id) == 70:
@@ -132,6 +149,8 @@ class AbilityManager:
             AbilityManager._iara_metralleta_on_turn_start(unit, game_state)
         elif int(unit.id) == 128:
             AbilityManager._sofi_dermapatch_on_turn_start(unit, game_state)
+        elif int(unit.id) == 159:
+            AbilityManager._emi_sofi_heal_adj(unit, game_state)
 
     @staticmethod
     def trigger_on_death(unit, game_state):
@@ -172,6 +191,9 @@ class AbilityManager:
             AbilityManager._vicente_conejo_malo_on_evolve(unit, game_state)
         elif int(unit.id) == 140:
             AbilityManager._crisby_bunker_on_evolve(unit, game_state)
+        elif int(unit.id) == 160:
+            unit.has_shield = True
+            print(f">> [Dario Pianista - Evolución] ¡Adquiere un escudo que reduce a la mitad el primer daño recibido!")
 
     @staticmethod
     def trigger_on_draw_card(unit, drawn_card, game_state):
@@ -356,11 +378,11 @@ class AbilityManager:
             dist = max(abs(sx - tx), abs(sy - ty))
             eff_range = game_state.get_effective_stats(unit)["range_atk"]
             if enemy_unit and enemy_unit.owner_id != unit.owner_id and dist <= (eff_range + 1):
-                murio = enemy_unit.take_damage(6, game_state)
+                murio = enemy_unit.take_damage(5, game_state)
                 if unit.owner_id == 0:
                     try:
                         from src.domain.mission_manager import MissionManager
-                        MissionManager.track_damage(0, 6, getattr(unit, 'groups', ''))
+                        MissionManager.track_damage(0, 5, getattr(unit, 'groups', ''))
                         if murio:
                             MissionManager.track_kill(0, getattr(unit, 'groups', ''), getattr(enemy_unit, 'groups', ''))
                     except Exception:
@@ -370,9 +392,42 @@ class AbilityManager:
                     game_state.board.remove_unit(tx, ty)
                 AudioManager().play_sfx("yukatamiku")
                 unit.ability_used_this_turn = True
+                game_state.pending_ability = None
                 return True
             else:
                 print(">> [Dante Yukata] Objetivo inválido o fuera de rango.")
+                return False
+
+        elif pending['ability'] == 'isa_vaca_heal':
+            sx, sy = pending['source_coords']
+            unit = game_state.board.get_unit_at(sx, sy)
+            if not unit: return False
+            target_unit = game_state.board.get_unit_at(tx, ty)
+            if target_unit and target_unit.owner_id == unit.owner_id:
+                heal_amt = pending.get('heal_amount', 0)
+                healed = target_unit.heal(heal_amt, game_state)
+                unit.ability_used_this_turn = True
+                game_state.pending_ability = None
+                print(f">> [Isa Vaca] ¡Restaura {healed} PV a {target_unit.name}! (Vida: {target_unit.health}/{target_unit.max_health})")
+                return True
+            else:
+                print(">> [Isa Vaca] Debes seleccionar una unidad aliada válida.")
+                return False
+
+        elif pending['ability'] == 'crisby_mozo_heal':
+            sx, sy = pending['source_coords']
+            unit = game_state.board.get_unit_at(sx, sy)
+            if not unit: return False
+            target_unit = game_state.board.get_unit_at(tx, ty)
+            if target_unit and target_unit.owner_id == unit.owner_id:
+                unit.health -= 2
+                healed = target_unit.heal(7, game_state)
+                unit.ability_used_this_turn = True
+                game_state.pending_ability = None
+                print(f">> [Crisby Mozo de Panes] ¡Pierde 2 PV y restaura {healed} PV a {target_unit.name}! (Vida Crisby: {unit.health}, Vida {target_unit.name}: {target_unit.health}/{target_unit.max_health})")
+                return True
+            else:
+                print(">> [Crisby Mozo de Panes] Debes seleccionar una unidad aliada válida.")
                 return False
             
 
@@ -597,6 +652,10 @@ class AbilityManager:
             147: AbilityManager._spell_147_effect,
             148: AbilityManager._spell_148_effect,
             149: AbilityManager._spell_149_effect,
+            156: AbilityManager._spell_156_effect,
+            163: AbilityManager._spell_163_effect,
+            164: AbilityManager._spell_164_effect,
+            168: AbilityManager._spell_168_effect,
         }
         
         method = effect_methods.get(int(card.id))
@@ -826,7 +885,7 @@ class AbilityManager:
             if getattr(player, 'cant_heal_turns', 0) > 0:
                 print(f">> [!] {player.name} está bajo un efecto que impide la curación. No se curó la base.")
             else:
-                heal_amt = count * 3
+                heal_amt = count * 2
                 player.health = min(80, player.health + heal_amt)
                 print(f">> [Tik-Toks] Curó {heal_amt} PV a tu Base. Vida de la base: {player.health}/80")
         else:
@@ -909,7 +968,7 @@ class AbilityManager:
         
         player = game_state.players[target_unit.owner_id]
         if getattr(player, 'cant_heal_turns', 0) == 0:
-            healed = target_unit.heal(6, game_state)
+            healed = target_unit.heal(10, game_state)
             print(f">> ¡{target_unit.name} ha sido curado por {healed} PV! (Vida actual: {target_unit.health})")
             if target_unit.owner_id == 0:
                 try:
@@ -1320,12 +1379,14 @@ class AbilityManager:
         for nx, ny in game_state.board.get_neighbors(unit.pos_x, unit.pos_y):
             target = game_state.board.get_unit_at(nx, ny)
             if target and target.owner_id == unit.owner_id and target.health < target.max_health:
-                target.health = min(target.max_health, target.health + 1)
-                print(f">> [Habilidad Sofi]: {target.name} ha recibido 1 HP de curación.")
+                t_groups = str(getattr(target, 'groups', '')).lower()
+                heal_amt = 3 if ('derma-patch' in t_groups or 'dermapatch' in t_groups or int(target.id) in (22, 106)) else 2
+                target.health = min(target.max_health, target.health + heal_amt)
+                print(f">> [Habilidad Sofi]: {target.name} ha recibido {heal_amt} HP de curación.")
                 if unit.owner_id == 0:
                     try:
                         from src.domain.mission_manager import MissionManager
-                        MissionManager.track_heal(0, 1, getattr(target, 'groups', ''))
+                        MissionManager.track_heal(0, heal_amt, getattr(target, 'groups', ''))
                     except Exception:
                         pass
                 break
@@ -1620,10 +1681,10 @@ class AbilityManager:
 
     @staticmethod
     def _dante_on_evolve(unit, game_state):
-        # Gana +1 de velocidad y devuelve 2 de energia.
+        # Gana +1 de velocidad y devuelve 1 de energia.
         unit.speed += 1
-        game_state.players[unit.owner_id].current_energy += 2
-        print(f">> [Habilidad Dante]: {unit.name} ha ganado +1 de velocidad y devuelve 2 de energia.")
+        game_state.players[unit.owner_id].current_energy += 1
+        print(f">> [Habilidad Dante]: {unit.name} ha ganado +1 de velocidad y devuelve 1 de energia.")
 
     # =============================================
     # NUEVAS HABILIDADES: CARTAS 89-122
@@ -2296,7 +2357,7 @@ class AbilityManager:
         print(f">> [NicoNicoNi] ¡{target_unit.name} recibe +6 de daño (Ataque) por 1 turno! (Ataque efectivo: {eff_atk})")
         return True
 
-    # --- UNIDAD 151: Sabch ---
+    # --- UNIDAD 171: Sabch (Jazz-guitar) ---
     @staticmethod
     def _sabch_on_activate(unit, game_state):
         if getattr(unit, 'ability_used_this_turn', False):
@@ -2337,3 +2398,237 @@ class AbilityManager:
             print(f">> [Sabch] ¡Cambió a modalidad SOPORTE! (Otorga +1 de Ataque a unidades Sucesores y Fuerzas Especiales Valenzuela. Rango: {eff_stats['range_atk']}, Ataque: {eff_stats['attack']})")
 
         return True
+
+    # --- UNIDAD 152: Ami (Pesadillas) ---
+    @staticmethod
+    def _ami_pesadillas_on_enter(unit, game_state):
+        if getattr(unit, 'is_clone', False):
+            return
+        ox, oy = unit.pos_x, unit.pos_y
+        sym_x = (game_state.board.width - 1) - ox
+        sym_y = oy
+        if not game_state.board.is_within_bounds(sym_x, sym_y):
+            return
+        if game_state.board.is_occupied(sym_x, sym_y):
+            occupant = game_state.board.get_unit_at(sym_x, sym_y)
+            print(f">> [Ami Pesadillas] ¡Casilla simétrica ({sym_x}, {sym_y}) ocupada por {occupant.name}! El clon explota e inflige 4 de daño.")
+            occupant.take_damage(4, game_state, source="clon_explosion")
+        else:
+            import copy
+            clone = copy.deepcopy(unit)
+            clone.is_clone = True
+            clone.owner_id = unit.owner_id
+            clone.pos_x = sym_x
+            clone.pos_y = sym_y
+            game_state.board.set_unit_at(sym_x, sym_y, clone)
+            print(f">> [Ami Pesadillas] ¡Crea un clon de {unit.name} en la casilla simétrica ({sym_x}, {sym_y})!")
+
+    # --- UNIDAD 153: Isa (Vaca) ---
+    @staticmethod
+    def _isa_vaca_on_activate(unit, game_state):
+        if getattr(unit, 'ability_used_this_turn', False):
+            print(">> [Isa Vaca] Ya has usado la habilidad este turno.")
+            return False
+        adj_count = 0
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                if dx == 0 and dy == 0: continue
+                nx, ny = unit.pos_x + dx, unit.pos_y + dy
+                if game_state.board.is_within_bounds(nx, ny) and game_state.board.is_occupied(nx, ny):
+                    adj_count += 1
+        heal_amt = adj_count * 3
+        print(f">> [Isa Vaca] Hay {adj_count} unidades adyacentes. Curará {heal_amt} PV al aliado seleccionado.")
+        game_state.pending_ability = {
+            'ability': 'isa_vaca_heal',
+            'source_coords': (unit.pos_x, unit.pos_y),
+            'heal_amount': heal_amt
+        }
+        return True
+
+    # --- UNIDAD 154: Helen (Soviética) ---
+    @staticmethod
+    def _helen_sovietica_on_enter(unit, game_state):
+        player = game_state.players[unit.owner_id]
+        gorro_idx = -1
+        for idx, c in enumerate(player.deck):
+            if c.name == "Gorro Soviético" or int(c.id) == 47:
+                gorro_idx = idx
+                break
+        if gorro_idx != -1 and len(player.hand) < 10:
+            gorro_card = player.deck.pop(gorro_idx)
+            player.hand.append(gorro_card)
+            print(f">> [Helen Soviética] ¡Buscó y añadió a tu mano '{gorro_card.name}' del mazo!")
+        else:
+            print(">> [Helen Soviética] No quedan cartas 'Gorro Soviético' en el mazo. Robas 1 carta.")
+            game_state.draw_card(player)
+
+    # --- HECHIZO 156: Pintacaritas ---
+    @staticmethod
+    def _spell_156_effect(card, target, game_state):
+        player_id = game_state.current_player_id
+        target_unit = None
+        if isinstance(target, tuple):
+            target_unit = game_state.board.get_unit_at(*target)
+        if not target_unit or target_unit.owner_id != player_id:
+            allies = game_state.board.get_all_units(player_id)
+            if not allies:
+                print(">> [Pintacaritas] No hay aliados disponibles.")
+                return False
+            target_unit = allies[0]
+        target_unit.temporary_buffs.append({"type": "attack", "amount": 1, "duration": 1})
+        tags = str(getattr(target_unit, 'groups', '')).lower()
+        if 'placeholder' in tags or int(target_unit.id) in (22, 106):
+            target_unit.temporary_buffs.append({"type": "speed", "amount": 1, "duration": 1})
+            print(f">> [Pintacaritas] ¡{target_unit.name} (PlaceHolder) gana +1 de Ataque y +1 de Velocidad este turno!")
+        else:
+            print(f">> [Pintacaritas] ¡{target_unit.name} gana +1 de Ataque este turno!")
+        return True
+
+    # --- UNIDAD 157: Dante (Destacado Académico) ---
+    @staticmethod
+    def _dante_destacado_on_enter(unit, game_state):
+        allies = game_state.board.get_all_units(unit.owner_id)
+        print(f">> [Dante Destacado Académico] ¡Otorga bonificaciones a {len(allies)} aliados según sus grupos!")
+        for ally in allies:
+            tags = str(getattr(ally, 'groups', '')).lower()
+            is_ph = 'placeholder' in tags or int(ally.id) in (22, 106)
+            if 'mish-a' in tags or 'deportistas' in tags or is_ph:
+                ally.attack += 2
+            if 'derma-patch' in tags or 'dermapatch' in tags or '3_nai' in tags or is_ph:
+                ally.heal(6, game_state)
+            if 'fuerzas especiales valenzuela' in tags or 'literatura' in tags or is_ph:
+                eff_r = game_state.get_effective_stats(ally)["range_atk"]
+                if eff_r < 2:
+                    ally.temporary_buffs.append({"type": "range_atk", "amount": 1, "duration": 1})
+            if 'cabezal de tren' in tags or 'futboleros' in tags or is_ph:
+                eff_s = game_state.get_effective_stats(ally)["speed"]
+                if eff_s < 3:
+                    ally.temporary_buffs.append({"type": "speed", "amount": 1, "duration": 1})
+            if 'mish-b' in tags or 'tecnológico' in tags or 'tecnologico' in tags or is_ph:
+                ally.max_health += 3
+                ally.health += 3
+            if is_ph or 'nuevo' in tags:
+                ally.has_shield = True
+            if 'artista' in tags or 'músico' in tags or 'musico' in tags or is_ph:
+                ally.temporary_buffs.append({"type": "attack", "amount": 2, "duration": 2})
+            if 'tralaleros' in tags or 'danza' in tags or is_ph:
+                ally.permanent_dmg_reduction = getattr(ally, 'permanent_dmg_reduction', 0) + 1
+            if 'sucesores' in tags or 'ex-estudiantes' in tags or is_ph:
+                ally.stat_immunity_turns = max(getattr(ally, 'stat_immunity_turns', 0), 2)
+
+    # --- UNIDAD 159: Emi & Sofi (Viento-Metal) ---
+    @staticmethod
+    def _emi_sofi_heal_adj(unit, game_state):
+        for nx, ny in game_state.board.get_neighbors(unit.pos_x, unit.pos_y):
+            adj = game_state.board.get_unit_at(nx, ny)
+            if adj and adj.owner_id == unit.owner_id:
+                healed = adj.heal(2, game_state)
+                if healed > 0:
+                    print(f">> [Emi & Sofi Viento-Metal] Restaura 2 PV a {adj.name} (Vida: {adj.health}/{adj.max_health})")
+
+    # --- UNIDAD 161: Crisby (Mozo de Panes) ---
+    @staticmethod
+    def _crisby_mozo_on_activate(unit, game_state):
+        if getattr(unit, 'ability_used_this_turn', False):
+            print(">> [Crisby Mozo de Panes] Ya has usado la habilidad este turno.")
+            return False
+        if unit.health <= 2:
+            print(">> [Crisby Mozo de Panes] Vida insuficiente para usar la habilidad (necesitas más de 2 PV).")
+            return False
+        game_state.pending_ability = {
+            'ability': 'crisby_mozo_heal',
+            'source_coords': (unit.pos_x, unit.pos_y)
+        }
+        print(">> [Crisby Mozo de Panes] Selecciona una unidad aliada para restaurarle 7 PV.")
+        return True
+
+    # --- HECHIZO 163: Cooler Mojado ---
+    @staticmethod
+    def _spell_163_effect(card, target, game_state):
+        player_id = game_state.current_player_id
+        enemy_id = 1 - player_id
+        if not isinstance(target, tuple):
+            enemies = game_state.board.get_all_units(enemy_id)
+            if enemies:
+                target = (enemies[0].pos_x, enemies[0].pos_y)
+            else:
+                target = (2, 2)
+        cx, cy = target
+        print(f">> [Cooler Mojado] ¡Explosión de agua en área 3x3 centrada en ({cx}, {cy})!")
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                nx, ny = cx + dx, cy + dy
+                if game_state.board.is_within_bounds(nx, ny):
+                    u = game_state.board.get_unit_at(nx, ny)
+                    if u and u.owner_id == enemy_id:
+                        u.take_damage(3, game_state, source="spell")
+                        u.wet_turns = 3
+                        print(f">> [Cooler Mojado] {u.name} recibe 3 de daño y queda Mojado por 3 turnos.")
+        return True
+
+    # --- HECHIZO 164: Banquete ---
+    @staticmethod
+    def _spell_164_effect(card, target, game_state):
+        player_id = game_state.current_player_id
+        allies = game_state.board.get_all_units(player_id)
+        for ally in allies:
+            tags = str(getattr(ally, 'groups', '')).lower()
+            heal_amt = 7 if ('sucesores' in tags or int(ally.id) in (22, 106)) else 5
+            healed = ally.heal(heal_amt, game_state)
+            print(f">> [Banquete] {ally.name} restaura {healed} PV (Vida: {ally.health}/{ally.max_health}).")
+        return True
+
+    # --- UNIDAD 165: Alex ---
+    @staticmethod
+    def _alex_on_enter(unit, game_state):
+        allies = game_state.board.get_all_units(unit.owner_id)
+        deportistas = [u for u in allies if u is not unit and ('deportistas' in str(getattr(u, 'groups', '')).lower() or int(u.id) in (22, 106))]
+        if deportistas:
+            target_dep = deportistas[0]
+            target_dep.temporary_buffs.append({"type": "speed", "amount": 1, "duration": 1})
+            print(f">> [Alex] ¡Controlas otro aliado Deportistas! {target_dep.name} gana +1 de Velocidad este turno.")
+
+    # --- UNIDAD 167: Yotnier ---
+    @staticmethod
+    def _yotnier_on_enter(unit, game_state):
+        allies = game_state.board.get_all_units(unit.owner_id)
+        for ally in allies:
+            tags = str(getattr(ally, 'groups', '')).lower()
+            if 'ex-estudiantes' in tags or int(ally.id) in (22, 106):
+                ally.temporary_buffs.append({"type": "attack", "amount": 2, "duration": 1})
+                print(f">> [Yotnier] {ally.name} (Ex-estudiante) gana +2 de Ataque este turno.")
+        active_env = getattr(game_state, 'active_environment', None)
+        if active_env:
+            env_tags = str(getattr(active_env.card, 'groups', '')).lower()
+            if 'ex-estudiantes' in env_tags or int(active_env.card.id) == 166:
+                unit.temporary_buffs.append({"type": "speed", "amount": 1, "duration": 1})
+                print(f">> [Yotnier] ¡Entorno Ex-estudiantes activo! Yotnier gana +1 de Velocidad este turno.")
+
+    # --- HECHIZO 168: Licenciatura ---
+    @staticmethod
+    def _spell_168_effect(card, target, game_state):
+        player_id = game_state.current_player_id
+        target_unit = None
+        if isinstance(target, tuple):
+            target_unit = game_state.board.get_unit_at(*target)
+        if not target_unit or target_unit.owner_id != player_id:
+            allies = game_state.board.get_all_units(player_id)
+            if not allies:
+                print(">> [Licenciatura] No hay aliados disponibles.")
+                return False
+            target_unit = allies[0]
+        target_unit.max_health += 12
+        target_unit.heal(12, game_state)
+        target_unit.immobile_turns = 0
+        target_unit.temporary_buffs = [b for b in target_unit.temporary_buffs if b.get('amount', 0) >= 0]
+        print(f">> [Licenciatura] ¡{target_unit.name} recibe +12 PV Máximos, se cura 12 PV y elimina efectos negativos! (Vida: {target_unit.health}/{target_unit.max_health})")
+        return True
+
+    # --- UNIDAD 173: Isidora ---
+    @staticmethod
+    def _isidora_on_enter(unit, game_state):
+        allies = game_state.board.get_all_units(unit.owner_id)
+        for ally in allies:
+            ally.max_health += 3
+            ally.health += 3
+        print(f">> [Isidora] ¡Todas las unidades aliadas obtienen +3 PV de Vida Máxima! (Total aliados afectados: {len(allies)})")

@@ -128,6 +128,15 @@ class GameState:
                                       (isinstance(c_tag, list) and any(c in board_ally_tags for c in c_tag))
                             if t_match and c_match:
                                 effective_speed += ability['amount']
+                        elif ability['type'] == 'buff_tag_attack_if_tag_present':
+                            t_tag = ability['target_tag']
+                            c_tag = ability['condition_tag']
+                            t_match = (isinstance(t_tag, str) and (t_tag in unit_tags or int(unit.id) == 22)) or \
+                                      (isinstance(t_tag, list) and (any(t in unit_tags for t in t_tag) or int(unit.id) == 22))
+                            c_match = any(c_tag in str(getattr(u, 'groups', '')).lower() or int(u.id) in (22, 106)
+                                          for u in self.board.get_all_units())
+                            if t_match and c_match:
+                                effective_attack += ability['amount']
                         elif ability['type'] == 'buff_adj_attack':
                             # Buff only adjacent allies
                             if unit is not ally:
@@ -171,9 +180,11 @@ class GameState:
                 if 'literatura' in unit_tags or int(unit.id) in (22, 106):
                     effective_range += 1
             elif env_id == 134: # Gimnasio
-                if 'deportistas' in unit_tags:
+                if 'deportistas' in unit_tags or int(unit.id) in (22, 106):
                     if effective_speed < unit.speed:
                         effective_speed = unit.speed
+                    if getattr(unit, '_immobile_turns', 0) > 0:
+                        unit._immobile_turns = 0
             elif env_id == 67: # Casa de Nico
                 if 'mish' in unit_tags:
                     effective_attack += 1
@@ -235,6 +246,20 @@ class GameState:
             enemy_hp = self.players[1 - unit.owner_id].health
             if enemy_hp > friendly_hp:
                 effective_attack += 3
+
+        # Helen (Jazz Star) (158): Aliados que renuncien/no hayan usado su fase de movimiento ganan +1 Rango y +2 Ataque
+        if getattr(unit, 'owner_id', None) is not None and not getattr(unit, 'has_moved', False):
+            has_jazz_star = any(int(u.id) == 158 for u in self.board.get_all_units(unit.owner_id))
+            if has_jazz_star:
+                effective_range += 1
+                effective_attack += 2
+
+        # Alex (165): Gana +2 de Ataque mientras controles otro Deportistas
+        if int(unit.id) == 165 and getattr(unit, 'owner_id', None) is not None:
+            has_other_dep = any(('deportistas' in str(getattr(u, 'groups', '')).lower() or int(u.id) in (22, 106))
+                                for u in self.board.get_all_units(unit.owner_id) if u is not unit)
+            if has_other_dep:
+                effective_attack += 2
 
         # Evitar valores negativos
         effective_attack = max(0, effective_attack)
@@ -315,7 +340,9 @@ class GameState:
                     110: (18, 26, "Margarita", "Helen"),
                     111: (5, 31, "Joel", "Bichots"),
                     117: (28, 30, "Cristóbal", "Josefa A"),
-                    120: (5, 4, "Joel", "Melsizis")
+                    120: (5, 4, "Joel", "Melsizis"),
+                    159: (13, 14, "Emi", "Sofi"),
+                    172: (167, 5, "Yotnier", "Joel")
                 }
                 evolution = {
                     88: (7, "Dante"),  # 88 evoluciona de 7 (Dante)
@@ -324,7 +351,8 @@ class GameState:
                     108: (11, "Ale"),
                     109: (68, "Dante (Yukata)"),
                     131: (6, "Vicente"),
-                    140: (59, "Crisby (Airsoft)")
+                    140: (59, "Crisby (Airsoft)"),
+                    160: (27, "Dario")
                 }
                 card_id_int = int(card.id)
 
@@ -562,10 +590,13 @@ class GameState:
                 print(f">> [!] Objetivo fuera de rango. Distancia: {dist}, Rango: {eff_range}")
                 return False
 
-            # ID 32: Isidora (Inmune si tiene aliados adyacentes)
-            if target.id == 31:
-                if any(self.board.get_unit_at(nx, ny) for nx, ny in self.board.get_neighbors(tx, ty)):
-                    print(">> [!] Isidora no puede ser objetivo de ataques.")
+            # ID 173 (e histórica 31): Isidora (Inmune si tiene aliados adyacentes)
+            if int(target.id) in (31, 173):
+                if any(
+                    self.board.get_unit_at(nx, ny) and self.board.get_unit_at(nx, ny).owner_id == target.owner_id
+                    for nx, ny in self.board.get_neighbors(tx, ty)
+                ):
+                    print(">> [!] Isidora no puede ser objetivo de ataques mientras tenga aliados adyacentes.")
                     return False 
 
             if dist > 1 and ("Danza" in target.groups or "Alianza Azulada" in target.groups):
@@ -653,7 +684,9 @@ class GameState:
                     110: (18, 26, "Margarita", "Helen"),
                     111: (5, 31, "Joel", "Bichots"),
                     117: (28, 30, "Cristóbal", "Josefa A"),
-                    120: (5, 4, "Joel", "Melsizis")
+                    120: (5, 4, "Joel", "Melsizis"),
+                    159: (13, 14, "Emi", "Sofi"),
+                    172: (167, 5, "Yotnier", "Joel")
                 }
                 evolution = {
                     88: (7, "Dante"),  # ID 88 evoluciona sobre ID 7
@@ -662,7 +695,8 @@ class GameState:
                     108: (11, "Ale"),
                     109: (68, "Dante (Yukata)"),
                     131: (6, "Vicente"),
-                    140: (59, "Crisby (Airsoft)")
+                    140: (59, "Crisby (Airsoft)"),
+                    160: (27, "Dario")
                 }
                 card_id_int = int(card.id)
 
@@ -738,6 +772,18 @@ class GameState:
                             card.max_health += 2
                             card.health += 2
                             print(f">> [Gimnasio] ¡{card.name} obtiene +2 de Vida Máxima al invocarse! (Vida actual: {card.health})")
+                    elif env_id == 166: # Recinto Militar (+2 PV Max Health, +1 ATK)
+                        if 'ex-estudiantes' in card_tags or int(card.id) in (22, 106):
+                            card.max_health += 2
+                            card.health += 2
+                            card.attack += 1
+                            print(f">> [Recinto Militar] ¡{card.name} obtiene +2 de Vida Máxima y +1 de Ataque al invocarse! (ATK: {card.attack}, Vida: {card.health})")
+                
+                # Presencia de Isidora (173): Todos los aliados reciben +3 PV de Vida Máxima
+                if any(int(u.id) == 173 for u in self.board.get_all_units(player.id) if u is not card):
+                    card.max_health += 3
+                    card.health += 3
+                    print(f">> [Isidora] ¡{card.name} obtiene +3 PV de Vida Máxima por la presencia de Isidora!")
                         
             elif card.card_type.lower() in ('environment', 'building'):
                 from domain.environment import Environment
@@ -789,6 +835,16 @@ class GameState:
                         if has_tec:
                             player.current_energy += 1
                             print(f">> [Laboratorio de Computación] ¡Recuperas +1 de energía! (Energía actual: {player.current_energy})")
+
+                # Tammy (Vestido Chino) (169): La primera vez en cada turno que juegues un Truco
+                for u in self.board.get_all_units(action.player_id):
+                    if int(u.id) == 169 and not getattr(u, 'truco_buff_used_this_turn', False):
+                        u.truco_buff_used_this_turn = True
+                        u.temporary_buffs.append({'type': 'attack', 'amount': 2, 'duration': 1})
+                        c_tags = str(getattr(card, 'groups', '')).lower()
+                        if 'placeholder' in c_tags or int(card.id) in (22, 106):
+                            u.temporary_buffs.append({'type': 'speed', 'amount': 1, 'duration': 1})
+                        print(f">> [Tammy Vestido Chino] ¡Gana bono por jugar un Truco este turno! (+2 ATK)")
                 return True
             else:
                 print(f">> [!] El hechizo {card.name} falló. Devolviendo energía y carta.")
@@ -874,6 +930,13 @@ class GameState:
                 tx, ty = action.payload['target']
             
             if tx == 'B':
+                # Emi & Sofi (159): Al declarar ataque, restaura 2 PV a unidades aliadas adyacentes
+                if int(attacker.id) == 159:
+                    for nx, ny in self.board.get_neighbors(fx, fy):
+                        adj = self.board.get_unit_at(nx, ny)
+                        if adj and adj.owner_id == attacker.owner_id:
+                            adj.heal(2, self)
+
                 enemy_id = 1 - action.player_id
                 enemy = self.players[enemy_id]
                 
@@ -902,12 +965,30 @@ class GameState:
             else:
                 target = self.board.get_unit_at(tx, ty)
                 
+                # Emi & Sofi (159): Al declarar ataque, restaura 2 PV a unidades aliadas adyacentes
+                if int(attacker.id) == 159:
+                    for nx, ny in self.board.get_neighbors(fx, fy):
+                        adj = self.board.get_unit_at(nx, ny)
+                        if adj and adj.owner_id == attacker.owner_id:
+                            adj.heal(2, self)
+
+                # Daniela (Muñeca Diabólica) (155): El primer ataque contra cada unidad enemiga inflige +4 de daño adicional
+                atk_damage = effective_attack
+                if int(attacker.id) == 155:
+                    if not hasattr(attacker, 'daniela_attacked_targets'):
+                        attacker.daniela_attacked_targets = set()
+                    t_key = id(target)
+                    if t_key not in attacker.daniela_attacked_targets:
+                        attacker.daniela_attacked_targets.add(t_key)
+                        atk_damage += 4
+                        print(f">> [Daniela Muñeca Diabólica] ¡Primer ataque contra {target.name} inflige +4 de daño adicional! (Ataque: {atk_damage})")
+
                 # Check for Vampira Lifesteal
                 margaritas = [u for u in self.board.get_all_units(action.player_id) if int(u.id) == 91]
                 
                 health_before = target.health
                 # Aplicar daño
-                murió = target.take_damage(effective_attack, self, source="attack", attacker=attacker)
+                murió = target.take_damage(atk_damage, self, source="attack", attacker=attacker)
                 damage_dealt = max(0, health_before - target.health) if not murió else health_before
                 
                 if margaritas and damage_dealt > 0:
@@ -939,6 +1020,27 @@ class GameState:
                 if int(attacker.id) == 116 and not murió:
                     target.temporary_buffs.append({"type": "attack", "amount": -3, "duration": 1})
                     print(f">> [Ariana Rapera] ¡Reduce el ataque de {target.name} en 3!")
+
+                # Carta 162: Diego S. (Mojados) - Aplica estado Mojado por 2 turnos
+                if int(attacker.id) == 162 and not murió:
+                    target.wet_turns = 2
+                    print(f">> [Diego S. Mojados] ¡Aplica estado Mojado a {target.name} por 2 turnos!")
+
+                # Carta 172: Yotnier & Joel (Quemadores) - Al eliminar, lanzamiento adicional de 8 de daño en rango
+                if int(attacker.id) == 172 and murió:
+                    eff_r = self.get_effective_stats(attacker)["range_atk"]
+                    candidates = [
+                        u for u in self.board.get_all_units(1 - attacker.owner_id)
+                        if u is not target and (abs(u.pos_x - fx) + abs(u.pos_y - fy)) <= eff_r
+                    ]
+                    if candidates:
+                        extra_target = candidates[0]
+                        print(f">> [Yotnier & Joel Quemadores] ¡Lanzamiento adicional inflige 8 de daño a {extra_target.name}!")
+                        ex_died = extra_target.take_damage(8, self, source="attack", attacker=attacker)
+                        if ex_died:
+                            if extra_target.rarity == "Excelencia":
+                                self.excelenciaactive -= 1
+                            self.board.remove_unit(extra_target.pos_x, extra_target.pos_y)
 
                 # ID 140: Crisby (Bunker de guerra)
                 # Al declarar un ataque, inflige su Ataque al objetivo principal y 4 de daño en área a todas las unidades enemigas adyacentes al objetivo.
@@ -1081,11 +1183,11 @@ class GameState:
                 nuevos = [u for u in self.board.get_all_units(self.current_player_id)
                           if 'nuevo' in str(getattr(u, 'groups', '')).lower() or int(u.id) in (22, 106)]
                 if nuevos:
-                    damaged_nuevos = [u for u in nuevos if u.health < u.max_health]
+                    damaged_nuevos = sorted([u for u in nuevos if u.health < u.max_health], key=lambda u: u.health)
                     if damaged_nuevos:
-                        lowest = min(damaged_nuevos, key=lambda u: u.health)
-                        lowest.heal(4, self)
-                        print(f">> [El Casino] Restaura 4 PV a {lowest.name} (Vida: {lowest.health}/{lowest.max_health}).")
+                        for lowest in damaged_nuevos[:2]:
+                            lowest.heal(4, self)
+                            print(f">> [El Casino] Restaura 4 PV a {lowest.name} (Vida: {lowest.health}/{lowest.max_health}).")
                     else:
                         print(">> [El Casino] Todos los aliados Nuevos tienen la vida llena. ¡Robas 1 carta!")
                         self.draw_card(current_player)
@@ -1112,13 +1214,27 @@ class GameState:
                         unit.temporary_buffs = buffs_to_keep
 
         # Pasiva de Fin de Turno: Martina & Rin Ángeles (ID 87)
-        # "Al final de tu turno, si la Base ha recibido daño, restaura 4 PV a la Base y 2 PV a todas las unidades aliadas adyacentes."
+        # "Al final de tu turno, restaura 2 PV a cada aliado adyacente. Además, si tu Base ha recibido daño durante ese turno, restaura 4 PV a tu Base."
         ending_player = self.get_current_player()
-        if ending_player.health < 80:
-            for y in range(self.board.height):
-                for x in range(self.board.width):
-                    unit_m_r = self.board.get_unit_at(x, y)
-                    if unit_m_r and int(unit_m_r.id) == 87 and unit_m_r.owner_id == ending_player.id:
+        for y in range(self.board.height):
+            for x in range(self.board.width):
+                unit_m_r = self.board.get_unit_at(x, y)
+                if unit_m_r and int(unit_m_r.id) == 87 and unit_m_r.owner_id == ending_player.id:
+                    # Siempre restaura 2 PV a cada aliado adyacente
+                    for nx, ny in self.board.get_neighbors(x, y):
+                        adj_ally = self.board.get_unit_at(nx, ny)
+                        if adj_ally and adj_ally.owner_id == ending_player.id and getattr(ending_player, 'cant_heal_turns', 0) == 0:
+                            if adj_ally.health < adj_ally.max_health:
+                                adj_ally.health = min(adj_ally.max_health, adj_ally.health + 2)
+                                print(f">> [Martina & Rin]: Cura 2 PV a {adj_ally.name} (Vida: {adj_ally.health}/{adj_ally.max_health}).")
+                                if ending_player.id == 0:
+                                    try:
+                                        from src.domain.mission_manager import MissionManager
+                                        MissionManager.track_heal(0, 2, getattr(adj_ally, 'groups', ''))
+                                    except Exception:
+                                        pass
+                    # Además, si la Base ha recibido daño (< 80 PV)
+                    if ending_player.health < 80:
                         heal_base = min(4, 80 - ending_player.health)
                         if heal_base > 0 and getattr(ending_player, 'cant_heal_turns', 0) == 0:
                             ending_player.health += heal_base
@@ -1129,19 +1245,18 @@ class GameState:
                                     MissionManager.track_heal(0, heal_base, "Base")
                                 except Exception:
                                     pass
-                        
-                        for nx, ny in self.board.get_neighbors(x, y):
-                            adj_ally = self.board.get_unit_at(nx, ny)
-                            if adj_ally and adj_ally.owner_id == ending_player.id and getattr(ending_player, 'cant_heal_turns', 0) == 0:
-                                if adj_ally.health < adj_ally.max_health:
-                                    adj_ally.health = min(adj_ally.max_health, adj_ally.health + 2)
-                                    print(f">> [Martina & Rin]: Cura 2 PV a {adj_ally.name} (Vida: {adj_ally.health}/{adj_ally.max_health}).")
-                                    if ending_player.id == 0:
-                                        try:
-                                            from src.domain.mission_manager import MissionManager
-                                            MissionManager.track_heal(0, 2, getattr(adj_ally, 'groups', ''))
-                                        except Exception:
-                                            pass
+
+        # Entorno ID 166: Recinto Militar (Restaura 2 PV a un Ex-estudiante si controlas 2 o más)
+        if getattr(self, 'active_environment', None) and int(self.active_environment.card.id) == 166:
+            if getattr(self.active_environment, 'owner_id', None) == ending_player.id:
+                ex_est = [u for u in self.board.get_all_units(ending_player.id)
+                          if 'ex-estudiantes' in str(getattr(u, 'groups', '')).lower() or int(u.id) in (22, 106)]
+                if len(ex_est) >= 2:
+                    damaged_ex = [u for u in ex_est if u.health < u.max_health]
+                    if damaged_ex:
+                        lowest_ex = min(damaged_ex, key=lambda u: u.health)
+                        lowest_ex.heal(2, self)
+                        print(f">> [Recinto Militar] Restaura 2 PV a {lowest_ex.name} (Vida: {lowest_ex.health}/{lowest_ex.max_health}).")
 
         # Decrementar penalización de curación
         current_p = self.get_current_player()

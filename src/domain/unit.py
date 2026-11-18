@@ -28,10 +28,16 @@ class Unit(Card):
             self.static_abilities.append({"type": "buff_tag_attack", "tag": "fuerzas especiales valenzuela", "amount": 1})
             self.static_abilities.append({"type": "buff_tag_speed_if_tag_present", "target_tag": "fuerzas especiales valenzuela", "condition_tag": "cabezal de tren", "amount": 1})
         elif str(self.id) == "84" or self.name == 'Stefano (Viejo)':
-            self.static_abilities.append({"type": "buff_tag_speed", "tag": "cabezal de tren", "amount": 1})
+            self.static_abilities.append({"type": "buff_tag_speed", "tag": ["cabezal de tren", "ex-estudiantes"], "amount": 1})
+            self.static_abilities.append({"type": "buff_tag_attack", "tag": "ex-estudiantes", "amount": 1})
         elif str(self.id) == "106":
             self.static_abilities.append({"type": "buff_adj_attack", "amount": 2})
-        elif str(self.id) == "151" or self.name == 'Sabch':
+        elif str(self.id) == "160" or self.name == 'Dario (Pianista)':
+            self.static_abilities.append({"type": "buff_tag_attack", "tag": ["mish-b", "músico", "musico"], "amount": 1})
+        elif str(self.id) == "170" or self.name == 'Capzy (Director de Coro)':
+            self.static_abilities.append({"type": "buff_tag_speed", "tag": "cabezal de tren", "amount": 1})
+            self.static_abilities.append({"type": "buff_tag_attack_if_tag_present", "target_tag": "cabezal de tren", "condition_tag": "fuerzas especiales valenzuela", "amount": 1})
+        elif str(self.id) == "171" or self.name == 'Sabch (Jazz-guitar)':
             self.sabch_mode = 'soporte'
             self.static_abilities.append({
                 "type": "buff_tag_attack",
@@ -61,10 +67,32 @@ class Unit(Card):
             print(f">> [Inmunidad Emi Dermapatch] ¡{self.name} es inmune a la inmovilización!")
             self._immobile_turns = 0
             return
+        if getattr(self, 'stat_immunity_turns', 0) > 0 and value > 0:
+            print(f">> [Inmunidad] ¡{self.name} es inmune a la inmovilización!")
+            self._immobile_turns = 0
+            return
         self._immobile_turns = max(0, value)
 
     def take_damage(self, amount: int, game_state, source: str = "attack", attacker = None, is_redirected: bool = False) -> bool:
         # """Resta vida y devuelve True si la unidad murió."""
+        # Carta 152: Ami (Pesadillas) Clon al recibir daño
+        if getattr(self, 'is_clone', False) and int(getattr(self, 'id', -1)) == 152:
+            print(f">> [Ami Pesadillas - Clon] ¡El clon de {self.name} recibe daño y explota!")
+            if attacker:
+                attacker.take_damage(4, game_state, source="clon_explosion")
+                print(f">> [Ami Pesadillas - Clon] ¡Explosión inflige 4 de daño a {attacker.name}!")
+            elif game_state:
+                # Daño al enemigo más cercano o adyacente
+                enemy_id = 1 - getattr(self, 'owner_id', 0)
+                for u in game_state.board.get_all_units(enemy_id):
+                    if abs(u.pos_x - self.pos_x) + abs(u.pos_y - self.pos_y) <= 1:
+                        u.take_damage(4, game_state, source="clon_explosion")
+                        print(f">> [Ami Pesadillas - Clon] ¡Explosión inflige 4 de daño a {u.name}!")
+                        break
+            if game_state and self.pos_x != -1 and self.pos_y != -1:
+                game_state.board.remove_unit(self.pos_x, self.pos_y)
+            return True
+
         # Carta 130: Vicente (Portero) - Guardaespaldas
         if not is_redirected and game_state and getattr(self, 'owner_id', None) is not None and int(getattr(self, 'id', -1)) != 130:
             vicentes = [u for u in game_state.board.get_all_units(self.owner_id)
@@ -89,6 +117,20 @@ class Unit(Card):
             tags = str(getattr(self, 'groups', '')).lower()
             if 'tralaleros' in tags or int(self.id) == 22:
                 amount = max(0, amount - 1)
+
+        # Entorno ID 55: Sala STEAM (-1 de daño de ataque recibido a Derma-patch, mín 1)
+        if active_env and int(active_env.card.id) == 55 and source == 'attack':
+            tags = str(getattr(self, 'groups', '')).lower()
+            if 'derma-patch' in tags or 'dermapatch' in tags or int(self.id) in (22, 106):
+                amount = max(1, amount - 1)
+
+        # Reducción permanente de daño (Dante Destacado Académico / Tralaleros-Danza)
+        if getattr(self, 'permanent_dmg_reduction', 0) > 0 and source == 'attack':
+            amount = max(0, amount - self.permanent_dmg_reduction)
+
+        # Estado "Mojado" (Cartas 162, 163): +1 de daño recibido por ataque
+        if getattr(self, 'wet_turns', 0) > 0 and source == 'attack':
+            amount += 1
 
         # Carta 126: Richi (Dermapatch) - Reduce en 3 daño de ataques a distancia
         if int(getattr(self, 'id', -1)) == 126 and attacker is not None:
@@ -141,10 +183,15 @@ class Unit(Card):
         self.has_attacked = False
         self.ability_used_this_turn = False
         self.attacks_made = 0
+        self.truco_buff_used_this_turn = False
         if getattr(self, 'immobile_turns', 0) > 0:
             self.immobile_turns -= 1
         if is_owner and getattr(self, 'fuse_cooldown', 0) > 0:
             self.fuse_cooldown -= 1
+        if is_owner and getattr(self, 'wet_turns', 0) > 0:
+            self.wet_turns -= 1
+        if is_owner and getattr(self, 'stat_immunity_turns', 0) > 0:
+            self.stat_immunity_turns -= 1
 
     def on_enter(self, game_state):
         from src.domain.ability_manager import AbilityManager

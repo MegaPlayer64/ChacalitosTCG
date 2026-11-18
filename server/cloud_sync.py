@@ -9,7 +9,7 @@ import time
 import requests
 from src.infrastructure.path_manager import PathManager
 
-DEFAULT_SERVER_URL = "http://192.168.1.15:8000"
+DEFAULT_SERVER_URL = "https://api.bohrstudy.cl"
 
 
 class CloudSyncManager:
